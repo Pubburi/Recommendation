@@ -26,7 +26,7 @@
 
 ## ✍ 프로젝트 개요
 
-주점부리의 Python·FastAPI 서버입니다. 명시한 상품 카탈로그와 필수·제외 조건으로 계산하는 B0 기본 추천, 헬스 체크·API 문서·패키징·CI를 제공합니다. B0는 학습하지 않은 결정적 기준선이며 콘텐츠 모델 학습과 서비스 연동은 개발 계획에 따라 진행합니다.
+주점부리의 Python·FastAPI 서버입니다. 명시한 상품 카탈로그와 필수·제외 조건으로 계산하는 B0 기본 추천, 오프라인 콘텐츠 표현 fit 모듈, 헬스 체크·API 문서·패키징·CI를 제공합니다. B0는 학습하지 않은 결정적 기준선이며 B1 모듈은 현재 직접 작성한 허구 입력으로 fit을 검증했습니다. 검수 서비스 카탈로그 학습·품질 평가와 서버 연동은 진행할 과제입니다.
 
 <a id="features"></a>
 
@@ -39,6 +39,7 @@
 | 제약·결측 처리 | 주종·가격·도수·판매 상태·제외 ID, unknown을 요구 조건에 임의 통과시키지 않음 |
 | 오프라인 원천 감사 | 명세·출처/revision·수량 단위·unknown·브랜드/SKU 정체성을 구분하고 명시 검수 후 B0 시연 요청 변환 |
 | 고정 시나리오 검사 | 수동 기대 사실·명세/응답 해시를 고정하고 추천 엔진과 분리해 제약·중복·결측·이유·후보 부족 확인 |
+| 오프라인 콘텐츠 모듈 | 학습군의 TF-IDF·관측 수치 범위를 fit하고 명시 취향/선택 상품의 유사도·실제 기여를 계산. 현재 허구 입력 회귀이며 B1 HTTP·실카탈로그 품질 평가는 미구현 |
 | API 문서 | FastAPI 자동 생성 /docs와 /openapi.json |
 | 독립 실행 | DB·모델 파일·외부 AI 키 없이 기동 |
 | 품질 검사 | Ruff, pytest, wheel·sdist 빌드 |
@@ -51,6 +52,7 @@
 |---|---|
 | 런타임 | Python 3.12 |
 | 서버 | FastAPI, Uvicorn |
+| 콘텐츠 표현 | scikit-learn TF-IDF·MinMaxScaler, NumPy |
 | 의존성·패키징 | uv, uv.lock, pyproject.toml, Hatchling |
 | 테스트·검사 | pytest, HTTPX, Ruff |
 | CI | GitHub Actions · recommendation-ci |
@@ -65,7 +67,8 @@ flowchart LR
     Backend -. "후속 내부 API 연동" .-> API["Recommendation · FastAPI"]
     API --> Health["/health"]
     API --> Baseline["명시 카탈로그 → 필수 필터 → B0 기본순"]
-    API -. "후속 구현" .-> Model["B1 특성 fit · 콘텐츠 점수 · 평가"]
+    API -. "후속 HTTP 연동" .-> Model["B1 오프라인 특성 fit · 콘텐츠 점수"]
+    Fixture["명시 로컬 입력 · 현재 허구 fixture"] --> Model
 ~~~
 
 <a id="problem-solving"></a>
@@ -209,6 +212,8 @@ uv sync --locked
 로컬 구조화 데이터 준비는 [원천 감사 도구](docs/CATALOG-AUDIT.md)를 따릅니다. 이 도구는 원문을 자동 수집하거나 브랜드를 판매 상품으로 생성하지 않으며, 허용된 로컬 입력과 검수 mapping을 별도로 사용합니다.
 
 추천 결과의 재현 가능한 계약 검사는 [시나리오·평가 경계](docs/EVALUATION.md)를 따릅니다. 직접 작성한 입력의 조건 검증을 실제 사용자 선호나 모델 관련성 평가와 구분합니다.
+
+상품군을 나눈 실제 TF-IDF·수치 변환 fit과 오프라인 유사도 실행은 [콘텐츠 모듈 안내](docs/CONTENT-MODEL.md)를 따릅니다. 미확인 맛/향을 생성하지 않으며 설명 원문·이미지·행동 로그를 학습에 사용하지 않습니다.
 
 <a id="verification"></a>
 
