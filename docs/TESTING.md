@@ -18,6 +18,8 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
 7. 새 wheel의 runtime-only `python -I`로 `content_experiment`를 실제 실행한다. 직접 작성한
    fixture의 vocabulary/IDF·수치 fit과 명시 상품군 분리·필수 조건 결과를 확인한다. 원문/모델을
    Git이나 artifact에 업로드하지 않으며 실제 상품 품질 평가로 표현하지 않는다.
+8. `legacy_seed_audit`도 runtime-only 실제 CLI로 작은 자체 SQL literal/바이트 시그니처를
+   감사한다. 실제80행/이미지는 CI가 읽지 않으며 결과가 자동 학습 승격을 만들지 않는지 확인한다.
 
 HTTP 과정에 DB·AWS·모델·외부 AI API 환경변수를 전달하지 않는다. 8000 포트를 점유하지 않고
 본인 서버 프로세스와 임시 환경만 정리한다. 현재 검증 대상은 Linux/macOS이며 CI는 Ubuntu다.
@@ -43,6 +45,12 @@ unknown과 0의 구분, 후보 부족 시 조건 유지, 필터 뒤 limit, 입�
 검수 mapping·명시 Backend ID/그룹/시연 가용성·가격·B0 계약·출력 덮어쓰기 차단을 검증한다.
 실제 CC0 소량 표본 감사와 이 회귀 fixture는 구분하며 CI가 원천을 다운로드하지 않는다.
 격리 wheel 검증은 checkout 밖에서 CLI `--help`도 실행해 runtime 의존성/패키징을 확인한다.
+
+`tests/test_legacy_seed_audit.py`는 작은 직접 작성 SQL·로컬 바이트 fixture로 활성 INSERT/주석·
+quoted text·컬럼/리터럴 상한·지원 불가/변경문 거절, 사용자/암호 행 비노출, Decimal 타입/정확값·
+unknown/실제0·언더플로, 웹 매핑·경로/시그니처/해시·중복·symlink/파일 크기와 새 출력 보존을 검증한다.
+DB/SQL 실행·네트워크·실제 이미지 변환·학습은 수행하지 않는다. 실제80행 관측 집계와 단위 테스트의
+고정 정답을 결합하지 않으며 [감사 범위·실제 결과](LEGACY-SEED-AUDIT.md)를 별도로 관리한다.
 
 ## 독립 고정 시나리오
 

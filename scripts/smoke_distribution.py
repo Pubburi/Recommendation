@@ -216,6 +216,51 @@ def main(progress: dict[str, str]) -> None:
             timeout=10,
             stdout=subprocess.DEVNULL,
         )
+        progress["stage"] = "isolated-legacy-inventory-cli"
+        # Only tiny authored literals/byte signatures, never the real legacy seed or its images.
+        legacy_manifest = work / "legacy-manifest.json"
+        shutil.copy2(ROOT / "sources/legacy-demo-seed.json", legacy_manifest)
+        legacy_sql = work / "authored-seed.sql"
+        legacy_sql.write_text(
+            "INSERT INTO t_product (name,type,price,img,abv,order_count) VALUES "
+            "('fictional-smoke','fixture',1000,'authored.png',0,0);",
+            encoding="utf-8",
+        )
+        legacy_assets = work / "authored-assets"
+        legacy_assets.mkdir()
+        (legacy_assets / "authored.webp").write_bytes(b"RIFF\x00\x00\x00\x00WEBPauthored-signature")
+        legacy_output = work / ".pubburi" / "legacy-inventory"
+        subprocess.run(
+            [
+                str(python),
+                "-I",
+                "-m",
+                "pubburi_recommendation.legacy_seed_audit",
+                "--manifest",
+                str(legacy_manifest),
+                "--sql",
+                str(legacy_sql),
+                "--assets-dir",
+                str(legacy_assets),
+                "--output-dir",
+                str(legacy_output),
+            ],
+            cwd=work,
+            check=True,
+            timeout=10,
+            stdout=subprocess.DEVNULL,
+        )
+        legacy_result = json.loads(
+            (legacy_output / "audit-report.json").read_text(encoding="utf-8")
+        )
+        if (
+            legacy_result["product_rows"] != 1
+            or legacy_result["mapped_images_readable"] != 1
+            or legacy_result["feature_fit_eligible_rows"] != 0
+        ):
+            raise RuntimeError(
+                "The installed wheel violated the authored legacy inventory boundary"
+            )
         progress["stage"] = "isolated-scenario-checker-cli"
         subprocess.run(
             [str(python), "-I", "-m", "pubburi_recommendation.scenario_evaluation", "--help"],
