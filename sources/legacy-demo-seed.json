@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "source_id": "pubburi-legacy-demo-seed",
+  "reviewed_on": "2026-11-01",
+  "source_refs": [
+    "https://github.com/Pubburi/Backend/blob/main/data.sql",
+    "https://github.com/Pubburi/Frontend/tree/main/public/images/pub",
+    "https://github.com/Pubburi/Backend/blob/main/docs/PROVENANCE.md",
+    "https://github.com/Pubburi/Frontend/blob/main/docs/PROVENANCE.md"
+  ],
+  "decision": "local_inventory_only_pending_record_and_media_evidence",
+  "structured_feature_fit_approved": false,
+  "public_redistribution_approved": false,
+  "image_reuse_or_training_approved": false,
+  "notes": [
+    "Repository history identifies the original project, not the source or usage permission for individual product facts or images.",
+    "Local read-only inventory is separate from model training, public catalog reuse and image rights review.",
+    "Prices and order counts are legacy demo inputs, not observed market prices or real popularity.",
+    "No volume, taste, aroma, SKU identity or approved training field is inferred from product names or image filenames."
+  ]
+}
