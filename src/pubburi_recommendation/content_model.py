@@ -321,15 +321,12 @@ class FittedContentModel:
     ) -> ContentResponse:
         if not isinstance(reference, ContentProduct):
             raise ValueError("validated_reference_product_required")
-        constraints = constraints if constraints is not None else Constraints()
-        constraints = Constraints.model_validate(
-            {
-                **constraints.model_dump(),
-                "exclude_product_ids": sorted(
-                    set(constraints.exclude_product_ids) | {reference.product_id}
-                ),
-            }
-        )
+        # Validate before removing the anchor so duplicate/oversized inputs cannot evade limits.
+        validate_catalog(candidates, allow_empty=True)
+        # Internal anchor removal must not consume the caller's 1,000-ID exclusion budget.
+        candidates = [
+            product for product in candidates if product.product_id != reference.product_id
+        ]
         return self.rank(
             candidates,
             ContentProfile(

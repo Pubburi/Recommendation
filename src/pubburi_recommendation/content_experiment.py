@@ -99,14 +99,10 @@ def run_experiment(spec: ContentExperiment, spec_sha256: str) -> dict:
             result = model.similar(
                 products[case.reference_product_id], candidates, constraints, limit=case.limit
             )
-            constraints = Constraints.model_validate(
-                {
-                    **constraints.model_dump(),
-                    "exclude_product_ids": sorted(
-                        set(constraints.exclude_product_ids) | {case.reference_product_id}
-                    ),
-                }
-            )
+            # Compare B0 on the same anchor-free candidates without expanding external constraints.
+            candidates = [
+                product for product in candidates if product.product_id != case.reference_product_id
+            ]
         # Independently declared facts/requirements, never B1 scores, determine correctness here.
         ids = [item.product_id for item in result.items]
         issues = []

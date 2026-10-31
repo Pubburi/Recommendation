@@ -249,6 +249,44 @@ def test_similar_product_excludes_anchor_and_respects_explicit_exclusion():
     assert excluded.items == []
 
 
+@pytest.mark.parametrize("anchor_in_candidates", [False, True])
+def test_similar_accepts_full_exclusion_budget_without_mutating_constraints(anchor_in_candidates):
+    training = model_products()
+    model = FittedContentModel.fit(training)
+    constraints = Constraints(exclude_product_ids=list(range(1000, 2000)))
+    original = constraints.model_dump()
+    candidates = [training[1]] + ([training[0]] if anchor_in_candidates else [])
+    result = model.similar(training[0], candidates, constraints)
+    assert [item.product_id for item in result.items] == [2]
+    assert result.eligible_count == 1
+    assert constraints.model_dump() == original
+
+
+def test_similar_still_rejects_duplicate_anchor_candidates_before_removing_anchor():
+    training = model_products()
+    with pytest.raises(ValueError, match="catalog_product_ids_must_be_unique"):
+        FittedContentModel.fit(training).similar(training[0], [training[0], training[0]])
+
+
+@pytest.mark.parametrize("anchor_in_candidates", [False, True])
+def test_reference_experiment_accepts_full_exclusion_budget(anchor_in_candidates):
+    payload, sha256 = read_json(SPEC_PATH)
+    case = payload["cases"][6]
+    if anchor_in_candidates:
+        case["reference_product_id"] = 102
+        case["expected_eligible_ids"].remove(102)
+    case["constraints"] = {"exclude_product_ids": list(range(1000, 2000))}
+    spec = ContentExperiment.model_validate(payload)
+    original = spec.cases[6].constraints.model_dump()
+    result = run_experiment(spec, sha256)["cases"][6]
+    assert result["passed_contract"]
+    assert case["reference_product_id"] not in result["b0_product_ids"]
+    assert case["reference_product_id"] not in [
+        item["product_id"] for item in result["b1"]["items"]
+    ]
+    assert spec.cases[6].constraints.model_dump() == original
+
+
 @pytest.mark.parametrize(
     "change",
     [
