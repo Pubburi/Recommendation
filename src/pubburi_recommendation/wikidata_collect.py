@@ -62,6 +62,25 @@ def entity_url(ids: list[str]) -> str:
     )
 
 
+def declared_body_length(headers) -> int | None:
+    lengths = headers.get_all("Content-Length", [])
+    encodings = headers.get_all("Transfer-Encoding", [])
+    # Conservative for ambiguous framing; HTTPResponse otherwise chooses a length silently.
+    if len(lengths) > 1 or len(encodings) > 1:
+        raise AuditError("remote_protocol_failed")
+    if encodings and (lengths or encodings[0].strip(" \t").lower() != "chunked"):
+        raise AuditError("remote_protocol_failed")
+    if not lengths:
+        return None  # Chunked completion is checked by HTTPResponse; no-length bodies end at EOF.
+    token = lengths[0].strip(" \t")
+    if not token or len(token) > 20 or not token.isascii() or not token.isdecimal():
+        raise AuditError("remote_protocol_failed")
+    expected = int(token)
+    if expected > MAX_INPUT_BYTES:
+        raise AuditError("input_exceeds_10_mib")
+    return expected
+
+
 def fetch(url: str) -> tuple[bytes, int]:
     parsed = urlsplit(url)
     parameters = parse_qs(parsed.query)
@@ -81,9 +100,16 @@ def fetch(url: str) -> tuple[bytes, int]:
                 raise AuditError("unexpected_http_status")
             if response.headers.get_content_type() != "application/json":
                 raise AuditError("unexpected_response_content_type")
+            expected_length = declared_body_length(response.headers)
+            if response.headers.get_all("Transfer-Encoding", []) and not getattr(
+                response, "chunked", False
+            ):
+                raise AuditError("remote_protocol_failed")
             content = response.read(MAX_INPUT_BYTES + 1)
             if len(content) > MAX_INPUT_BYTES:
                 raise AuditError("input_exceeds_10_mib")
+            if expected_length is not None and len(content) != expected_length:
+                raise AuditError("remote_protocol_failed")
             return content, response.status
     except HTTPException as error:
         raise AuditError("remote_protocol_failed") from error

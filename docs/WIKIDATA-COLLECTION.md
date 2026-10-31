@@ -79,6 +79,12 @@ uv run --locked python -m pubburi_recommendation.wikidata_collect \
   [HTTPException 계열](https://docs.python.org/3.12/library/http.client.html#http.client.HTTPException)은
   `remote_protocol_failed`로 변환한다. HTTP200·JSON처럼 보이는 일부 본문만으로 성공을 만들지
   않으며 traceback/partial body를 진단에 노출하지 않고 실패 receipt와 종료2를 유지한다.
+- Content-Length가 있는 응답은 상한 내에서 읽은 바이트 수가 선언 길이와 일치해야 한다.
+  `HTTPResponse.read(amt)`는 선언 길이보다 짧아도 예외 없이 반환할 수 있어 JSON 검증과 별도로
+  확인한다. 선언 길이는 단일 부호 없는 ASCII 십진 표기(0 포함·최대20자리)만 허용하고
+  10MiB 초과는 본문을 읽기 전에 거절한다. 중복 길이·길이와 Transfer-Encoding의 동시 선언·
+  지원하지 않는 전송 인코딩·실제 chunk decoder가 선택되지 않은 선언은 보수적으로 보류한다.
+  정상 길이·길이 없는 EOF 응답·정상 chunked는 허용하며 읽기 상한을 늘리거나 무제한 읽지 않는다.
 - 성공 종료0은 수집/재생의 형식 검증이다. item 정체성·개별 필드 사실·판매 SKU 연결·새 카탈로그
   학습/독립 관련성·최종 평가와 Backend/Frontend 연동은 별도 미완료다. 실패 종료는2다.
 

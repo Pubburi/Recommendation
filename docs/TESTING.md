@@ -63,6 +63,9 @@ offline 모드/권리 승인 경계를 검증한다. 실패한 새 snapshot이 �
 실제 `HTTPResponse` decoder에 종료 chunk가 누락된 자체 wire를 제공해 `IncompleteRead`를
 재현하고 fetch·별도 프로세스의 실제 CLI parser/main이 고정 protocol 진단·exit2·완성 실패
 receipt를 남기며 원문/정제 파일을 생성하지 않는지 확인한다. 네트워크·외부 원천 요청은 없다.
+선언 길이보다 짧지만 완결된 JSON인 자체 응답도 같은 실패 경계를 검증한다. 정확한 길이·길이 없는
+EOF·정상 chunked의 성공을 보존하고, 잘못된/중복 Content-Length·길이와 전송 인코딩의 충돌·
+네이티브 decoder가 처리하지 않는 인코딩·상한 초과 선언을 본문 읽기 전에 거절하는지 확인한다.
 
 ## 독립 고정 시나리오
 

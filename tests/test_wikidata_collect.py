@@ -45,6 +45,16 @@ def truncated_chunked_wire():
     )
 
 
+def content_length_wire(extra_declared_bytes=0):
+    body = json.dumps(payload()).encode()
+    return (
+        b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: "
+        + str(len(body) + extra_declared_bytes).encode()
+        + b"\r\n\r\n"
+        + body
+    )
+
+
 def actual_response(wire):
     class Socket:
         def makefile(self, mode):
@@ -281,14 +291,13 @@ def test_real_truncated_chunked_response_is_a_safe_protocol_error(monkeypatch):
         module.fetch(module.entity_url(["Q1"]))
 
 
-def test_cli_real_truncated_chunked_response_has_complete_failed_receipt(tmp_path):
-    output = tmp_path / ".pubburi" / "truncated-response"
+def run_wire_cli(wire, output):
     # Use the real CLI parser/main and HTTPResponse decoder; only the opener is in-memory.
     program = f"""
 import io
 from http.client import HTTPResponse
 import pubburi_recommendation.wikidata_collect as module
-wire = {truncated_chunked_wire()!r}
+wire = {wire!r}
 class Socket:
     def makefile(self, mode):
         return io.BytesIO(wire)
@@ -316,6 +325,97 @@ raise SystemExit(module.main())
         text=True,
         check=False,
     )
+    return result
+
+
+def test_real_content_length_shortfall_is_not_an_accepted_item(tmp_path, monkeypatch):
+    wire = content_length_wire(100)
+    with actual_response(wire) as response:
+        content = response.read(module.MAX_INPUT_BYTES + 1)
+        # Bounded read(amt) does not raise; even the received JSON is structurally complete.
+        assert len(content) < int(response.headers["Content-Length"])
+        assert module.check_payload(json.loads(content), ["Q1"])
+
+    class Opener:
+        def open(self, *args, **kwargs):
+            return actual_response(wire)
+
+    monkeypatch.setattr(module, "build_opener", lambda *args: Opener())
+    output = tmp_path / ".pubburi" / "short-body"
+    with pytest.raises(AuditError, match="remote_protocol_failed"):
+        module.collect(manifest(), ["Q1"], output)
+    receipt = json.loads((output / "receipt.json").read_text())
+    assert receipt["accepted"] is False and receipt["error_code"] == "remote_protocol_failed"
+    assert (
+        not (output / "entities.json").exists()
+        and not (output / "normalized-records.json").exists()
+    )
+
+
+@pytest.mark.parametrize("framing", ["exact_length", "no_length", "complete_chunked"])
+def test_real_complete_framing_preserves_collection_success(tmp_path, monkeypatch, framing):
+    body = json.dumps(payload()).encode()
+    wire = (
+        content_length_wire()
+        if framing == "exact_length"
+        else truncated_chunked_wire() + b"0\r\n\r\n"
+        if framing == "complete_chunked"
+        else b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n" + body
+    )
+
+    class Opener:
+        def open(self, *args, **kwargs):
+            return actual_response(wire)
+
+    monkeypatch.setattr(module, "build_opener", lambda *args: Opener())
+    output = tmp_path / ".pubburi" / framing
+    receipt = module.collect(manifest(), ["Q1"], output)
+    assert receipt["accepted"] and receipt["http_status"] == 200
+    assert (output / "entities.json").read_bytes() == body
+    assert receipt["response_bytes"] == len(body)
+
+
+@pytest.mark.parametrize(
+    "headers,reason",
+    [
+        (b"Content-Length: -1\r\n", "remote_protocol_failed"),
+        (b"Content-Length: +175\r\n", "remote_protocol_failed"),
+        (b"Content-Length: 175, 175\r\n", "remote_protocol_failed"),
+        (b"Content-Length: \xb2\r\n", "remote_protocol_failed"),
+        (b"Content-Length: \xa0175\r\n", "remote_protocol_failed"),
+        (b"Content-Length: " + b"9" * 21 + b"\r\n", "remote_protocol_failed"),
+        (b"Content-Length: 3\r\nContent-Length: 3\r\n", "remote_protocol_failed"),
+        (b"Content-Length: 3\r\nTransfer-Encoding: chunked\r\n", "remote_protocol_failed"),
+        (b"Transfer-Encoding: gzip\r\n", "remote_protocol_failed"),
+        (b"Transfer-Encoding: chunked \t\r\n", "remote_protocol_failed"),
+        (
+            b"Content-Length: " + str(module.MAX_INPUT_BYTES + 1).encode() + b"\r\n",
+            "input_exceeds_10_mib",
+        ),
+    ],
+)
+def test_invalid_or_excessive_real_framing_is_rejected_before_body_read(
+    monkeypatch, headers, reason
+):
+    response = actual_response(
+        b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n" + headers + b"\r\n" + b"{}"
+    )
+    response.read = lambda maximum: pytest.fail("invalid framing must not read the body")
+
+    class Opener:
+        def open(self, *args, **kwargs):
+            return response
+
+    monkeypatch.setattr(module, "build_opener", lambda *args: Opener())
+    with pytest.raises(AuditError, match=reason):
+        module.fetch(module.entity_url(["Q1"]))
+
+
+@pytest.mark.parametrize("framing", ["chunked", "content_length"])
+def test_cli_real_incomplete_response_has_complete_failed_receipt(tmp_path, framing):
+    output = tmp_path / ".pubburi" / "truncated-response"
+    wire = truncated_chunked_wire() if framing == "chunked" else content_length_wire(100)
+    result = run_wire_cli(wire, output)
     assert result.returncode == 2
     assert result.stderr.strip() == "Wikidata collection failed: remote_protocol_failed"
     assert "Traceback" not in result.stderr and "authored contract" not in result.stderr

@@ -48,3 +48,23 @@
   성공/maxlag/깊은JSON 재생·legacy감사/B1 fit·health/B0/OpenAPI·중복ID422를 통과했다. 기존
   TestClient 경고1건은 같다. 예외/fetch/실제 CLI의 세 수정 전 실패가 고정 진단/실패 상태로 바뀐
   로컬 회귀이며 원천 서비스의 장애율·추천 품질·성능 개선으로 표현하지 않는다.
+
+## PR12 정식 P2 — 선언 길이에 못 미치는 완결 JSON
+
+- 최신 head1604959의 별도 Codex P2는 Content-Length보다 짧게 끝난 본문이 완결 JSON이면
+  `HTTPResponse.read(amt)`가 예외를 발생시키지 않아 accepted=true가 되는 문제를 지적했다.
+- 실제 HTTPResponse에 자체 item JSON보다100B 큰 길이를 선언한 wire를 넣었다. stdlib가 짧은
+  본문을 반환하고 기존 payload 검증은 통과하는지 먼저 확인했다. 수정 전 collect의 성공과
+  별도 프로세스의 실제 CLI exit0/acceptedtrue를 두 회귀의 실패로 재현했다. 외부 요청은 없다.
+- 상한 내 읽기를 유지하면서 선언 길이의 형식/중복/전송 인코딩 모호성을 먼저 확인하고 읽은
+  바이트 수와 선언 길이를 대조한다. 길이 미달은 고정 remote_protocol_failed로 변환해 exit2·
+  acceptedfalse/error_code·원문/정제 미생성을 유지한다. 과대 선언은 읽기 전에 거절한다.
+- 정확한 길이·길이 없는 EOF·정상 chunked는 성공하고 기존 종료 chunk 누락도 계속 거절한다.
+  중복/비ASCII/부호/쉼표/과도한 길이·CL+TE·미지원 인코딩과 네이티브 decoder가 선택되지 않은
+  선언은 자체 wire로 검증한다. 무제한 읽기·추가 live 수집·source 권리/품질 승격은 없다.
+- 기존 세 커밋과 첫 P2 수정을 보존하고 별도 한국어 fix 커밋을 작성한다. 새 스레드의 한국어
+  답글·native Resolve·최신 head 리뷰/CI/병합은 조정자가 처리한다. README 두 사례는 유지한다.
+- 수정 후 수집54회귀와 전체 `check.sh`의 locked/Ruff·pytest275·B0/B1각8/8·새 sdist/wheel의
+  runtime-only 실제 source 성공/maxlag/깊은JSON 재생·legacy감사/B1 fit·실제 health/B0/OpenAPI·
+  중복ID422를 통과했다. 기존 TestClient 경고1건은 같다. 완결 JSON의 선언 길이 미충족을 로컬
+  장애 주입으로 재현한 정확성 수정이며 실제 원천 장애율·추천 품질·서비스 성능 수치가 아니다.
