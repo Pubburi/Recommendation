@@ -2,7 +2,7 @@
   <img src="docs/brand/pubburi.webp" alt="주점부리" width="96" />
   <h1>주점부리 · Recommendation</h1>
   <p><strong>취향에 맞는 한 잔을 발견하고 기록하는 주류 큐레이션</strong></p>
-  <p>추천 알고리즘 개발을 위한 독립 FastAPI 서비스의 최소 실행 환경입니다.</p>
+  <p>Python·FastAPI 기반 추천 서비스</p>
   <a href="https://github.com/Pubburi/Recommendation/actions/workflows/ci.yml"><img src="https://github.com/Pubburi/Recommendation/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
   <img src="https://img.shields.io/badge/Python-3.12-3776AB" alt="Python 3.12" /> <img src="https://img.shields.io/badge/FastAPI-009688" alt="FastAPI" /> <img src="https://img.shields.io/badge/uv-DE5FE9" alt="uv" />
 </div>
@@ -26,7 +26,7 @@
 
 ## ✍ 프로젝트 개요
 
-향후 주점부리의 상품 특성·취향·피드백을 활용할 추천 서비스입니다. 현재 단계에서는 서버 실행, 헬스 체크, 패키징과 CI만 제공합니다. 모델 학습·상품 추천·외부 LLM 호출은 아직 구현하지 않았습니다.
+주점부리의 Python·FastAPI 서버입니다. 현재 헬스 체크·API 문서·패키징·CI를 제공하며, 상품 추천과 모델 학습은 개발 계획에 따라 구현합니다.
 
 <a id="features"></a>
 
@@ -38,8 +38,6 @@
 | API 문서 | FastAPI 자동 생성 /docs와 /openapi.json |
 | 독립 실행 | DB·모델 파일·외부 AI 키 없이 기동 |
 | 품질 검사 | Ruff, pytest, wheel·sdist 빌드 |
-
-스크린샷은 준비 중입니다. 추천 결과 화면은 웹 구현과 연동 후 추가합니다.
 
 <a id="technology"></a>
 
@@ -71,12 +69,15 @@ flowchart LR
 
 Python 3.12와 uv 0.13.6을 사용합니다. 레포 루트에서 실행합니다.
 
+세 서버와 DB를 함께 실행하는 방법은 [로컬 통합 실행](https://github.com/Pubburi/Backend/blob/main/docs/LOCAL-DEVELOPMENT.md)을 참고하세요.
+
 ~~~bash
 uv sync --locked
 ./scripts/dev.sh
 ~~~
 
 - 서버: http://localhost:8000
+- 개발 포트: PUBBURI_RECOMMENDATION_PORT(기본 8000)
 - 헬스 체크: http://localhost:8000/health
 - API 문서: http://localhost:8000/docs
 - 현재 필수 환경변수와 외부 서비스는 없습니다. .env.example에 현재 요구사항을 기록했습니다.
@@ -94,9 +95,13 @@ uv sync --locked
 
 main은 PR·recommendation-ci 성공·최신 main 반영·대화 해결을 요구합니다. 필수 승인은 0명이고 관리자에게도 적용합니다. Squash merge 뒤 작업 브랜치를 정리합니다.
 
+자동화 PR은 최신 커밋의 Codex 리뷰와 관련 검증까지 통과해야 병합합니다. [개발·운영 기준](https://github.com/Pubburi/Backend/blob/main/docs/DELIVERY-PLAN.md)을 함께 적용합니다.
+
 <a id="roadmap"></a>
 
 ## 🗺️ 개발 계획
+
+기한은 **2027년 2월 5일**이며 P1·P2 추천 모두 필수 목표입니다. [전체 기능·일정](https://github.com/Pubburi/Backend/blob/main/docs/DELIVERY-PLAN.md)을 기준으로 진행합니다.
 
 - [ ] 상품 특성·사용자 취향·평점·찜 데이터 계약 정리
 - [ ] 콘텐츠 기반 추천·유사 상품·신규 사용자 대체 추천
@@ -120,6 +125,5 @@ main은 PR·recommendation-ci 성공·최신 main 반영·대화 해결을 요�
 |---|---|
 | [오인성](https://github.com/ois0886) | 추천 서버·데이터·알고리즘·평가 |
 
-초기 웹·백엔드는 SSAFY 13기 주점부리 프로젝트(오인성·박상윤)를 기반으로 합니다.
-[이전 기준 소스](https://github.com/ois0886/Pubburi-Refactor/tree/b993b4c8f3ba8e5d11e98a3cc76c98b3e661bfdf)를 기록하고 각 신규 레포의 기존 이력 위에 초기 세팅을 추가했습니다.
+[소스 출처](docs/PROVENANCE.md)
 프로젝트에는 별도 담당자의 모바일 앱도 포함되며, 이 레포는 공통 API 연동 범위를 다룹니다.
