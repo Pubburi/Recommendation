@@ -100,6 +100,27 @@ def test_request_identity_is_bounded_and_never_becomes_arbitrary_api_action(ids)
         module.entity_url(ids)
 
 
+def test_fixed_request_explicitly_includes_default_labels_without_language_inference():
+    parameters = parse_qs(urlsplit(module.entity_url(["Q1"])).query)
+    assert parameters["languages"] == ["ko|en|mul"]
+    assert parameters["props"] == ["info|labels|claims"]
+    assert "languagefallback" not in parameters
+
+
+def test_default_only_label_survives_collection_without_sku_approval(tmp_path, monkeypatch):
+    body = payload()
+    body["entities"]["Q1"]["labels"] = {
+        "mul": {"language": "mul", "value": "Authored default only"}
+    }
+    monkeypatch.setattr(module, "fetch", lambda url: (json.dumps(body).encode(), 200))
+    output = tmp_path / ".pubburi" / "default-label"
+    receipt = module.collect(manifest(), ["Q1"], output)
+    record = json.loads((output / "normalized-records.json").read_text())[0]
+    assert receipt["accepted"] and not receipt["training_ready"]
+    assert record["label"] == "Authored default only" and record["label_language"] == "mul"
+    assert record["entity_kind"] == "unknown" and record["sku_group"] is None
+
+
 @pytest.mark.parametrize(
     "mutation,reason",
     [

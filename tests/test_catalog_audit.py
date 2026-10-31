@@ -16,6 +16,7 @@ from pubburi_recommendation.catalog_audit import (
     ReviewManifest,
     audit,
     normalize_entities,
+    parse_json_bytes,
     read_json,
     scalar_quantity,
 )
@@ -105,6 +106,41 @@ def test_unit_conversion_preserves_known_zero_abv_and_missing_label():
     assert records[0]["issues"] == []
     assert report["missing"]["abv_percent"] == 0
     assert report["missing"]["label"] == 1
+
+
+@pytest.mark.parametrize(
+    "labels,expected,language",
+    [
+        ({"mul": {"value": "Shared authored name"}}, "Shared authored name", "mul"),
+        (
+            {
+                "ko": {"value": "직접 작성"},
+                "en": {"value": "Authored"},
+                "mul": {"value": "Default"},
+            },
+            "직접 작성",
+            "ko",
+        ),
+        ({"en": {"value": "Authored"}, "mul": {"value": "Default"}}, "Authored", "en"),
+        ({"ko": {"value": "  "}, "mul": {"value": " Default "}}, "Default", "mul"),
+        ({"fr": {"value": "Authored French only"}}, None, None),
+        ({"mul": {"value": "  "}}, None, None),
+        ({}, None, None),
+    ],
+)
+def test_default_label_fallback_preserves_source_language_without_translation(
+    labels, expected, language
+):
+    raw_entity = entity(labels=labels)
+    raw_entity["descriptions"] = {"en": {"value": "not a source label"}}
+    raw_entity["aliases"] = {"en": [{"value": "not a source label"}]}
+    report, records, _ = audit(payload(raw_entity), HASH)
+    assert records[0]["label"] == expected
+    assert records[0]["label_language"] == language
+    assert report["label_languages"] == {language or "unknown": 1}
+    assert report["missing"]["label"] == int(expected is None)
+    assert records[0]["entity_kind"] == "unknown"
+    assert records[0]["price_krw"] is None and records[0]["volume_ml"] is None
 
 
 @pytest.mark.parametrize(
@@ -220,6 +256,22 @@ def test_review_is_bound_to_snapshot_and_known_entities():
         audit(payload(entity()), HASH, reviews({}, input_hash="b" * 64))
     with pytest.raises(AuditError, match="review_references_unknown_entity"):
         audit(payload(entity()), HASH, reviews({"Q2": sku()}))
+
+
+def test_default_labels_change_snapshot_hash_even_when_entity_revision_is_unchanged():
+    before = payload(entity(labels={}))
+    after = payload(entity(labels={"mul": {"value": "Authored default"}}))
+    _, old_hash = parse_json_bytes(json.dumps(before).encode())
+    parsed, new_hash = parse_json_bytes(json.dumps(after).encode())
+    assert old_hash != new_hash
+    assert before["entities"]["Q1"]["lastrevid"] == after["entities"]["Q1"]["lastrevid"]
+    with pytest.raises(AuditError, match="review_snapshot_hash_mismatch"):
+        audit(parsed, new_hash, reviews({"Q1": sku(kind="product_family")}, old_hash))
+
+
+def test_oversized_default_labels_keep_the_existing_label_bound():
+    with pytest.raises(AuditError, match="label_exceeds_1000_characters"):
+        normalize_entities(payload(entity(labels={"mul": {"value": "a" * 1001}})))
 
 
 @pytest.mark.parametrize(

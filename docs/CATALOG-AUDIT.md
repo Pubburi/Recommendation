@@ -46,6 +46,10 @@ HTTP200의 API error는 카탈로그 부재/성공으로 처리하지 않으며 
   값이 서로 충돌하거나 수량 범위/문맥이 있으면 하나의 용량이나 여러 SKU로 추측하지 않는다.
 - deprecated statement는 계산에 사용하지 않는다. 참조한 entity ID·revision·공식 URL과
   입력 파일 SHA-256을 남긴다. 라벨 없는 항목은 임의 이름을 만들지 않는다.
+- 라벨은 `ko → en → mul` 순서로 선택하고 `label_language`에 실제 사용한 원천 키를 남긴다.
+  [공식 기본 라벨](https://www.wikidata.org/wiki/Help:Default_values_for_all_languages)의 `mul`은
+  여러 언어에 공통으로 쓰는 원천 값이며 번역이나 한국어/영어 관측값이 아니다. 기존 ko/en 선택은
+  유지한다. 셋 다 없으면 label/label_language는 null이며 설명·별칭·ID에서 이름을 추론하지 않는다.
 - P31의 주종·브랜드·생산자·제품군을 개별 판매 SKU와 구분한다. QID를 Backend의 상품 ID로
   바꾸거나 용량/도수의 조합으로 가짜 SKU를 생성하지 않는다. 가격·판매 가용성·맛은 추론하지 않는다.
 
@@ -62,6 +66,7 @@ uv run --locked python -m pubburi_recommendation.catalog_audit \
 ```
 
 - `audit-report.json`: 입력 해시·레코드 수·종류·결측·수량 검토 사유·B0 내보내기 수와 한계.
+- `label_languages`: 선택한 ko/en/mul/unknown의 실제 개수. 원천 전체의 언어 충실도로 일반화하지 않는다.
 - `normalized-records.json`: 허용한 구조화 필드·출처/revision·unknown·검토 결과. 원문 본문/이미지는 없음.
 - `--review`를 제공한 경우 `b0-demo-request.json`: 검수된 개별 SKU만 B0 계약으로 변환한
   **시연 전용** 요청. 검수 없이 자동으로 상품을 만들지 않으며 이 산출물은 업무 DB의 상품 원본이 아니다.
@@ -115,6 +120,12 @@ Backend 상품 ID·명시적 시연 가용성·검수한 SKU 그룹·라벨을 �
 **0건**이다. 이 목적 표본의 충실도를 Wikidata 전체나 국내 주류 전체의 비율로 일반화하지 않는다.
 원본은 ignored에만 있고, 집계는 실제 CLI가 계산했다. B1 fit·원천 카탈로그 완성·추천 품질은
 이번 결과가 아니며, 실제 서비스 상품/권리·단위·SKU 연결을 다음 단계에서 확보해야 한다.
+
+2026-11-01 추가 소량 수집에서는 원천이 정상 복구되어 새 고유 entity 7개를 확보했다. 이 중 같은
+6항목·동일 revision·동일 비라벨 필드를 비교한 [기본 라벨 보존 측정](measurements/2026-11-01-default-labels.md)은
+라벨 결측 3/6 → 0/6을 확인했다. 명시 검수는 상품군5·브랜드1이며 판매 SKU·B0 내보내기·실카탈로그
+fit 승격은 모두0이다. 용량/가격/그룹 결측은 각각6/6으로 남는다. 예전4항목 결과와 합쳐 판매 상품 수로
+표현하지 않으며 새 raw 해시에는 이전 검수 mapping을 재사용하지 않는다.
 
 ## 기존 시드·이미지의 별도 감사
 
