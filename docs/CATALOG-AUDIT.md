@@ -4,6 +4,9 @@
 네트워크 요청·학습·DB 변경·원본 자동 다운로드를 하지 않는다. 현재 지원하는 실제 입력은
 Wikidata `wbgetentities`의 item JSON이며, 원천 명세는 `sources/`에 둔다.
 
+원문 준비의 제한된 GET·영수증·offline 재생은 [수집 경계](WIKIDATA-COLLECTION.md)의 별도 CLI를 쓴다.
+HTTP200의 API error는 카탈로그 부재/성공으로 처리하지 않으며 원천 보류와 item 정체성 검수를 분리한다.
+
 ## 권리·처리 범위
 
 - [Wikidata 공식 라이선스](https://www.wikidata.org/wiki/Wikidata:Licensing)는 구조화 데이터를
