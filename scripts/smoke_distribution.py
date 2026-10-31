@@ -224,6 +224,37 @@ def main(progress: dict[str, str]) -> None:
             timeout=10,
             stdout=subprocess.DEVNULL,
         )
+        progress["stage"] = "isolated-content-fit"
+        # Run actual fit/transform in the runtime-only wheel, not only import/--help.
+        spec = work / "authored-content-spec.json"
+        shutil.copy2(ROOT / "evaluation/content-fit-v1.json", spec)
+        content_report = work / "reports" / "content-fit.json"
+        subprocess.run(
+            [
+                str(python),
+                "-I",
+                "-m",
+                "pubburi_recommendation.content_experiment",
+                "--spec",
+                str(spec),
+                "--output",
+                str(content_report),
+            ],
+            cwd=work,
+            check=True,
+            timeout=60,
+            stdout=subprocess.DEVNULL,
+        )
+        content_result = json.loads(content_report.read_text(encoding="utf-8"))
+        if (
+            not content_result["passed_contract"]
+            or content_result["data_kind"] != "authored_model_fixture"
+            or content_result["fit_summary"]["vocabulary_size"] < 1
+            or not content_result["fit_summary"]["numeric_fit"]["abv_percent"]["active"]
+        ):
+            raise RuntimeError(
+                "The installed wheel did not fit and validate the authored B1 fixture"
+            )
         progress["stage"] = "installed-wheel-http-contract"
         verify_http(python, work)
         # Preserve the normal local build outputs, but verify only this fresh build.

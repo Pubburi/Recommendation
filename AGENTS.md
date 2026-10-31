@@ -5,6 +5,7 @@
 - Keep initialization free of database, model download and external API requirements.
 - Offline source preparation uses python -m pubburi_recommendation.catalog_audit and docs/CATALOG-AUDIT.md. Source manifests record reviewed scope, not automatic legal approval. Keep raw/normalized catalogs in ignored .pubburi only; entity/brand IDs must never become Backend SKU IDs without explicit review.
 - Follow docs/EVALUATION.md for frozen authored scenarios and the independent result checker. Production scoring/filter helpers must not generate expected labels. B0 ID order is not B1 relevance truth; fixture checks do not establish user preference quality or final model evaluation.
+- Offline B1 fit/rank is implemented in content_model; follow docs/CONTENT-MODEL.md. Fit vocabulary/IDF and observed numeric ranges on training SKU groups only; transform never refits. Keep atomic taste/aroma tags, unknown masks, actual contribution explanations and deterministic cold-start/zero-vector fallback. content_experiment currently accepts authored fixtures only; actual service SKU/catalog fit, relevance/final-holdout evaluation and B1 HTTP integration remain incomplete.
 - Validate with ./scripts/check.sh (pytest, Ruff and distribution build).
 - Implement data preparation, content-based recommendations, fallbacks and model evaluation under the approved roadmap; never present unfinished features as implemented.
 - Do not commit datasets, model weights, .venv/, credentials or generated distributions.

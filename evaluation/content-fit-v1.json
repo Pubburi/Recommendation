@@ -1,0 +1,378 @@
+{
+  "schema_version": 1,
+  "experiment_id": "b1-authored-fit-v1",
+  "data_kind": "authored_model_fixture",
+  "catalog_version": "fictional-facts-v1",
+  "catalog": [
+    {
+      "product_id": 1,
+      "sku_group": "train-a",
+      "category": "fixture-a",
+      "taste_tags": [
+        "단",
+        "가벼운 질감"
+      ],
+      "aroma_tags": [
+        "곡물"
+      ],
+      "abv_percent": 5,
+      "volume_ml": 350,
+      "price_krw": 1000,
+      "available": true
+    },
+    {
+      "product_id": 2,
+      "sku_group": "train-a",
+      "category": "fixture-a",
+      "taste_tags": [
+        "단",
+        "가벼운 질감"
+      ],
+      "aroma_tags": [
+        "곡물"
+      ],
+      "abv_percent": 5,
+      "volume_ml": 700,
+      "price_krw": 1000,
+      "available": true
+    },
+    {
+      "product_id": 3,
+      "sku_group": "train-b",
+      "category": "fixture-b",
+      "taste_tags": [
+        "쓴"
+      ],
+      "aroma_tags": [
+        "단"
+      ],
+      "abv_percent": 15,
+      "volume_ml": 500,
+      "price_krw": 1000,
+      "available": true
+    },
+    {
+      "product_id": 4,
+      "sku_group": "train-c",
+      "category": "fixture-c",
+      "taste_tags": [],
+      "aroma_tags": null,
+      "abv_percent": 0,
+      "volume_ml": 1000,
+      "price_krw": 1000,
+      "available": true
+    },
+    {
+      "product_id": 101,
+      "sku_group": "new-b",
+      "category": "fixture-b",
+      "taste_tags": [
+        "쓴"
+      ],
+      "aroma_tags": [
+        "단"
+      ],
+      "abv_percent": 15,
+      "volume_ml": 500,
+      "price_krw": 1000,
+      "available": true
+    },
+    {
+      "product_id": 102,
+      "sku_group": "new-a",
+      "category": "fixture-a",
+      "taste_tags": [
+        "단",
+        "가벼운 질감"
+      ],
+      "aroma_tags": [
+        "곡물"
+      ],
+      "abv_percent": 5,
+      "volume_ml": 350,
+      "price_krw": 2000,
+      "available": true
+    },
+    {
+      "product_id": 103,
+      "sku_group": "new-c",
+      "category": "fixture-a",
+      "taste_tags": [
+        "신규 태그"
+      ],
+      "aroma_tags": [],
+      "abv_percent": 100,
+      "volume_ml": 1,
+      "price_krw": 1500,
+      "available": true
+    },
+    {
+      "product_id": 104,
+      "sku_group": "new-a",
+      "category": "fixture-a",
+      "taste_tags": null,
+      "aroma_tags": null,
+      "abv_percent": null,
+      "volume_ml": null,
+      "price_krw": 1500,
+      "available": true
+    },
+    {
+      "product_id": 105,
+      "sku_group": "unavailable",
+      "category": "fixture-a",
+      "taste_tags": [
+        "단"
+      ],
+      "aroma_tags": [
+        "곡물"
+      ],
+      "abv_percent": 5,
+      "volume_ml": 350,
+      "price_krw": 1000,
+      "available": false
+    },
+    {
+      "product_id": 106,
+      "sku_group": "unknown",
+      "category": null,
+      "taste_tags": null,
+      "aroma_tags": null,
+      "abv_percent": null,
+      "volume_ml": null,
+      "price_krw": null,
+      "available": true
+    },
+    {
+      "product_id": 107,
+      "sku_group": "zero",
+      "category": "fixture-a",
+      "taste_tags": [],
+      "aroma_tags": [],
+      "abv_percent": 0,
+      "volume_ml": 1000,
+      "price_krw": 0,
+      "available": true
+    }
+  ],
+  "fit_group_ids": [
+    "train-a",
+    "train-b",
+    "train-c"
+  ],
+  "transform_group_ids": [
+    "new-a",
+    "new-b",
+    "new-c",
+    "unavailable",
+    "unknown",
+    "zero"
+  ],
+  "cases": [
+    {
+      "case_id": "explicit-profile",
+      "candidate_ids": [
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107
+      ],
+      "expected_eligible_ids": [
+        101,
+        102,
+        104,
+        107
+      ],
+      "fact_basis": "직접 작성한 허구 특성의 판매/제외/필수 조건만 수동 확인. 순위 관련성 정답이 아님.",
+      "profile": {
+        "categories": [
+          "fixture-a"
+        ],
+        "taste_tags": [
+          "단",
+          "가벼운 질감"
+        ],
+        "aroma_tags": [
+          "곡물"
+        ],
+        "preferred_abv_percent": 5,
+        "preferred_volume_ml": 350
+      },
+      "constraints": {
+        "max_price_krw": 3000,
+        "exclude_product_ids": [
+          103
+        ]
+      }
+    },
+    {
+      "case_id": "cold-start",
+      "candidate_ids": [
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107
+      ],
+      "expected_eligible_ids": [
+        101,
+        102,
+        103,
+        104,
+        106,
+        107
+      ],
+      "fact_basis": "직접 작성한 허구 특성의 판매/제외/필수 조건만 수동 확인. 순위 관련성 정답이 아님."
+    },
+    {
+      "case_id": "unknown-vocabulary",
+      "candidate_ids": [
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107
+      ],
+      "expected_eligible_ids": [
+        101,
+        102,
+        103,
+        104,
+        106,
+        107
+      ],
+      "fact_basis": "직접 작성한 허구 특성의 판매/제외/필수 조건만 수동 확인. 순위 관련성 정답이 아님.",
+      "profile": {
+        "taste_tags": [
+          "학습에 없는 태그"
+        ]
+      }
+    },
+    {
+      "case_id": "hard-constraints-before-score",
+      "candidate_ids": [
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107
+      ],
+      "expected_eligible_ids": [
+        107
+      ],
+      "fact_basis": "직접 작성한 허구 특성의 판매/제외/필수 조건만 수동 확인. 순위 관련성 정답이 아님.",
+      "profile": {
+        "categories": [
+          "fixture-b"
+        ],
+        "taste_tags": [
+          "쓴"
+        ]
+      },
+      "constraints": {
+        "categories": [
+          "fixture-a"
+        ],
+        "max_abv_percent": 5,
+        "max_price_krw": 2000,
+        "exclude_product_ids": [
+          102
+        ]
+      }
+    },
+    {
+      "case_id": "observed-zero",
+      "candidate_ids": [
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107
+      ],
+      "expected_eligible_ids": [
+        101,
+        102,
+        103,
+        104,
+        106,
+        107
+      ],
+      "fact_basis": "직접 작성한 허구 특성의 판매/제외/필수 조건만 수동 확인. 순위 관련성 정답이 아님.",
+      "profile": {
+        "preferred_abv_percent": 0
+      }
+    },
+    {
+      "case_id": "empty-candidates",
+      "candidate_ids": [
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107
+      ],
+      "expected_eligible_ids": [],
+      "fact_basis": "직접 작성한 허구 특성의 판매/제외/필수 조건만 수동 확인. 순위 관련성 정답이 아님.",
+      "profile": {
+        "taste_tags": [
+          "단"
+        ]
+      },
+      "constraints": {
+        "categories": [
+          "missing-category"
+        ]
+      }
+    },
+    {
+      "case_id": "selected-product",
+      "candidate_ids": [
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107
+      ],
+      "expected_eligible_ids": [
+        101,
+        102,
+        103,
+        104,
+        106,
+        107
+      ],
+      "fact_basis": "직접 작성한 허구 특성의 판매/제외/필수 조건만 수동 확인. 순위 관련성 정답이 아님.",
+      "reference_product_id": 1
+    },
+    {
+      "case_id": "unknown-numeric-is-not-evidence",
+      "candidate_ids": [
+        104,
+        106
+      ],
+      "expected_eligible_ids": [
+        104,
+        106
+      ],
+      "fact_basis": "직접 작성한 허구 특성의 판매/제외/필수 조건만 수동 확인. 순위 관련성 정답이 아님.",
+      "profile": {
+        "preferred_abv_percent": 5
+      }
+    }
+  ]
+}

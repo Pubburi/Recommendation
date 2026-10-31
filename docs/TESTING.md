@@ -15,6 +15,9 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
 5. checkout 밖에서 `python -I`로 import 경로가 임시 환경에 있는지 확인하고 실제 Uvicorn을 실행한다.
 6. OS가 할당한 loopback 포트에서 `/health`·`/openapi.json`과 B0 추천 POST를 검증한다.
    조건을 요구하는 미확인 가격·판매 불가 후보가 제외되고, 중복 ID 요청은 422인지 확인한다.
+7. 새 wheel의 runtime-only `python -I`로 `content_experiment`를 실제 실행한다. 직접 작성한
+   fixture의 vocabulary/IDF·수치 fit과 명시 상품군 분리·필수 조건 결과를 확인한다. 원문/모델을
+   Git이나 artifact에 업로드하지 않으며 실제 상품 품질 평가로 표현하지 않는다.
 
 HTTP 과정에 DB·AWS·모델·외부 AI API 환경변수를 전달하지 않는다. 8000 포트를 점유하지 않고
 본인 서버 프로세스와 임시 환경만 정리한다. 현재 검증 대상은 Linux/macOS이며 CI는 Ubuntu다.
@@ -51,6 +54,20 @@ unknown과 0의 구분, 후보 부족 시 조건 유지, 필터 뒤 limit, 입�
 CI는 `reports/baseline-scenarios.json` 요약만 업로드하고 `baseline-responses.json`은 보관하지 않는다.
 새 wheel에서는 runtime-only `scenario_evaluation --help`를 실행한다. 명세/정책과 한계는
 [EVALUATION.md](EVALUATION.md)를 따른다. 이 ASGI runner는 실제 서버 간 통합 E2E가 아니다.
+
+## B1 오프라인 fit·누수 경계
+
+`tests/test_content_model.py`는 vocabulary/수동 계산 IDF·관측 수치 범위의 실제 fit,
+한국어 한 글자/띄어쓰기 태그·맛/향 namespace, fit 미호출 transform, unknown과 실제0·분모/기여,
+상수/결측 열 비활성화·빈/OOV/zero-vector fallback, 필수/제외·동점/순열·선택 상품 제외,
+엄격 타입/상한과 상품군 교차/미지정·수동 기대 사실 모순·CLI 출력 보존을 검증한다.
+
+필수 CI와 `check.sh`의 `scripts/evaluate_content.py`는 허구11상품을 학습4/3그룹·변환7/6그룹으로
+나누어 8개 계약 시나리오를 실제 실행한다. 학습에 없는 태그·수치가 vocabulary/범위에 유입되지
+않는지 확인한다. `reports/content-fit-summary.json`만 7일 보관하고 원문·응답·어휘/IDF는 제외한다.
+고정 fixture의 B0/B1 순서 비교는 품질 개선이나 최종 holdout이 아니다. 독립 관련성 라벨이 없어
+Recall/NDCG는 미산출이며 사용자 선호 학습·실서비스 카탈로그 fit·HTTP B1/Backend 통합은 남아 있다.
+[모듈·수식·실행 경계](CONTENT-MODEL.md)를 따른다.
 
 근거: [uv export/build](https://docs.astral.sh/uv/reference/cli/),
 [Python isolated mode](https://docs.python.org/3.12/using/cmdline.html#cmdoption-I).
