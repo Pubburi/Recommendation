@@ -1,7 +1,7 @@
 # Recommendation working guide
 
 - Use Python 3.12, FastAPI and uv. Commit uv.lock; sync with --locked.
-- Current public contract is GET /health only. Do not imply a trained model exists.
+- Current contracts are GET /health and POST /v1/recommendations/baseline (untrained B0). Follow docs/BASELINE-API.md. No catalog/model is loaded or persisted; do not imply B1 learning or Backend integration is complete.
 - Keep initialization free of database, model download and external API requirements.
 - Validate with ./scripts/check.sh (pytest, Ruff and distribution build).
 - Implement data preparation, content-based recommendations, fallbacks and model evaluation under the approved roadmap; never present unfinished features as implemented.

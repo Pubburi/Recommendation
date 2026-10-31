@@ -126,9 +126,10 @@ UCI 품질 예측은 선택적 별도 실험이며 카탈로그 추천 학습/�
 
 ## 검증과 인계
 
-현재 제공 기능은 GET /health와 개발·검증 환경이다. 이 문서는 데이터·모델·평가의 구현 계획이며
-카탈로그 수집·추천 모델/API·학습·평가 완료를 뜻하지 않는다. 실제 작업의 계획·구현·검증·병합을
-구분하고 결과와 미완료를 docs/plans 및 PR에 기록한다.
+현재 제공 기능은 GET /health, 명시 카탈로그를 받는 POST /v1/recommendations/baseline의 B0
+결정적 기본순과 개발·검증 환경이다. [B0 계약](BASELINE-API.md)은 필수/제외 조건을 먼저 적용하며
+학습·개인화 점수를 제공하지 않는다. 카탈로그 수집·B1 fit·모델 평가·Backend 연동은 미완료다.
+실제 작업의 계획·구현·검증·병합을 구분하고 결과와 미완료를 docs/plans 및 PR에 기록한다.
 
 Python 3.12·FastAPI·uv·lockfile과 GET /health를 보존하며 시작할 때 DB·AWS 인증·외부 AI API·
 모델/데이터 자동 다운로드를 요구하지 않는다. 검증은 ./scripts/check.sh를 사용한다.

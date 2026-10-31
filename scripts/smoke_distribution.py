@@ -11,8 +11,8 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from urllib.error import URLError
-from urllib.request import ProxyHandler, build_opener
+from urllib.error import HTTPError, URLError
+from urllib.request import ProxyHandler, Request, build_opener
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_HEALTH = {"status": "ok", "service": "pubburi-recommendation"}
@@ -22,10 +22,26 @@ def run(uv: str, *args: str, cwd: Path = ROOT, stdout: int | None = None) -> Non
     subprocess.run([uv, *args], cwd=cwd, stdout=stdout, check=True, timeout=180)
 
 
-def request_json(base_url: str, path: str) -> dict:
+def request_json(
+    base_url: str, path: str, *, body: dict | None = None, expected_status: int = 200
+) -> dict:
     # Local verification must not depend on a developer's HTTP proxy configuration.
-    with build_opener(ProxyHandler({})).open(base_url + path, timeout=1) as response:
-        if response.status != 200 or response.headers.get_content_type() != "application/json":
+    request = Request(
+        base_url + path,
+        data=None if body is None else json.dumps(body).encode(),
+        headers={} if body is None else {"Content-Type": "application/json"},
+    )
+    try:
+        response = build_opener(ProxyHandler({})).open(request, timeout=1)
+    except HTTPError as error:
+        if error.code != expected_status:
+            raise
+        response = error
+    with response:
+        if (
+            response.status != expected_status
+            or response.headers.get_content_type() != "application/json"
+        ):
             raise RuntimeError(f"Unexpected HTTP response for {path}")
         return json.load(response)
 
@@ -78,7 +94,49 @@ def verify_http(python: Path, work: Path) -> None:
                 response = schema["paths"]["/health"]["get"]["responses"]["200"]
                 if response["content"]["application/json"]["schema"]["type"] != "object":
                     raise RuntimeError("The installed wheel did not document its JSON health API")
-                print("Installed wheel passed isolated HTTP health and OpenAPI verification.")
+                path = "/v1/recommendations/baseline"
+                if "post" not in schema["paths"].get(path, {}):
+                    raise RuntimeError("The installed wheel did not document its baseline API")
+                result = request_json(
+                    base_url,
+                    path,
+                    body={
+                        "catalog": [
+                            {"product_id": 3, "available": True, "price_krw": 1000},
+                            {"product_id": 1, "available": False, "price_krw": 1000},
+                            {"product_id": 2, "available": True},
+                        ],
+                        "constraints": {"max_price_krw": 1000},
+                    },
+                )
+                expected = {
+                    "algorithm": "b0-id-ascending-v1",
+                    "items": [
+                        {
+                            "product_id": 3,
+                            "reasons": [
+                                "available",
+                                "price_within_range",
+                                "deterministic_baseline",
+                            ],
+                        }
+                    ],
+                    "eligible_count": 1,
+                    "fallback_reason": None,
+                }
+                if result != expected:
+                    raise RuntimeError("The installed wheel violated baseline eligibility")
+                rejected = request_json(
+                    base_url,
+                    path,
+                    body={
+                        "catalog": [{"product_id": 1, "available": True}] * 2,
+                    },
+                    expected_status=422,
+                )
+                if not rejected.get("detail"):
+                    raise RuntimeError("The installed wheel accepted duplicate catalog IDs")
+                print("Installed wheel passed isolated health, baseline and OpenAPI verification.")
             except BaseException:
                 log.flush()
                 log.seek(0)

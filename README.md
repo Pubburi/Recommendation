@@ -26,7 +26,7 @@
 
 ## ✍ 프로젝트 개요
 
-주점부리의 Python·FastAPI 서버입니다. 현재 헬스 체크·API 문서·패키징·CI를 제공하며, 상품 추천과 모델 학습은 개발 계획에 따라 구현합니다.
+주점부리의 Python·FastAPI 서버입니다. 명시한 상품 카탈로그와 필수·제외 조건으로 계산하는 B0 기본 추천, 헬스 체크·API 문서·패키징·CI를 제공합니다. B0는 학습하지 않은 결정적 기준선이며 콘텐츠 모델 학습과 서비스 연동은 개발 계획에 따라 진행합니다.
 
 <a id="features"></a>
 
@@ -35,6 +35,8 @@
 | 기능 | 제공 내용 |
 |---|---|
 | 헬스 체크 | GET /health → 상태와 서비스 이름 반환 |
+| 기본 추천 | POST /v1/recommendations/baseline → 필수/제외 조건을 통과한 상품 ID 기본순과 적용 이유 |
+| 제약·결측 처리 | 주종·가격·도수·판매 상태·제외 ID, unknown을 요구 조건에 임의 통과시키지 않음 |
 | API 문서 | FastAPI 자동 생성 /docs와 /openapi.json |
 | 독립 실행 | DB·모델 파일·외부 AI 키 없이 기동 |
 | 품질 검사 | Ruff, pytest, wheel·sdist 빌드 |
@@ -58,9 +60,10 @@
 ~~~mermaid
 flowchart LR
     Web["웹 클라이언트"] -. "후속 기능" .-> Backend["Backend"]
-    Backend -. "후속 추천 API 연동" .-> API["Recommendation · FastAPI"]
-    API --> Health["/health · 현재 구현"]
-    API -. "후속 구현" .-> Model["특성 처리 · 추천 · 학습 · 평가"]
+    Backend -. "후속 내부 API 연동" .-> API["Recommendation · FastAPI"]
+    API --> Health["/health"]
+    API --> Baseline["명시 카탈로그 → 필수 필터 → B0 기본순"]
+    API -. "후속 구현" .-> Model["B1 특성 fit · 콘텐츠 점수 · 평가"]
 ~~~
 
 <a id="problem-solving"></a>
@@ -91,14 +94,14 @@ flowchart LR
 
 #### 코드
 
-앱 생성과 현재 헬스 처리의 전체 흐름이다. [현재 구현](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/main.py)
+앱 설명과 헬스 처리 부분을 발췌했다. [현재 구현](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/main.py)
 
 ~~~python
 from fastapi import FastAPI
 
 app = FastAPI(
     title="Pubburi Recommendation",
-    description="Service bootstrap. Recommendation algorithms are planned separately.",
+    description="Stateless constrained B0 baseline. No trained model or user preference learning.",
     version="0.1.0",
 )
 
@@ -107,6 +110,78 @@ app = FastAPI(
 def health() -> dict[str, str]:
     """Report process availability without requiring a database or a model."""
     return {"status": "ok", "service": "pubburi-recommendation"}
+~~~
+
+### 후보 부족 때도 필수 조건을 유지하는 기본 추천
+
+#### 문제
+
+사용자 행동이나 학습 모델이 없을 때도 기본 목록이 필요하다. 이때 목록 개수를 채우려고 예산·도수·관심 없음 조건을 완화하거나, 누락된 값을 0으로 취급하면 요청한 조건과 다른 상품을 제시할 수 있다. 기존 모델의 장애를 수정한 사례가 아니라 첫 추천 계약에서 방지해야 할 문제다.
+
+#### 원인
+
+순위와 필수 조건을 함께 다루면 점수가 높은 상품이나 먼저 들어온 상품이 조건 확인보다 앞서 선택될 수 있다. 미확인 가격·도수는 실제 0원·0%와 의미가 다르고, 입력 순서에는 인기나 선호를 입증하는 근거가 없다.
+
+#### 해결
+
+판매 상태·제외 ID·주종·가격/도수 조건을 먼저 검사하고, 통과 후보만 ID 오름차순으로 정렬한 뒤 limit을 적용했다. unknown은 요청한 조건을 확인할 수 없으면 제외한다. 결과가 부족하면 조건을 완화하지 않고 빈 결과와 사유를 반환한다. 이유 코드는 실제 적용한 필터만 설명하며 선호 점수로 포장하지 않는다.
+
+#### 결과
+
+요청에 가격/도수 조건이 있으면 미확인 속성의 상품이 통과하지 않고, 0원·0%는 경계값으로 처리한다. 카탈로그 입력 순서를 바꿔도 결과 순서가 같으며 제한 개수보다 적은 후보도 그대로 반환한다. 이는 직접 작성한 가상 입력으로 확인한 계약 동작이다. 사용자 선호 품질·모델 학습·실측 성능 개선이나 Backend 통합을 의미하지 않는다.
+
+#### 대체안/회고
+
+입력 순서를 유지하면 구현은 단순하지만 원천별 순서에 결과가 의존한다. 인기순은 근거 있는 행동 데이터가 필요하고, 부족한 결과를 채우는 조건 완화는 명시 요구를 위반한다. 먼저 결정적 B0를 제공하고 이후 B1 콘텐츠 모델을 같은 필수 조건·후보 집합에서 비교하도록 경계를 정했다.
+
+#### 코드
+
+필수 조건·결측·순서의 핵심 처리다. [실제 엔진](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/baseline.py) · [내부 API 계약](docs/BASELINE-API.md)
+
+~~~python
+def within_range(
+    value: float | int | None, lower: float | int | None, upper: float | int | None
+) -> bool:
+    if lower is None and upper is None:
+        return True
+    if value is None:
+        return False
+    return (lower is None or value >= lower) and (upper is None or value <= upper)
+
+
+def recommend_baseline(request: RecommendationRequest) -> RecommendationResponse:
+    constraints = request.constraints
+    categories = set(constraints.categories)
+    excluded = set(constraints.exclude_product_ids)
+    eligible = [
+        product
+        for product in request.catalog
+        if product.available
+        and product.product_id not in excluded
+        and (not categories or product.category in categories)
+        and within_range(product.price_krw, constraints.min_price_krw, constraints.max_price_krw)
+        and within_range(
+            product.abv_percent, constraints.min_abv_percent, constraints.max_abv_percent
+        )
+    ]
+    # Eligibility precedes limit/order, so scarce candidates never relax constraints.
+    eligible.sort(key=lambda product: product.product_id)
+    reasons: list[Reason] = ["available"]
+    if categories:
+        reasons.append("category_match")
+    if constraints.min_price_krw is not None or constraints.max_price_krw is not None:
+        reasons.append("price_within_range")
+    if constraints.min_abv_percent is not None or constraints.max_abv_percent is not None:
+        reasons.append("abv_within_range")
+    reasons.append("deterministic_baseline")
+    return RecommendationResponse(
+        items=[
+            RecommendationItem(product_id=product.product_id, reasons=reasons.copy())
+            for product in eligible[: request.limit]
+        ],
+        eligible_count=len(eligible),
+        fallback_reason=None if eligible else "no_eligible_products",
+    )
 ~~~
 
 <a id="development"></a>
