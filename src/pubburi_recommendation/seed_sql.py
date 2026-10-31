@@ -169,7 +169,7 @@ def extract_products(sql: str) -> tuple[list[dict], int]:
         if target is None:
             masked = mask_string_literals(statement)
             mutation = re.match(
-                r"^(?:UPDATE|REPLACE|DELETE|TRUNCATE|ALTER|DROP|LOAD)\b", masked, re.I
+                r"^(?:UPDATE|REPLACE|DELETE|TRUNCATE|ALTER|DROP|LOAD|RENAME)\b", masked, re.I
             )
             if re.match(r"^WITH\b", masked, re.I):
                 mutation = re.search(r"\b(?:UPDATE|REPLACE|DELETE|INSERT)\b", masked, re.I)

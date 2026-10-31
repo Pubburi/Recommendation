@@ -57,24 +57,50 @@ def mapped_asset_name(reference: str | None) -> str | None:
     return re.sub(r"\.(?:png|jpe?g)$", ".webp", reference, flags=re.I)
 
 
-def asset_entry(directory_fd: int, name: str) -> dict:
+def asset_entry(directory_fd: int, name: str, remaining_budget: int) -> tuple[dict, int]:
     entry = {"name": name, "status": "not_regular_file", "sha256": None, "bytes": None}
+    bytes_read = 0
     try:
         mode = os.stat(name, dir_fd=directory_fd, follow_symlinks=False).st_mode
         if stat.S_ISLNK(mode):
             entry["status"] = "symlink_blocked"
-            return entry
+            return entry, bytes_read
         if not stat.S_ISREG(mode):
-            return entry
+            return entry, bytes_read
         descriptor = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory_fd)
-        with os.fdopen(descriptor, "rb") as source:
+        try:
             # Directory fd + NOFOLLOW keep root/leaf replacement from escaping the inventory.
-            if not stat.S_ISREG(os.fstat(source.fileno()).st_mode):
+            before = os.fstat(descriptor)
+            if not stat.S_ISREG(before.st_mode):
                 raise AuditError("asset_changed_to_non_regular_file")
-            content = source.read(MAX_ASSET_BYTES + 1)
-        if len(content) > MAX_ASSET_BYTES:
-            entry["status"] = "oversized_blocked"
-            return entry
+            if before.st_size > MAX_ASSET_BYTES:
+                entry["status"] = "oversized_blocked"
+                return entry, bytes_read
+            if before.st_size > remaining_budget:
+                raise AuditError("asset_inventory_exceeds_128_mib")
+            # Charge actual reads, including rejected/changed files; a stale size cannot bypass cap.
+            read_limit = min(MAX_ASSET_BYTES + 1, remaining_budget)
+            chunks = []
+            while bytes_read < read_limit:
+                chunk = os.read(descriptor, min(64 * 1024, read_limit - bytes_read))
+                if not chunk:
+                    break
+                bytes_read += len(chunk)
+                chunks.append(chunk)
+            after = os.fstat(descriptor)
+            if bytes_read > MAX_ASSET_BYTES or after.st_size > MAX_ASSET_BYTES:
+                entry["status"] = "oversized_blocked"
+                return entry, bytes_read
+            if (
+                before.st_size != after.st_size
+                or before.st_mtime_ns != after.st_mtime_ns
+                or before.st_ctime_ns != after.st_ctime_ns
+                or bytes_read != after.st_size
+            ):
+                raise AuditError("asset_changed_while_reading")
+            content = b"".join(chunks)
+        finally:
+            os.close(descriptor)
         extension = Path(name).suffix.lower().lstrip(".")
         signature = (
             "webp"
@@ -96,7 +122,7 @@ def asset_entry(directory_fd: int, name: str) -> dict:
         )
     except OSError:
         entry["status"] = "unreadable_blocked"
-    return entry
+    return entry, bytes_read
 
 
 def file_inventory(directory: Path) -> tuple[list[dict], str]:
@@ -111,8 +137,8 @@ def file_inventory(directory: Path) -> tuple[list[dict], str]:
         inventory = []
         total_bytes = 0
         for name in names:
-            entry = asset_entry(directory_fd, name)
-            total_bytes += entry["bytes"] or 0
+            entry, bytes_read = asset_entry(directory_fd, name, MAX_TOTAL_ASSET_BYTES - total_bytes)
+            total_bytes += bytes_read
             if total_bytes > MAX_TOTAL_ASSET_BYTES:
                 raise AuditError("asset_inventory_exceeds_128_mib")
             inventory.append(entry)

@@ -69,7 +69,7 @@ SQL은10MiB·상품2,000행, 자산은2,000개·개별20MiB·총128MiB로 제한
 제한된 파서는 활성 `t_product`의 명시 컬럼 `(name,type,price,img,abv,order_count)` literal
 INSERT만 받는다. 컬럼 순서 변경·단일 따옴표/겹따옴표 escape·정수/소수·NULL·일반 주석을 지원한다.
 함수/SELECT/변수/수식·backslash escape·실행 주석·지원하지 않는 INSERT는 거절한다. CTE 변경문·
-LOAD를 포함해 변경문에 t_product 식별자가 언급되면 보수적으로 보류한다. 문자열 값의 같은 단어와
+LOAD·RENAME을 포함해 변경문에 t_product 식별자가 언급되면 보수적으로 보류한다. 문자열 값의 같은 단어와
 읽기 전용 CTE는 구분한다. 일반 MySQL 파서/DB 실행 결과를 대신하지 않는다.
 [공식 주석](https://dev.mysql.com/doc/refman/8.4/en/comments.html)·
 [문자열](https://dev.mysql.com/doc/refman/8.4/en/string-literals.html) 규칙을 확인해 지원 부분을 정했다.
@@ -78,6 +78,10 @@ LOAD를 포함해 변경문에 t_product 식별자가 언급되면 보수적으�
 다른 디렉터리·query/fragment를 읽지 않으며 디렉터리 fd·NOFOLLOW로 root/leaf 교체·symlink를 차단한다.
 하위 폴더를 순회하지 않는다. 원본/변환 파일은 서로 다른 해시로 보존한다. 시그니처는 헤더 확인이며
 디코딩/화면·상품 동일성·권리 검증이 아니다.
+
+자산은 fstat 크기로 초과 파일을 본문 읽기 전에 보류한다. 읽기 도중 크기가 바뀌거나 크기 정보가
+오래된 경우에도 남은 총예산 이내에서만 읽으며, 거절/실패한 파일의 실제 읽은 바이트까지 예산에
+포함한다. 공개 인벤토리의 파일 크기·해시와 내부 I/O 예산 계수는 별개다.
 
 중복은 정확한 Decimal 값·정규화 이름·공유 이미지 참조·동일 바이트 그룹으로 나눈다. 숫자 문자열과
 숫자 literal을 혼동하거나 Decimal precision으로 값을 반올림해 합치지 않는다. 작은 양수 도수가

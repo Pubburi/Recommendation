@@ -91,6 +91,8 @@ def test_unsupported_syntax_is_rejected_without_execution_or_raw_diagnostics(sql
         "REPLACE LOW_PRIORITY INTO t_product VALUES (1);",
         "WITH c AS (SELECT 1) UPDATE t_product SET price=5;",
         "LOAD DATA INFILE 'fictional.csv' INTO TABLE t_product;",
+        "RENAME TABLE t_product TO t_product_archived;",
+        "RENAME TABLE archived_product TO t_product;",
     ],
 )
 def test_non_insert_product_mutations_cannot_silently_change_the_audited_snapshot(mutation):
@@ -105,6 +107,7 @@ def test_non_insert_product_mutations_cannot_silently_change_the_audited_snapsho
         "WITH c AS (SELECT 1) UPDATE t_user SET name='t_product';",
         "LOAD DATA INFILE 't_product.csv' INTO TABLE t_user;",
         "WITH c AS (SELECT * FROM t_product) SELECT * FROM c;",
+        "RENAME TABLE unrelated TO unrelated_archive;",
     ],
 )
 def test_unrelated_tables_and_literal_product_mentions_are_not_mutations(unrelated):
@@ -290,6 +293,75 @@ def test_asset_byte_budgets_hold_large_files_without_hashing_them(tmp_path, monk
     monkeypatch.setattr(module, "MAX_TOTAL_ASSET_BYTES", 8)
     with pytest.raises(AuditError, match="asset_inventory_exceeds_128_mib"):
         file_inventory(assets)
+
+
+@pytest.mark.parametrize("stale_size", [False, True])
+def test_oversized_assets_never_read_past_total_budget(tmp_path, monkeypatch, stale_size):
+    from types import SimpleNamespace
+
+    import pubburi_recommendation.legacy_seed_audit as module
+
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    for index in range(3):
+        (assets / f"large-{index}.webp").write_bytes(b"x" * 9)
+    monkeypatch.setattr(module, "MAX_ASSET_BYTES", 8)
+    monkeypatch.setattr(module, "MAX_TOTAL_ASSET_BYTES", 16)
+    original_fdopen, original_read, original_fstat = (
+        module.os.fdopen,
+        module.os.read,
+        module.os.fstat,
+    )
+    observed = {"bytes": 0}
+
+    class CountingReader:
+        def __init__(self, stream):
+            self.stream = stream
+
+        def __enter__(self):
+            self.stream.__enter__()
+            return self
+
+        def __exit__(self, *args):
+            return self.stream.__exit__(*args)
+
+        def fileno(self):
+            return self.stream.fileno()
+
+        def read(self, size):
+            chunk = self.stream.read(size)
+            observed["bytes"] += len(chunk)
+            return chunk
+
+    def counted_read(descriptor, size):
+        chunk = original_read(descriptor, size)
+        observed["bytes"] += len(chunk)
+        return chunk
+
+    def reported_stat(descriptor):
+        actual = original_fstat(descriptor)
+        return SimpleNamespace(
+            st_mode=actual.st_mode,
+            st_size=0,
+            st_mtime_ns=actual.st_mtime_ns,
+            st_ctime_ns=actual.st_ctime_ns,
+        )
+
+    monkeypatch.setattr(
+        module.os,
+        "fdopen",
+        lambda *args, **kwargs: CountingReader(original_fdopen(*args, **kwargs)),
+    )
+    monkeypatch.setattr(module.os, "read", counted_read)
+    if stale_size:
+        monkeypatch.setattr(module.os, "fstat", reported_stat)
+    try:
+        file_inventory(assets)
+    except AuditError:
+        pass  # Growing/changed sources may be held; actual I/O must still respect the cap.
+    assert observed["bytes"] <= 16
+    if not stale_size:
+        assert observed["bytes"] == 0  # fstat rejects known oversize before any body read.
 
 
 def test_manifest_cannot_turn_inventory_into_automatic_training_permission():
