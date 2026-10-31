@@ -47,6 +47,9 @@ unknown과 0의 구분, 후보 부족 시 조건 유지, 필터 뒤 limit, 입�
 검수 mapping·명시 Backend ID/그룹/시연 가용성·가격·B0 계약·출력 덮어쓰기 차단을 검증한다.
 실제 CC0 소량 표본 감사와 이 회귀 fixture는 구분하며 CI가 원천을 다운로드하지 않는다.
 격리 wheel 검증은 checkout 밖에서 CLI `--help`도 실행해 runtime 의존성/패키징을 확인한다.
+ko/en 우선순위·mul-only 기본 라벨·원천 label_language·실제 unknown·설명/별칭 비추론·라벨 상한과
+동일 revision이라도 새 raw 해시에 이전 검수가 재사용되지 않는 경계도 검증한다. 새 wheel의 실제
+수집 CLI는 직접 작성한 mul-only payload를 offline 재생해 라벨과 원천 언어가 보존되는지 확인한다.
 
 `tests/test_legacy_seed_audit.py`는 작은 직접 작성 SQL·로컬 바이트 fixture로 활성 INSERT/주석·
 quoted text·컬럼/리터럴 상한·지원 불가/변경문 거절, 사용자/암호 행 비노출, Decimal 타입/정확값·

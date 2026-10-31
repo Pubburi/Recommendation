@@ -230,7 +230,7 @@ def main(progress: dict[str, str]) -> None:
                             "id": "Q1",
                             "type": "item",
                             "lastrevid": 7,
-                            "labels": {"en": {"value": "authored contract fixture only"}},
+                            "labels": {"mul": {"value": "authored contract fixture only"}},
                             "claims": {},
                         }
                     },
@@ -255,11 +255,16 @@ def main(progress: dict[str, str]) -> None:
         ]
         subprocess.run(replay_command, cwd=work, check=True, timeout=10, stdout=subprocess.DEVNULL)
         source_receipt = json.loads((source_output / "receipt.json").read_text(encoding="utf-8"))
+        source_records = json.loads(
+            (source_output / "normalized-records.json").read_text(encoding="utf-8")
+        )
         if (
             not source_receipt["accepted"]
             or source_receipt["mode"] != "offline_replay"
             or source_receipt["http_status"] is not None
             or source_receipt["training_ready"]
+            or source_records[0]["label"] != "authored contract fixture only"
+            or source_records[0]["label_language"] != "mul"
         ):
             raise RuntimeError("The installed wheel violated the offline collection boundary")
         for suffix, rejected_body, expected_code in (

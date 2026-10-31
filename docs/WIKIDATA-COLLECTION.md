@@ -15,7 +15,7 @@
 
 | projection | 출처·처리 | 검수 경계 |
 |---|---|---|
-| label | item의 ko/en 라벨 | 원문 본문/설명 문장을 수집 특성으로 쓰지 않음 |
+| label / label_language | item의 ko → en → mul 라벨과 선택 키 | 원문 기본값을 보존하며 번역·설명·별칭으로 이름을 추론하지 않음 |
 | instance_of_ids | P31의 item ID | Backend 주종이나 개별 판매 SKU로 자동 매핑하지 않음 |
 | producer_ids | P176의 item ID | 브랜드·생산자·상품군의 정체성을 별도 검수 |
 | abv_percent | P2665·volume-percent 단위 | 0–100, 불명확 단위/범위/문맥/다중값은 unknown |
@@ -23,7 +23,9 @@
 | source/revision | QID·positive lastrevid·원문 hash | 수정 시 새 snapshot과 검수 필요 |
 | 가격·가용성·맛/향·인기·그룹 | 이 수집 단계에서 unknown | 이름이나 브랜드로 추론하지 않음 |
 
-API는 info/labels/claims를 요청한다. 원문에 이미지 파일명이나 외부 URL claim이 있어도 이미지나
+API는 info/labels/claims와 명시 언어 ko/en/mul을 요청한다. `mul`은
+[Wikidata 공식 기본 라벨](https://www.wikidata.org/wiki/Help:Default_values_for_all_languages)이며
+원천에서 제공한 이름만 사용한다. 원문에 이미지 파일명이나 외부 URL claim이 있어도 이미지나
 외부 문서를 요청하지 않으며 정제 projection은 기존 [단위/정체성 감사](CATALOG-AUDIT.md) 필드만
 사용한다. `identity_review=not_performed`, `training_ready=false`를 유지한다.
 
@@ -47,6 +49,12 @@ QID 후보는 기존 Wikipedia의 Wikidata sitelink로 발견했다. 그 페이�
 offline 재생에 성공했다. 이는 이전 브랜드3/미확정1·검수SKU0 자료의 재현이며 신규 수집이나 실제
 서비스 카탈로그 증가가 아니다. 실제 검색 오류 payload의 offline 재생도 `api_maxlag`로 거절했다.
 이 관측과 코드/계약 검증을 추천 품질·성능 개선·사람의 선호 성과로 환산하지 않는다.
+
+2026-10-31 23:38 UTC의 다음 실행에서는 같은 제한을 유지한 복구 확인 GET이 정상 응답했다.
+이어서 공식 구조화 상품 링크의 6개 후보를 단일 GET으로 확보하고, 같은 항목·동일 revision으로
+기본 라벨 요청/보존 수정 전후를 비교했다. 새 고유 entity는7개이며 6개 표본의 재조회는 추가6개
+상품으로 세지 않는다. [실제 정보 보존·필드/단위/정체성 검수](measurements/2026-11-01-default-labels.md)를
+별도 기록하며 원천 복구가 이전 maxlag 관측을 무효화하거나 수집 가드를 완화하는 것은 아니다.
 
 ## 실행과 완료 상태
 

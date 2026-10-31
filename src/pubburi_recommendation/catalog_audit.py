@@ -191,15 +191,18 @@ def normalize_entities(payload: dict) -> list[dict]:
         if type(revision) is not int or revision < 1:
             raise AuditError("positive_source_revision_required")
         name = None
+        name_language = None
         if not isinstance(entity.get("labels", {}), dict):
             raise AuditError("labels_object_required")
-        for language in ("ko", "en"):
+        # Keep existing localized choices; mul is Wikidata's default-for-all source label.
+        for language in ("ko", "en", "mul"):
             label_data = entity.get("labels", {}).get(language, {})
             label = label_data.get("value") if isinstance(label_data, dict) else None
             if isinstance(label, str) and label.strip():
                 if len(label) > 1000:
                     raise AuditError("label_exceeds_1000_characters")
                 name = label.strip()
+                name_language = language
                 break
         abv, abv_issues = scalar_quantity(entity, "P2665", ABV_UNITS, Decimal(100))
         volume, volume_issues = scalar_quantity(entity, "P2234", VOLUME_UNITS, Decimal(1_000_000))
@@ -210,6 +213,7 @@ def normalize_entities(payload: dict) -> list[dict]:
                 "source_revision": revision,
                 "source_url": f"https://www.wikidata.org/wiki/{qid}?oldid={revision}",
                 "label": name,
+                "label_language": name_language,
                 "instance_of_ids": item_ids(entity, "P31"),
                 "producer_ids": item_ids(entity, "P176"),
                 "abv_percent": abv,
@@ -272,6 +276,9 @@ def audit(
         "source_id": "wikidata-structured",
         "entities": len(records),
         "entity_kinds": dict(sorted(kinds.items())),
+        "label_languages": dict(
+            sorted(Counter(record["label_language"] or "unknown" for record in records).items())
+        ),
         "missing": {
             field: sum(record[field] is None for record in records)
             for field in ("label", "abv_percent", "volume_ml", "price_krw", "sku_group")

@@ -54,7 +54,7 @@ def entity_url(ids: list[str]) -> str:
                 "action": "wbgetentities",
                 "ids": "|".join(sorted(ids)),
                 "props": "info|labels|claims",
-                "languages": "ko|en",
+                "languages": "ko|en|mul",
                 "format": "json",
                 "maxlag": 5,
             }

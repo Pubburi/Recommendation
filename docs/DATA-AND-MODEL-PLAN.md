@@ -52,15 +52,15 @@ API 키는 로컬 환경변수로 관리한다. 원본 데이터·모델·권한
 
 ## 확인한 원천과 채택 상태
 
-2026-10-31 공식 문서 확인 기준이다. 현재는 명시 CC0인 Wikidata 구조화 4항목을 실제 감사했고,
-aT는 메타데이터만 확인했다. 활용신청/외부 문의는 하지 않았다. [실제 감사와 한계](CATALOG-AUDIT.md)를
+2026-11-01 공식 문서 재확인 기준이다. 명시 CC0인 Wikidata의 이전 구조화4항목과 새 고유7항목을
+서로 구분해 감사했고 aT는 메타데이터만 확인했다. 활용신청/외부 문의는 하지 않았다. [실제 감사와 한계](CATALOG-AUDIT.md)를
 따르며 소량 entity 표본을 판매 SKU 카탈로그로 간주하지 않는다.
 
 | 원천 | 확보 가능한 정보·용도 | 확인 조건·현재 판단 |
 |---|---|---|
 | [식약처 품목제조보고](https://www.data.go.kr/data/15064909/openapi.do?recommendDataYn=Y)·[원재료 명세 C002](https://www.foodsafetykorea.go.kr/api/openApiInfo.do?menu_grp=MENU_GRP31&menu_no=661&show_cnt=10&start_idx=1&svc_no=C002) | 상품/업소명·품목유형·보고번호·원재료·변경일 등 식별·원료 보완 | 포털 제한 없음 표시, 인증키/활용신청 필요. 주류 포함률은 소량 표본 확인 전 미확정. 도수·용량·가격·맛 점수가 있는 완성 카탈로그로 취급하지 않음 |
 | [aT 전통주정보](https://www.data.go.kr/data/15048755/fileData.do?recommendDataYn=Y) | 도수·용량·원재료·양조장 등의 우선 후보 | 무료/제한 없음과 판매자 허락·상업 협의·공란 유의사항, 16컬럼/1251행 메타데이터 확인. 실제 CSV는 이번 자동 승인 검토의 제3자/학습·재배포 권리 미확정 사유로 획득 보류. 상업 협의 문구만으로 비상업 사용을 금지한다고 판단한 것이 아님. 상세 원문/이미지·가격/맛과 판매 SKU 대응은 별도 확인 |
-| [Wikidata](https://www.wikidata.org/wiki/Wikidata:Licensing) | 검수 가능한 주종·생산자 등 보조 메타데이터 | 구조화 CC0의 4항목 실제 감사: 브랜드3·정체성 미확정1·검수SKU0. 라벨/도수 결측 각1/4, 용량/가격 결측 각4/4. 목적 표본이며 전체 충실도 추정 아님. 문서·링크 사진에 CC0를 확대 적용하지 않음 |
+| [Wikidata](https://www.wikidata.org/wiki/Wikidata:Licensing) | 검수 가능한 주종·생산자·기본 라벨·도수 등의 보조 메타데이터 | 이전4항목과 새 고유7항목을 구분. 새 동일6항목·revision의 상품군5/브랜드1 표본에서 기본 라벨 유실3/6→0/6을 수정. 도수결측1/6·용량/가격/그룹결측 각6/6, 판매SKU/fit승격0. 목적 표본이며 전체 충실도 추정 아님. 문서·링크 사진에 CC0를 확대 적용하지 않음 |
 | 직접 제공·검수 자료 | 제공 허락 범위의 도수/용량, 자체 설명·사진·평가 태그 | 항목별 제공/작성 주체와 권리를 기록한 소규모 카탈로그부터 시작. 빠진 필드를 꾸미지 않음 |
 | [UCI Wine Quality](https://archive.ics.uci.edu/dataset/186/wine+quality) | 물리화학 특성으로 와인 품질을 예측하는 공개 분류/회귀 실험 | CC BY 4.0. 출처·라이선스·변경 표시. 사용자 선호·우리 상품 ID가 없고 브랜드/가격도 부재. 서비스 개인 추천 학습/품질 근거로 사용하지 않음 |
 
@@ -74,8 +74,8 @@ Open Food Facts 등 별도 DB/이미지 라이선스 의무가 있는 원천은 
 
 | ID | 담당 | 우선순위·목표일 | 선행 조건 | 완료 기준·현재 상태 |
 |---|---|---|---|---|
-| DAT01 | AI 정본 / 조정자·BE 검수 | P0 · 2026-11-08 | C03와 공동 | CC0 소량 표본·[기존80시드/80자산 감사](LEGACY-SEED-AUDIT.md) 및 [고정 GET/receipt](WIKIDATA-COLLECTION.md) 구현. 새 실제 item 요청은HTTP200/maxlag로보류·accepted0이며 상품 부재와 구분. 시드/이미지 근거·aT 획득·허용 서비스 카탈로그는 미완료 |
-| DAT02 | AI 수집·정제 / BE 업무 스키마 연동 | P1 · 2026-11-26 | DAT01·F03 | 수집의 APIerror/ID/revision·불변snapshot/재생→허용 필드 projection·단위/unknown·기존 시드 격리 도구 구현. 기존CC0 4항목 offline 재생은 신규 수집이 아니며 검수 판매SKU·legacy fit승격0, 실제 카탈로그/전체 완료는 아님 |
+| DAT01 | AI 정본 / 조정자·BE 검수 | P0 · 2026-11-08 | C03와 공동 | CC0 소량 표본·[기존80시드/80자산 감사](LEGACY-SEED-AUDIT.md) 및 [고정 GET/receipt](WIKIDATA-COLLECTION.md) 구현. 이전maxlag 보존 후 정상복구로 새 고유entity7개 확보·그중6개 상품군/브랜드 검수. 판매SKU/fit승격0, 시드/이미지 근거·aT 획득·허용 서비스 카탈로그는 미완료 |
+| DAT02 | AI 수집·정제 / BE 업무 스키마 연동 | P1 · 2026-11-26 | DAT01·F03 | APIerror/ID/revision·불변snapshot/재생→단위/unknown·기존 시드 격리 도구와 [기본 라벨 보존](measurements/2026-11-01-default-labels.md) 구현. 동일6항목·revision 결측3/6→0/6, 새 raw 해시에 이전검수 보류. 검수 판매SKU·legacy fit승격0, 실제 카탈로그/전체 완료는 아님 |
 | DAT03 | AI 평가 명세 / BE·FE 입력·계정 연동 | P1 · 2026-11-29 | DAT01·C03, BE04/R01 공동 계약 | [고정 사실 명세·독립 검사기](EVALUATION.md) 증가분 구현. B0의 제약/순서와 모델 관련성을 구분하고 해시·전체 케이스·오류 주입 검증. 실제 SKU·관련성 명세와 시연 계정/찜/피드백 저장·권한·삭제·화면 연동은 미완료 |
 | DAT04 | AI / BE·FE 검증 지원 | P1 · 2027-01-20 | DAT02·DAT03 평가 명세, AI03과 공동 구현 | [오프라인 B1](CONTENT-MODEL.md)의 vocabulary/IDF·관측 수치 실제 fit, 필수 조건·기여·콜드스타트·상품군 분리 코드 증가분 구현. 현재 허구 fixture 회귀이며 실SKU0. 서비스 카탈로그 fit·독립 관련성/최종 평가·채택 근거·서버 연동은 미완료 |
 
