@@ -6,4 +6,5 @@ uv sync --locked
 uv run --locked ruff check .
 uv run --locked ruff format --check .
 uv run --locked pytest --junitxml=reports/pytest.xml
+uv run --locked python scripts/evaluate_baseline.py
 uv run --locked python scripts/smoke_distribution.py

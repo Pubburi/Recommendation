@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "suite_id": "b0-authored-contract-v1",
+  "data_kind": "authored_contract_fixture",
+  "catalog_version": "fictional-facts-v1",
+  "algorithm": "b0-id-ascending-v1",
+  "catalog": [
+    {"product_id": 101, "available": true, "category": "fixture-a", "price_krw": 1000, "abv_percent": 5},
+    {"product_id": 102, "available": true, "category": "fixture-a", "price_krw": 2000, "abv_percent": 10},
+    {"product_id": 103, "available": true, "category": "fixture-b", "price_krw": 1500, "abv_percent": 7},
+    {"product_id": 104, "available": true, "category": "fixture-a", "price_krw": null, "abv_percent": 5},
+    {"product_id": 105, "available": true, "category": null, "price_krw": 1000, "abv_percent": null},
+    {"product_id": 106, "available": false, "category": "fixture-a", "price_krw": 3000, "abv_percent": 15},
+    {"product_id": 107, "available": true, "category": "fixture-a", "price_krw": 0, "abv_percent": 0},
+    {"product_id": 108, "available": true, "category": "fixture-a", "price_krw": 1000, "abv_percent": 5}
+  ],
+  "scenarios": [
+    {
+      "case_id": "cold-start-order",
+      "purpose": "No preference/history: deterministic order and limit",
+      "candidate_ids": [108, 103, 101, 105, 102, 104, 107, 106],
+      "limit": 3,
+      "expected_eligible_ids": [101, 102, 103, 104, 105, 107, 108],
+      "expected_item_ids": [101, 102, 103],
+      "fact_basis": "Authored fixture only. 106 is unavailable; absent optional filters allow unknown fields. B0 ID order precedes limit."
+    },
+    {
+      "case_id": "hard-constraint-intersection",
+      "purpose": "Category, budget, ABV and explicit exclusion stay mandatory",
+      "candidate_ids": [108, 103, 101, 105, 102, 104, 107, 106],
+      "constraints": {"categories": ["fixture-a"], "min_price_krw": 0, "max_price_krw": 2000, "min_abv_percent": 0, "max_abv_percent": 10, "exclude_product_ids": [108]},
+      "expected_eligible_ids": [101, 102, 107],
+      "expected_item_ids": [101, 102, 107],
+      "fact_basis": "103 has the wrong category; 104 lacks price; 105 lacks category/ABV; 106 is unavailable; 108 is excluded. 101/102/107 meet inclusive bounds."
+    },
+    {
+      "case_id": "inclusive-bounds-before-limit",
+      "purpose": "Inclusive boundaries with a smaller return limit",
+      "candidate_ids": [108, 103, 101, 105, 102, 104, 107, 106],
+      "constraints": {"min_price_krw": 1000, "max_price_krw": 2000, "min_abv_percent": 5, "max_abv_percent": 10, "exclude_product_ids": [101]},
+      "limit": 2,
+      "expected_eligible_ids": [102, 103, 108],
+      "expected_item_ids": [102, 103],
+      "fact_basis": "102 is on the upper bounds; 108 is on the lower bounds. Exclude 101, unknown 104/105, unavailable 106, and below-min 107. eligible_count remains 3."
+    },
+    {
+      "case_id": "known-zero-not-unknown",
+      "purpose": "A zero upper bound is active and distinct from unknown",
+      "candidate_ids": [108, 103, 101, 105, 102, 104, 107, 106],
+      "constraints": {"max_price_krw": 0, "max_abv_percent": 0},
+      "expected_eligible_ids": [107],
+      "expected_item_ids": [107],
+      "fact_basis": "Only 107 has known price 0 and ABV 0. Unknown fields do not become 0. Both bound reason codes must be present."
+    },
+    {
+      "case_id": "unrequested-unknown-allowed",
+      "purpose": "Missing optional features do not exclude otherwise valid candidates",
+      "candidate_ids": [108, 103, 101, 105, 102, 104, 107, 106],
+      "constraints": {"categories": ["fixture-a"]},
+      "expected_eligible_ids": [101, 102, 104, 107, 108],
+      "expected_item_ids": [101, 102, 104, 107, 108],
+      "fact_basis": "104 has an unknown price but the requested category is known. There is no price/ABV filter, so those reason codes are absent."
+    },
+    {
+      "case_id": "no-matching-category",
+      "purpose": "No candidate means explicit empty result without relaxation",
+      "candidate_ids": [108, 103, 101, 105, 102, 104, 107, 106],
+      "constraints": {"categories": ["fixture-not-present"]},
+      "expected_eligible_ids": [],
+      "expected_item_ids": [],
+      "fact_basis": "No authored product has this category. Expected fallback reason is no_eligible_products, not a relaxed recommendation."
+    },
+    {
+      "case_id": "all-explicitly-excluded",
+      "purpose": "Excluded candidates are not reintroduced to fill the list",
+      "candidate_ids": [108, 103, 101, 105, 102, 104, 107, 106],
+      "constraints": {"exclude_product_ids": [101, 102, 103, 104, 105, 106, 107, 108]},
+      "expected_eligible_ids": [],
+      "expected_item_ids": [],
+      "fact_basis": "Every authored candidate is explicitly excluded. Expected fallback reason is no_eligible_products."
+    },
+    {
+      "case_id": "empty-catalog",
+      "purpose": "An empty explicit catalog has a valid empty response",
+      "candidate_ids": [],
+      "expected_eligible_ids": [],
+      "expected_item_ids": [],
+      "fact_basis": "There are no input candidates. Expected eligible_count 0 and no_eligible_products."
+    }
+  ]
+}

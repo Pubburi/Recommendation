@@ -216,6 +216,14 @@ def main(progress: dict[str, str]) -> None:
             timeout=10,
             stdout=subprocess.DEVNULL,
         )
+        progress["stage"] = "isolated-scenario-checker-cli"
+        subprocess.run(
+            [str(python), "-I", "-m", "pubburi_recommendation.scenario_evaluation", "--help"],
+            cwd=work,
+            check=True,
+            timeout=10,
+            stdout=subprocess.DEVNULL,
+        )
         progress["stage"] = "installed-wheel-http-contract"
         verify_http(python, work)
         # Preserve the normal local build outputs, but verify only this fresh build.

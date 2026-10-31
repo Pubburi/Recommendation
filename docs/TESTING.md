@@ -41,5 +41,16 @@ unknown과 0의 구분, 후보 부족 시 조건 유지, 필터 뒤 limit, 입�
 실제 CC0 소량 표본 감사와 이 회귀 fixture는 구분하며 CI가 원천을 다운로드하지 않는다.
 격리 wheel 검증은 checkout 밖에서 CLI `--help`도 실행해 runtime 의존성/패키징을 확인한다.
 
+## 독립 고정 시나리오
+
+단위 테스트 뒤 `scripts/evaluate_baseline.py`가 버전 고정 fixture를 ASGI 앱으로 실행하고,
+`scenario_evaluation`이 생산용 점수/필터 helper와 분리해 결과를 검사한다. `tests/test_scenario_evaluation.py`는
+명세 모순·해시/알고리즘·케이스 누락/중복·변조된 결과·제약/이유/순서·CLI 보호와 미래 모델의
+제약 전용 정책을 검증한다. 기대값을 실행 결과로 만들지 않으며 Recall/NDCG는 미산출이다.
+
+CI는 `reports/baseline-scenarios.json` 요약만 업로드하고 `baseline-responses.json`은 보관하지 않는다.
+새 wheel에서는 runtime-only `scenario_evaluation --help`를 실행한다. 명세/정책과 한계는
+[EVALUATION.md](EVALUATION.md)를 따른다. 이 ASGI runner는 실제 서버 간 통합 E2E가 아니다.
+
 근거: [uv export/build](https://docs.astral.sh/uv/reference/cli/),
 [Python isolated mode](https://docs.python.org/3.12/using/cmdline.html#cmdoption-I).
