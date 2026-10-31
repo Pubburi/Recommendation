@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "source_id": "at-traditional-liquor",
+  "provider": "한국농수산식품유통공사",
+  "source_url": "https://www.data.go.kr/data/15048755/fileData.do?recommendDataYn=Y",
+  "reviewed_on": "2026-10-31",
+  "license_label": "portal-unrestricted-with-additional-notes",
+  "evidence_urls": [
+    "https://www.data.go.kr/data/15048755/fileData.do?recommendDataYn=Y",
+    "https://www.data.go.kr/ugs/selectPortalPolicyView.do"
+  ],
+  "local_structured_normalization": false,
+  "structured_feature_fit": false,
+  "raw_redistribution_in_git": false,
+  "linked_media_included": false,
+  "free_text_included": false,
+  "additional_conditions": [
+    "The portal lists free/unrestricted use and says file download is possible without login.",
+    "The provider notes seller permission for the registered information, consultation before commercial use/additional information, and possible blank fields.",
+    "Portal policy requires legitimate permission where third-party rights exist; linked images and introduction prose are not included in the proposed structured scope."
+  ],
+  "decision_notes": [
+    "Metadata reviewed: snapshot name 20260731, portal modified 2026-10-22, reported 1251 rows and 16 columns; these are portal metadata, not measured file statistics.",
+    "A public download-metadata POST was rejected by automatic approval review because third-party/training/redistribution conditions were considered unconfirmed. No retry or indirect download was performed.",
+    "This is the specific acquisition/right-review hold from this run, not a rule that commercial consultation alone prohibits this noncommercial project.",
+    "Actual CSV sampling and normalization remain incomplete; no aT data file is committed or used by this CLI."
+  ]
+}

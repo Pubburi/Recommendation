@@ -37,6 +37,7 @@
 | 헬스 체크 | GET /health → 상태와 서비스 이름 반환 |
 | 기본 추천 | POST /v1/recommendations/baseline → 필수/제외 조건을 통과한 상품 ID 기본순과 적용 이유 |
 | 제약·결측 처리 | 주종·가격·도수·판매 상태·제외 ID, unknown을 요구 조건에 임의 통과시키지 않음 |
+| 오프라인 원천 감사 | 명세·출처/revision·수량 단위·unknown·브랜드/SKU 정체성을 구분하고 명시 검수 후 B0 시연 요청 변환 |
 | API 문서 | FastAPI 자동 생성 /docs와 /openapi.json |
 | 독립 실행 | DB·모델 파일·외부 AI 키 없이 기동 |
 | 품질 검사 | Ruff, pytest, wheel·sdist 빌드 |
@@ -203,6 +204,8 @@ uv sync --locked
 - API 문서: http://localhost:8000/docs
 - 현재 필수 환경변수와 외부 서비스는 없습니다. .env.example에 현재 요구사항을 기록했습니다.
 - 데이터·모델 파일을 시작 시 자동 다운로드하지 않습니다.
+
+로컬 구조화 데이터 준비는 [원천 감사 도구](docs/CATALOG-AUDIT.md)를 따릅니다. 이 도구는 원문을 자동 수집하거나 브랜드를 판매 상품으로 생성하지 않으며, 허용된 로컬 입력과 검수 mapping을 별도로 사용합니다.
 
 <a id="verification"></a>
 
