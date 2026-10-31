@@ -353,3 +353,25 @@ def test_json_parser_rejects_duplicate_keys_and_numeric_overflow(tmp_path, text,
     source.write_text(text)
     with pytest.raises(AuditError, match=reason):
         read_json(source)
+
+
+def test_json_parser_and_cli_hide_recursion_details(tmp_path):
+    source = tmp_path / "private-source.json"
+    source.write_text('{"private-source-marker":' + "[" * 20000 + "0" + "]" * 20000 + "}")
+    with pytest.raises(AuditError, match="json_nesting_exceeds_parser_limit"):
+        read_json(source)
+    result = subprocess.run(
+        command(
+            "--manifest",
+            "sources/wikidata-structured.json",
+            "--input",
+            source,
+            "--output-dir",
+            tmp_path / ".pubburi" / "deep",
+        ),
+        text=True,
+        capture_output=True,
+    )
+    assert result.returncode == 2
+    assert "json_nesting_exceeds_parser_limit" in result.stderr
+    assert "Traceback" not in result.stderr and "private-source-marker" not in result.stderr

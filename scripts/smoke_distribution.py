@@ -216,6 +216,85 @@ def main(progress: dict[str, str]) -> None:
             timeout=10,
             stdout=subprocess.DEVNULL,
         )
+        progress["stage"] = "isolated-wikidata-offline-replay"
+        # Actual installed CLI, authored payloads only; CI never calls the external source.
+        source_manifest = work / "wikidata-manifest.json"
+        shutil.copy2(ROOT / "sources/wikidata-structured.json", source_manifest)
+        source_payload = work / "authored-entity.json"
+        source_payload.write_text(
+            json.dumps(
+                {
+                    "success": 1,
+                    "entities": {
+                        "Q1": {
+                            "id": "Q1",
+                            "type": "item",
+                            "lastrevid": 7,
+                            "labels": {"en": {"value": "authored contract fixture only"}},
+                            "claims": {},
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        source_output = work / ".pubburi" / "source-replay"
+        replay_command = [
+            str(python),
+            "-I",
+            "-m",
+            "pubburi_recommendation.wikidata_collect",
+            "--manifest",
+            str(source_manifest),
+            "--ids",
+            "Q1",
+            "--snapshot",
+            str(source_payload),
+            "--output-dir",
+            str(source_output),
+        ]
+        subprocess.run(replay_command, cwd=work, check=True, timeout=10, stdout=subprocess.DEVNULL)
+        source_receipt = json.loads((source_output / "receipt.json").read_text(encoding="utf-8"))
+        if (
+            not source_receipt["accepted"]
+            or source_receipt["mode"] != "offline_replay"
+            or source_receipt["http_status"] is not None
+            or source_receipt["training_ready"]
+        ):
+            raise RuntimeError("The installed wheel violated the offline collection boundary")
+        for suffix, rejected_body, expected_code in (
+            ("maxlag", json.dumps({"error": {"code": "maxlag"}}), "api_maxlag"),
+            (
+                "depth",
+                '{"x":' + "[" * 20000 + "0" + "]" * 20000 + "}",
+                "json_nesting_exceeds_parser_limit",
+            ),
+        ):
+            source_payload.write_text(rejected_body, encoding="utf-8")
+            rejected_output = work / ".pubburi" / f"source-{suffix}"
+            replay_command[-1] = str(rejected_output)
+            rejected = subprocess.run(
+                replay_command,
+                cwd=work,
+                check=False,
+                timeout=10,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            rejected_receipt = json.loads(
+                (rejected_output / "receipt.json").read_text(encoding="utf-8")
+            )
+            if (
+                rejected.returncode != 2
+                or rejected_receipt["accepted"]
+                or rejected_receipt["error_code"] != expected_code
+                or "Traceback" in rejected.stderr
+                or (rejected_output / "normalized-records.json").exists()
+            ):
+                raise RuntimeError(
+                    "The installed wheel treated a source error as an accepted catalog"
+                )
         progress["stage"] = "isolated-legacy-inventory-cli"
         # Only tiny authored literals/byte signatures, never the real legacy seed or its images.
         legacy_manifest = work / "legacy-manifest.json"

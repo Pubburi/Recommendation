@@ -20,6 +20,8 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
    Git이나 artifact에 업로드하지 않으며 실제 상품 품질 평가로 표현하지 않는다.
 8. `legacy_seed_audit`도 runtime-only 실제 CLI로 작은 자체 SQL literal/바이트 시그니처를
    감사한다. 실제80행/이미지는 CI가 읽지 않으며 결과가 자동 학습 승격을 만들지 않는지 확인한다.
+9. `wikidata_collect`는 자체 item payload의 성공 offline 재생·maxlag/깊은JSON 실패를 새 wheel의 실제
+   CLI로 확인한다. CI는 원천 네트워크를 호출하지 않으며 재생을 신규 수집/카탈로그 품질로 쓰지 않는다.
 
 HTTP 과정에 DB·AWS·모델·외부 AI API 환경변수를 전달하지 않는다. 8000 포트를 점유하지 않고
 본인 서버 프로세스와 임시 환경만 정리한다. 현재 검증 대상은 Linux/macOS이며 CI는 Ubuntu다.
@@ -51,6 +53,19 @@ quoted text·컬럼/리터럴 상한·지원 불가/변경문 거절, 사용자/
 unknown/실제0·언더플로, 웹 매핑·경로/시그니처/해시·중복·symlink/파일 크기와 새 출력 보존을 검증한다.
 DB/SQL 실행·네트워크·실제 이미지 변환·학습은 수행하지 않는다. 실제80행 관측 집계와 단위 테스트의
 고정 정답을 결합하지 않으며 [감사 범위·실제 결과](LEGACY-SEED-AUDIT.md)를 별도로 관리한다.
+
+`tests/test_wikidata_collect.py`는 고정GET/요청 상한·UA/maxlag/timeout·redirect·잘못된 HTTP/크기·
+JSON 중복/비유한 값/재귀 한계·APIerror/warning·누락/추가/redirect item·revision·실패 receipt·출력 보존과
+offline 모드/권리 승인 경계를 검증한다. 실패한 새 snapshot이 이전 정상본이나 empty 성공을 만들지
+않는지 확인한다. 실제 원천 maxlag와 기존4항목 재생 결과는 [수집 기록](WIKIDATA-COLLECTION.md)으로
+별도 보존하며 실제 상품 부재·카탈로그 학습 완료로 해석하지 않는다.
+
+실제 `HTTPResponse` decoder에 종료 chunk가 누락된 자체 wire를 제공해 `IncompleteRead`를
+재현하고 fetch·별도 프로세스의 실제 CLI parser/main이 고정 protocol 진단·exit2·완성 실패
+receipt를 남기며 원문/정제 파일을 생성하지 않는지 확인한다. 네트워크·외부 원천 요청은 없다.
+선언 길이보다 짧지만 완결된 JSON인 자체 응답도 같은 실패 경계를 검증한다. 정확한 길이·길이 없는
+EOF·정상 chunked의 성공을 보존하고, 잘못된/중복 Content-Length·길이와 전송 인코딩의 충돌·
+네이티브 decoder가 처리하지 않는 인코딩·상한 초과 선언을 본문 읽기 전에 거절하는지 확인한다.
 
 ## 독립 고정 시나리오
 

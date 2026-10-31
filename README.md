@@ -38,6 +38,7 @@
 | 기본 추천 | POST /v1/recommendations/baseline → 필수/제외 조건을 통과한 상품 ID 기본순과 적용 이유 |
 | 제약·결측 처리 | 주종·가격·도수·판매 상태·제외 ID, unknown을 요구 조건에 임의 통과시키지 않음 |
 | 오프라인 원천 감사 | 명세·출처/revision·수량 단위·unknown·브랜드/SKU 정체성을 구분하고 명시 검수 후 B0 시연 요청 변환 |
+| 제한된 원천 수집 | 고정 Wikidata GET·ID/revision/오류 검증·불변 snapshot/영수증·offline 재생. 수집 검증과 실제 SKU/학습 준비를 구분 |
 | 기존 시드·자산 감사 | SQL 실행 없이 활성 상품 literal·실제 웹 이미지 매핑·해시/중복·개별 사실/권리 미확인을 분리하고 학습 입력으로 자동 승격하지 않음 |
 | 고정 시나리오 검사 | 수동 기대 사실·명세/응답 해시를 고정하고 추천 엔진과 분리해 제약·중복·결측·이유·후보 부족 확인 |
 | 오프라인 콘텐츠 모듈 | 학습군의 TF-IDF·관측 수치 범위를 fit하고 명시 취향/선택 상품의 유사도·실제 기여를 계산. 현재 허구 입력 회귀이며 B1 HTTP·실카탈로그 품질 평가는 미구현 |
@@ -76,46 +77,118 @@ flowchart LR
 
 ## 🧩 문제 해결
 
-### 모델 준비와 프로세스 가용성을 분리한 헬스 계약
+### HTTP200 안의 원천 오류를 격리한 카탈로그 수집
 
 #### 문제
 
-추천 기능을 개발하기 전에도 서버가 실행되고 요청에 응답하는지 확인할 수 있어야 했다. 모델 파일·상품 데이터·DB 연결을 서버의 기본 기동 조건으로 삼으면, 자원 준비와 프로세스 상태를 함께 다뤄야 한다.
+카탈로그 원천을 조사하던 중 HTTP 응답은 정상이었지만 본문은 `maxlag` 오류였다. 이를 성공한 빈 검색 결과로 처리하면 원천이 보류된 상태를 상품이 없다는 사실로 오인할 수 있다. 서비스 운영 장애를 복구한 실적이 아니라 실제 데이터 준비에서 확인한 수집 실패 경계다.
 
 #### 원인
 
-프로세스가 요청을 받을 수 있는 상태와 추천을 계산할 준비가 된 상태는 서로 다른 조건이다. 초기 서버에는 추천 모델과 데이터 계약이 없으므로 이를 헬스 응답에 포함하면 확인되지 않은 준비 상태를 정상으로 표현할 수 있다. 이는 관측한 장애를 복구한 사례가 아니라, 초기 구현에서 진단 범위를 정한 설계 문제다.
+초기 조사용 표시의 `payload.get("search", [])`는 API 오류와 빈 결과를 구분하지 못했다. HTTP200·JSON 파싱 성공은 요청한 항목과 revision을 확보했다는 보장이 없으며, 누락/redirect나 기록 도중 실패도 별도 상태다.
 
 #### 해결
 
-앱 생성과 `/health` 처리에서 모델·DB·외부 API를 읽지 않도록 경계를 잡았다. 헬스 응답은 프로세스 상태와 서비스 이름만 제공하고, 현재 구현 범위를 API 설명에도 기록했다.
+고정 endpoint의 소량 GET과 `maxlag=5`를 유지하고 API error/warning·success·요청 ID 집합·revision·단위를 원문 저장 전에 확인했다. 새 디렉터리와 원자적 receipt를 사용해 성공·실패를 구분하고 이전 snapshot을 보존한다. 응답 해시·revision·live/offline 모드를 기록하며 수집 검증을 SKU·학습 승인으로 승격하지 않는다.
 
 #### 결과
 
-현재 서버는 모델 파일·학습 데이터·외부 AI 키 없이 헬스 응답을 제공한다. 응답의 의미는 요청 처리 가능 여부이며, 추천 결과나 모델의 준비·품질은 별도 계약으로 다룬다.
+실제 단일 item GET의 HTTP200/maxlag 응답은 `api_maxlag`·`accepted=false`·실패 종료로 처리했고 새 상품 원문/카탈로그를 만들지 않았다. 기존 CC0 4항목은 같은 원문 해시로 offline 재생했지만 신규 수집으로 집계하지 않는다. 이번 새 accepted item은0이며 원천의 제품 부재·카탈로그 완성·추천 품질이나 시간 성능 개선을 의미하지 않는다.
 
 #### 대체안/회고
 
-헬스 요청에서 모델을 불러오거나 DB까지 조회하면 추천 준비 상태도 함께 검사할 수 있지만, 호출 지연과 외부 자원의 실패가 프로세스 진단에 섞인다. 모델 연동 단계에서는 프로세스 가용성과 추천 준비 상태를 구분하고, 준비되지 않은 이유와 대체 추천 동작을 연결할 필요가 있다.
+HTTP 상태만 확인하면 구현은 단순하지만 데이터의 완료 조건을 잃는다. 즉시 반복 요청하거나 maxlag 임계값을 완화하는 대신 원천 보류를 보존하고 독립 개발을 계속한다. 외부 원천의 정상 복구 후 실제 상품 단위·필드를 검수하는 과제는 남아 있다. 헬스와 B0의 기본 기동은 수집에 의존하지 않는다.
 
 #### 코드
 
-앱 설명과 헬스 처리 부분을 발췌했다. [현재 구현](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/main.py)
+payload 검증과 `collect`의 전체 저장/실패 흐름을 발췌했다. [실제 수집기](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/wikidata_collect.py) · [실제 관측·실행과 한계](docs/WIKIDATA-COLLECTION.md)
 
 ~~~python
-from fastapi import FastAPI
+def check_payload(payload: dict, ids: list[str]) -> list[dict]:
+    if "error" in payload:
+        error = payload["error"]
+        code = error.get("code") if isinstance(error, dict) else None
+        raise AuditError(
+            API_ERRORS.get(code, "unrecognized_api_error")
+            if isinstance(code, str)
+            else "unrecognized_api_error"
+        )
+    if payload.get("warnings"):
+        raise AuditError("source_api_warning_requires_review")
+    if payload.get("redirects"):
+        raise AuditError("entity_redirect_requires_review")
+    if type(payload.get("success")) is not int or payload["success"] != 1:
+        raise AuditError("explicit_api_success_required")
+    entities = payload.get("entities")
+    if not isinstance(entities, dict) or set(entities) != set(ids):
+        raise AuditError("returned_item_ids_must_match_request")
+    if any(isinstance(entity, dict) and "redirect" in entity for entity in entities.values()):
+        raise AuditError("entity_redirect_requires_review")
+    # Checks exact item IDs, positive revisions, label shape and supported quantity/claim shape.
+    return normalize_entities(payload)
+~~~
 
-app = FastAPI(
-    title="Pubburi Recommendation",
-    description="Stateless constrained B0 baseline. No trained model or user preference learning.",
-    version="0.1.0",
-)
-
-
-@app.get("/health")
-def health() -> dict[str, str]:
-    """Report process availability without requiring a database or a model."""
-    return {"status": "ok", "service": "pubburi-recommendation"}
+~~~python
+def collect(
+    manifest: SourceManifest, ids: list[str], output: Path, snapshot: Path | None = None
+) -> dict:
+    if (
+        manifest.source_id != "wikidata-structured"
+        or manifest.license_label != "CC0-1.0"
+        or not manifest.local_structured_normalization
+    ):
+        raise AuditError("reviewed_wikidata_structured_source_required")
+    url = entity_url(ids)
+    if ".pubburi" not in output.resolve().parts:
+        raise AuditError("outputs_must_be_inside_private_pubburi_directory")
+    # Reserve once before reading the input or making a request; never overwrite an old snapshot.
+    output.mkdir(parents=True, exist_ok=False)
+    receipt = {
+        "schema_version": 1,
+        "mode": "live_get" if snapshot is None else "offline_replay",
+        "request_url": url,
+        "requested_ids": sorted(ids),
+        "observed_at_utc": datetime.datetime.now(datetime.UTC).isoformat(),
+        "accepted": False,
+        "http_status": None,
+        "response_bytes": None,
+        "response_sha256": None,
+        "error_code": None,
+        "structured_data_license": "CC0-1.0",
+        "license_evidence": "https://www.wikidata.org/wiki/Wikidata:Licensing",
+        "manifest_sha256": hashlib.sha256(manifest.model_dump_json().encode()).hexdigest(),
+        "images_fetched": False,
+        "identity_review": "not_performed",
+        "training_ready": False,
+    }
+    write_receipt(output, receipt)
+    try:
+        if snapshot is None:
+            content, receipt["http_status"] = fetch(url)
+        else:
+            with snapshot.open("rb") as source:
+                content = source.read(MAX_INPUT_BYTES + 1)
+        receipt["response_bytes"] = len(content)
+        payload, receipt["response_sha256"] = parse_json_bytes(content)
+        records = check_payload(payload, ids)
+        (output / "entities.json").write_bytes(content)
+        (output / "normalized-records.json").write_text(
+            json.dumps(records, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        receipt.update(
+            accepted=True,
+            entities=len(records),
+            revisions={record["source_record_id"]: record["source_revision"] for record in records},
+        )
+        write_receipt(output, receipt)
+        return receipt
+    except (OSError, ValueError, TypeError, KeyError) as error:
+        receipt["accepted"] = False
+        receipt["error_code"] = (
+            str(error) if isinstance(error, AuditError) else type(error).__name__
+        )
+        write_receipt(output, receipt)
+        raise
 ~~~
 
 ### 후보 부족 때도 필수 조건을 유지하는 기본 추천
@@ -213,6 +286,8 @@ uv sync --locked
 로컬 구조화 데이터 준비는 [원천 감사 도구](docs/CATALOG-AUDIT.md)를 따릅니다. 이 도구는 원문을 자동 수집하거나 브랜드를 판매 상품으로 생성하지 않으며, 허용된 로컬 입력과 검수 mapping을 별도로 사용합니다.
 
 기존 시드와 이미지의 실제 조사 범위·집계·격리 실행은 [시드·자산 감사](docs/LEGACY-SEED-AUDIT.md)를 따릅니다. 데이터가 채워졌다는 사실과 검수 상품·사용 허락·학습 가능 상태를 구분합니다.
+
+소량 원천 GET과 오류·revision·영수증/오프라인 재생은 [수집 경계](docs/WIKIDATA-COLLECTION.md)를 따릅니다. HTTP 성공을 데이터 확보·상품 부재·모델 준비와 구분합니다.
 
 추천 결과의 재현 가능한 계약 검사는 [시나리오·평가 경계](docs/EVALUATION.md)를 따릅니다. 직접 작성한 입력의 조건 검증을 실제 사용자 선호나 모델 관련성 평가와 구분합니다.
 

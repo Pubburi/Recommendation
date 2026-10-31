@@ -64,6 +64,11 @@ class ReviewManifest(BaseModel):
 def read_json(path: Path) -> tuple[dict, str]:
     with path.open("rb") as source:
         content = source.read(MAX_INPUT_BYTES + 1)
+    return parse_json_bytes(content)
+
+
+def parse_json_bytes(content: bytes) -> tuple[dict, str]:
+    """Apply the same bounded/duplicate-key/finite JSON boundary to files and HTTP bodies."""
     if len(content) > MAX_INPUT_BYTES:
         raise AuditError("input_exceeds_10_mib")
 
@@ -93,6 +98,8 @@ def read_json(path: Path) -> tuple[dict, str]:
         )
     except AuditError:
         raise
+    except RecursionError as error:
+        raise AuditError("json_nesting_exceeds_parser_limit") from error
     except (UnicodeError, ValueError) as error:
         raise AuditError("invalid_json") from error
     if not isinstance(payload, dict):

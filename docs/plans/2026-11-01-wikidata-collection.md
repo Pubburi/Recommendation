@@ -1,0 +1,70 @@
+# DAT01/02 제한 수집·정제 파이프라인
+
+- 기준 main `b1dca74`(#11), 작업 `codex/reviewed-entity-catalog`.
+- 공식 CC0/접근/wbgetentities/etiquette와 P31/P176/P2665/P2234 필드를 확인했다. 주류 상품/상품군
+  원천 확보를 진행했으나 새 검색 payload3개와 간격을 둔 단일 item GET이 모두 maxlag 보류였다.
+  조회 불가와 실제 제품 부재를 구분하고 maxlag5를 완화·다른 endpoint로 우회하지 않는다.
+- 단일 GET의 실제 HTTP200·501B·api_maxlag·acceptedfalse 영수증과 원문 hash를 ignored에 기록했다.
+  신규 accepted0이며 카탈로그/검수SKU·실모델 학습 완료로 기록하지 않는다. Q1154088은 기존
+  Wikipedia의 sitelink에서 발견한 후보이며 그 페이지의 본문·맛·이미지·수치를 학습하지 않았다.
+- 초기에 payload.get(search,[])가 오류를 빈 결과처럼 표시할 위험을 확인하고 원문으로 정정했다.
+  제품 수집기는 HTTP/JSON 외 APIerror/warning·success·정확ID/revision/shape를 통과해야만
+  raw/projection을 기록한다. 오류 info/개인 경로는 진단에 포함하지 않는다.
+- 최대10QID·고정 HTTPS/GET·maxlag5·식별UA·timeout/bytecap·redirect금지·새폴더/원자receipt 경계를
+  구현했다. 소스 명세와 원문/정제/영수증 hash/revision을 보존하며 accepted가 학습 승인인 것은 아니다.
+- 기존 CC0 4항목의 offline 재생은 같은 원문 해시·revision으로 성공했다. 이전 브랜드3/미확정1·
+  SKU0 자료의 재생이며 신규 카탈로그 증가가 아니다. 실제 검색 maxlag payload도 offline 거절했다.
+- 같은 fixture fit/legacy 감사만 반복하지 않고 실제 원천 보류의 잘못된 성공 상태를 차단하는
+  필요 제품 코드를 완성했다. 원천이 정상일 때 개별 제품 단위/필드·권리를 검수한 카탈로그를
+  계속 확보해야 하며 다른 독립 제품 작업을 원천 회복까지 대기시키지 않는다.
+- README는 실제 외부계약/데이터오인 조건·영수증/ID/revision/불변snapshot 판단·실패 거절 근거가
+  단순 health 초기설계보다 강하다고 판단해 그 사례 한 개를 교체한다. 기존 health 기능/기록과
+  B0사례는 보존하고 총2/4를 유지한다. sourceaccepted0를 수집 성공/성능/추천 품질로 포장하지 않는다.
+- CI는 자체 작은 payload만 재생하고 새 runtime-only wheel CLI의 성공/실패를 검증한다.
+  실제 원문·카탈로그·영수증·요청 로그는 ignored에만 두며 aT 재시도/가입/키/외부문의/비용/AWS는 없다.
+- 독립 검토의 깊은 JSON 진단 누락은 Python3.12에서20,000중첩/40KB대 입력으로 RecursionError·
+  실제 CLI exit1/traceback·미완성 오류 receipt를 먼저 재현했다. 공통 parser가 고정 AuditError로
+  변환해 catalog/collector CLI의 exit2·안전 진단·완성 실패 receipt와 원문/정제 미생성을 확인한다.
+  공통 fix와 수집 feature를 독립 한국어 커밋으로 나눠 기존 이력을 보존한다.
+- 최종 `check.sh`는 저장소/locked·Ruff·pytest256·B0계약8/8·B1fixture fit8/8, 새 sdist/wheel의
+  runtime-only python-I 실제 source재생 성공/maxlag/깊은JSON 거절·legacy감사/B1 fit·실제
+  health/B0/OpenAPI·중복ID422를 통과했다. 기존 TestClient 경고1건은 남아 있다. 마지막 README
+  전체 코드 발췌/문서 정리 뒤 Ruff/저장소/차이 검사를 다시 통과했다. 성능 수치로 사용하지 않는다.
+- 공통 파서 fix와 수집 기능은 서로 검토 가능한 한국어 커밋으로 나눈다. PR/최신리뷰/CI/병합은
+  조정자가 처리하며 원천 보류를 구현 완료/서비스 카탈로그 확보로 바꾸지 않는다.
+
+## PR12 정식 P2 — 잘린 HTTP 응답
+
+- 최신 head4afa43c의 Codex P2는 `HTTPResponse.read`의 IncompleteRead가 처리되지 않아
+  traceback/exit1·error_code가 비어 있는 실패 receipt로 남는 문제를 지적했다.
+- 실제 HTTPResponse에 정상 HTTP200/JSON 헤더·완전한 자체 JSON data chunk와 누락된 종료 chunk를
+  넣어 IncompleteRead를 확인했다. 예외 stub뿐 아니라 decoder/fetch/실제 CLI 진입에서 수정 전
+  예외 누출·exit1을 재현했다. 실제 제공자의 응답을 다시 요청하거나 운영 장애로 주장하지 않는다.
+- HTTPException은 OSError와 다른 계층이므로 fetch에서 고정 AuditError(remote_protocol_failed)로
+  변환한다. 실패 receipt의 acceptedfalse/error_code·CLI exit2/안전 진단·원문/정제 미생성을 검증한다.
+- 기존139d9d0·4afa43c는 보존하고 별도 한국어 fix 커밋을 작성한다. 외부 댓글/reply·native Resolve·
+  최신 head 재리뷰/CI·merge는 조정자가 처리한다. 원천 권리/수집/카탈로그 품질 상태는 그대로다.
+- 수정 후 수집38회귀·전체 `check.sh`의 pytest259·B0/B1각8/8·새 runtime-only wheel의 source
+  성공/maxlag/깊은JSON 재생·legacy감사/B1 fit·health/B0/OpenAPI·중복ID422를 통과했다. 기존
+  TestClient 경고1건은 같다. 예외/fetch/실제 CLI의 세 수정 전 실패가 고정 진단/실패 상태로 바뀐
+  로컬 회귀이며 원천 서비스의 장애율·추천 품질·성능 개선으로 표현하지 않는다.
+
+## PR12 정식 P2 — 선언 길이에 못 미치는 완결 JSON
+
+- 최신 head1604959의 별도 Codex P2는 Content-Length보다 짧게 끝난 본문이 완결 JSON이면
+  `HTTPResponse.read(amt)`가 예외를 발생시키지 않아 accepted=true가 되는 문제를 지적했다.
+- 실제 HTTPResponse에 자체 item JSON보다100B 큰 길이를 선언한 wire를 넣었다. stdlib가 짧은
+  본문을 반환하고 기존 payload 검증은 통과하는지 먼저 확인했다. 수정 전 collect의 성공과
+  별도 프로세스의 실제 CLI exit0/acceptedtrue를 두 회귀의 실패로 재현했다. 외부 요청은 없다.
+- 상한 내 읽기를 유지하면서 선언 길이의 형식/중복/전송 인코딩 모호성을 먼저 확인하고 읽은
+  바이트 수와 선언 길이를 대조한다. 길이 미달은 고정 remote_protocol_failed로 변환해 exit2·
+  acceptedfalse/error_code·원문/정제 미생성을 유지한다. 과대 선언은 읽기 전에 거절한다.
+- 정확한 길이·길이 없는 EOF·정상 chunked는 성공하고 기존 종료 chunk 누락도 계속 거절한다.
+  중복/비ASCII/부호/쉼표/과도한 길이·CL+TE·미지원 인코딩과 네이티브 decoder가 선택되지 않은
+  선언은 자체 wire로 검증한다. 무제한 읽기·추가 live 수집·source 권리/품질 승격은 없다.
+- 기존 세 커밋과 첫 P2 수정을 보존하고 별도 한국어 fix 커밋을 작성한다. 새 스레드의 한국어
+  답글·native Resolve·최신 head 리뷰/CI/병합은 조정자가 처리한다. README 두 사례는 유지한다.
+- 수정 후 수집54회귀와 전체 `check.sh`의 locked/Ruff·pytest275·B0/B1각8/8·새 sdist/wheel의
+  runtime-only 실제 source 성공/maxlag/깊은JSON 재생·legacy감사/B1 fit·실제 health/B0/OpenAPI·
+  중복ID422를 통과했다. 기존 TestClient 경고1건은 같다. 완결 JSON의 선언 길이 미충족을 로컬
+  장애 주입으로 재현한 정확성 수정이며 실제 원천 장애율·추천 품질·서비스 성능 수치가 아니다.
