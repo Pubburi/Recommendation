@@ -3,6 +3,7 @@
 - Use Python 3.12, FastAPI and uv. Commit uv.lock; sync with --locked.
 - Current contracts are GET /health and POST /v1/recommendations/baseline (untrained B0). Follow docs/BASELINE-API.md. No catalog/model is loaded or persisted; do not imply B1 learning or Backend integration is complete.
 - Keep initialization free of database, model download and external API requirements.
+- Offline source preparation uses python -m pubburi_recommendation.catalog_audit and docs/CATALOG-AUDIT.md. Source manifests record reviewed scope, not automatic legal approval. Keep raw/normalized catalogs in ignored .pubburi only; entity/brand IDs must never become Backend SKU IDs without explicit review.
 - Validate with ./scripts/check.sh (pytest, Ruff and distribution build).
 - Implement data preparation, content-based recommendations, fallbacks and model evaluation under the approved roadmap; never present unfinished features as implemented.
 - Do not commit datasets, model weights, .venv/, credentials or generated distributions.

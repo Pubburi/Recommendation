@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "source_id": "wikidata-structured",
+  "provider": "Wikidata contributors",
+  "source_url": "https://www.wikidata.org/",
+  "reviewed_on": "2026-10-31",
+  "license_label": "CC0-1.0",
+  "evidence_urls": [
+    "https://www.wikidata.org/wiki/Wikidata:Licensing",
+    "https://www.wikidata.org/wiki/Wikidata:Data_access",
+    "https://www.wikidata.org/wiki/Property:P2665",
+    "https://www.wikidata.org/wiki/Property:P2234"
+  ],
+  "local_structured_normalization": true,
+  "structured_feature_fit": true,
+  "raw_redistribution_in_git": false,
+  "linked_media_included": false,
+  "free_text_included": false,
+  "additional_conditions": [
+    "Only structured item labels and claims; CC0 does not extend to linked photos or other website prose.",
+    "Use identified, bounded requests and record entity revisions and input hashes.",
+    "Commercial/public use requires renewed project-scope review even where structured data is CC0."
+  ],
+  "decision_notes": [
+    "Selected as a small structured-data audit alternative after the aT download action was blocked by automatic approval review.",
+    "Entity type, unit, missingness and SKU suitability require review independently of licensing.",
+    "The CLI is offline; this manifest does not initiate network requests or imply any model was fitted."
+  ]
+}

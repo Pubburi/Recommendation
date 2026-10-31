@@ -208,6 +208,14 @@ def main(progress: dict[str, str]) -> None:
             "pathlib.Path(sys.prefix).resolve()), 'Wheel imported outside its isolated environment'"
         )
         subprocess.run([str(python), "-I", "-c", probe], cwd=work, check=True, timeout=10)
+        progress["stage"] = "isolated-catalog-cli"
+        subprocess.run(
+            [str(python), "-I", "-m", "pubburi_recommendation.catalog_audit", "--help"],
+            cwd=work,
+            check=True,
+            timeout=10,
+            stdout=subprocess.DEVNULL,
+        )
         progress["stage"] = "installed-wheel-http-contract"
         verify_http(python, work)
         # Preserve the normal local build outputs, but verify only this fresh build.

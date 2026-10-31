@@ -33,5 +33,13 @@ unknown과 0의 구분, 후보 부족 시 조건 유지, 필터 뒤 limit, 입�
 입력의 JSON 오류 응답도 검증한다. fixture 값은 실제 상품 사실·사용자 행동·평가 정답이 아니다.
 기본 기준선은 학습 전 비교 대상으로 구현한 신규 기능이며 과거 모델의 장애/성능 개선으로 쓰지 않는다.
 
+## 오프라인 원천 감사
+
+`tests/test_catalog_audit.py`는 직접 작성한 가상 entity로 권리 보류를 입력 읽기 전에 확인하는지,
+단위 변환·범위/문맥/다중 값의 unknown·deprecated·라벨 누락·브랜드/SKU 분리·원문 해시와
+검수 mapping·명시 Backend ID/그룹/시연 가용성·가격·B0 계약·출력 덮어쓰기 차단을 검증한다.
+실제 CC0 소량 표본 감사와 이 회귀 fixture는 구분하며 CI가 원천을 다운로드하지 않는다.
+격리 wheel 검증은 checkout 밖에서 CLI `--help`도 실행해 runtime 의존성/패키징을 확인한다.
+
 근거: [uv export/build](https://docs.astral.sh/uv/reference/cli/),
 [Python isolated mode](https://docs.python.org/3.12/using/cmdline.html#cmdoption-I).
