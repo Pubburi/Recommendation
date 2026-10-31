@@ -75,6 +75,10 @@ uv run --locked python -m pubburi_recommendation.wikidata_collect \
   파일 쓰기 실패도 accepted=false이며 소비자는 해당 상태를 먼저 확인해야 한다.
 - 실패 receipt에는 고정 error code/종류·응답 hash/크기 등 안전한 메타데이터만 둔다. 원천의 error info·
   로컬 경로를 오류 로그에 복사하지 않는다. 기존 폴더/영수증/카탈로그를 덮어쓰지 않는다.
+- 읽기 중 잘린 chunked HTTP 응답의 `IncompleteRead`를 포함한
+  [HTTPException 계열](https://docs.python.org/3.12/library/http.client.html#http.client.HTTPException)은
+  `remote_protocol_failed`로 변환한다. HTTP200·JSON처럼 보이는 일부 본문만으로 성공을 만들지
+  않으며 traceback/partial body를 진단에 노출하지 않고 실패 receipt와 종료2를 유지한다.
 - 성공 종료0은 수집/재생의 형식 검증이다. item 정체성·개별 필드 사실·판매 SKU 연결·새 카탈로그
   학습/독립 관련성·최종 평가와 Backend/Frontend 연동은 별도 미완료다. 실패 종료는2다.
 

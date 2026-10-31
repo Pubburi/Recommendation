@@ -1,8 +1,10 @@
 import copy
+import io
 import json
 import subprocess
 import sys
 from email.message import Message
+from http.client import HTTPException, HTTPResponse, IncompleteRead
 from pathlib import Path
 from urllib.error import URLError
 from urllib.parse import parse_qs, urlsplit
@@ -32,6 +34,26 @@ def payload():
             }
         },
     }
+
+
+def truncated_chunked_wire():
+    body = json.dumps(payload()).encode()
+    # Complete JSON in a data chunk, but the mandatory terminating chunk is missing.
+    return (
+        b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
+        b"Transfer-Encoding: chunked\r\n\r\n" + f"{len(body):X}\r\n".encode() + body + b"\r\n"
+    )
+
+
+def actual_response(wire):
+    class Socket:
+        def makefile(self, mode):
+            assert mode == "rb"
+            return io.BytesIO(wire)
+
+    response = HTTPResponse(Socket())
+    response.begin()
+    return response
 
 
 def test_live_receipt_binds_raw_projection_and_revision_without_training_approval(
@@ -225,12 +247,14 @@ def test_fetch_cannot_lower_remote_guardrails_or_choose_other_endpoints(monkeypa
         module.fetch(url)
 
 
-@pytest.mark.parametrize("failure", ["wrong_type", "too_large", "transport"])
+@pytest.mark.parametrize("failure", ["wrong_type", "too_large", "transport", "protocol"])
 def test_fetch_rejects_non_json_large_and_transport_failures(monkeypatch, failure):
     class Opener:
         def open(self, *args, **kwargs):
             if failure == "transport":
                 raise URLError("do-not-copy-network-details")
+            if failure == "protocol":
+                raise HTTPException("do-not-copy-protocol-details")
             return Response(
                 b"x" * (module.MAX_INPUT_BYTES + 1) if failure == "too_large" else b"{}",
                 "text/html" if failure == "wrong_type" else "application/json",
@@ -239,6 +263,68 @@ def test_fetch_rejects_non_json_large_and_transport_failures(monkeypatch, failur
     monkeypatch.setattr(module, "build_opener", lambda *args: Opener())
     with pytest.raises(AuditError):
         module.fetch(module.entity_url(["Q1"]))
+
+
+def test_real_truncated_chunked_response_is_a_safe_protocol_error(monkeypatch):
+    wire = truncated_chunked_wire()
+    with actual_response(wire) as response:
+        assert response.status == 200
+        with pytest.raises(IncompleteRead):
+            response.read(module.MAX_INPUT_BYTES + 1)
+
+    class Opener:
+        def open(self, *args, **kwargs):
+            return actual_response(wire)
+
+    monkeypatch.setattr(module, "build_opener", lambda *args: Opener())
+    with pytest.raises(AuditError, match="remote_protocol_failed"):
+        module.fetch(module.entity_url(["Q1"]))
+
+
+def test_cli_real_truncated_chunked_response_has_complete_failed_receipt(tmp_path):
+    output = tmp_path / ".pubburi" / "truncated-response"
+    # Use the real CLI parser/main and HTTPResponse decoder; only the opener is in-memory.
+    program = f"""
+import io
+from http.client import HTTPResponse
+import pubburi_recommendation.wikidata_collect as module
+wire = {truncated_chunked_wire()!r}
+class Socket:
+    def makefile(self, mode):
+        return io.BytesIO(wire)
+class Opener:
+    def open(self, *args, **kwargs):
+        response = HTTPResponse(Socket())
+        response.begin()
+        return response
+module.build_opener = lambda *args: Opener()
+raise SystemExit(module.main())
+"""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            program,
+            "--manifest",
+            str(ROOT / "sources/wikidata-structured.json"),
+            "--ids",
+            "Q1",
+            "--output-dir",
+            str(output),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 2
+    assert result.stderr.strip() == "Wikidata collection failed: remote_protocol_failed"
+    assert "Traceback" not in result.stderr and "authored contract" not in result.stderr
+    receipt = json.loads((output / "receipt.json").read_text())
+    assert receipt["accepted"] is False and receipt["error_code"] == "remote_protocol_failed"
+    assert (
+        not (output / "entities.json").exists()
+        and not (output / "normalized-records.json").exists()
+    )
 
 
 def test_offline_cli_replays_without_claiming_live_acquisition(tmp_path):

@@ -32,3 +32,19 @@
   전체 코드 발췌/문서 정리 뒤 Ruff/저장소/차이 검사를 다시 통과했다. 성능 수치로 사용하지 않는다.
 - 공통 파서 fix와 수집 기능은 서로 검토 가능한 한국어 커밋으로 나눈다. PR/최신리뷰/CI/병합은
   조정자가 처리하며 원천 보류를 구현 완료/서비스 카탈로그 확보로 바꾸지 않는다.
+
+## PR12 정식 P2 — 잘린 HTTP 응답
+
+- 최신 head4afa43c의 Codex P2는 `HTTPResponse.read`의 IncompleteRead가 처리되지 않아
+  traceback/exit1·error_code가 비어 있는 실패 receipt로 남는 문제를 지적했다.
+- 실제 HTTPResponse에 정상 HTTP200/JSON 헤더·완전한 자체 JSON data chunk와 누락된 종료 chunk를
+  넣어 IncompleteRead를 확인했다. 예외 stub뿐 아니라 decoder/fetch/실제 CLI 진입에서 수정 전
+  예외 누출·exit1을 재현했다. 실제 제공자의 응답을 다시 요청하거나 운영 장애로 주장하지 않는다.
+- HTTPException은 OSError와 다른 계층이므로 fetch에서 고정 AuditError(remote_protocol_failed)로
+  변환한다. 실패 receipt의 acceptedfalse/error_code·CLI exit2/안전 진단·원문/정제 미생성을 검증한다.
+- 기존139d9d0·4afa43c는 보존하고 별도 한국어 fix 커밋을 작성한다. 외부 댓글/reply·native Resolve·
+  최신 head 재리뷰/CI·merge는 조정자가 처리한다. 원천 권리/수집/카탈로그 품질 상태는 그대로다.
+- 수정 후 수집38회귀·전체 `check.sh`의 pytest259·B0/B1각8/8·새 runtime-only wheel의 source
+  성공/maxlag/깊은JSON 재생·legacy감사/B1 fit·health/B0/OpenAPI·중복ID422를 통과했다. 기존
+  TestClient 경고1건은 같다. 예외/fetch/실제 CLI의 세 수정 전 실패가 고정 진단/실패 상태로 바뀐
+  로컬 회귀이며 원천 서비스의 장애율·추천 품질·성능 개선으로 표현하지 않는다.

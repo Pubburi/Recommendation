@@ -5,6 +5,7 @@ import datetime
 import hashlib
 import json
 import sys
+from http.client import HTTPException
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlencode, urlsplit
@@ -84,6 +85,8 @@ def fetch(url: str) -> tuple[bytes, int]:
             if len(content) > MAX_INPUT_BYTES:
                 raise AuditError("input_exceeds_10_mib")
             return content, response.status
+    except HTTPException as error:
+        raise AuditError("remote_protocol_failed") from error
     except (HTTPError, URLError, TimeoutError, OSError) as error:
         raise AuditError("remote_transport_failed") from error
 

@@ -60,6 +60,10 @@ offline 모드/권리 승인 경계를 검증한다. 실패한 새 snapshot이 �
 않는지 확인한다. 실제 원천 maxlag와 기존4항목 재생 결과는 [수집 기록](WIKIDATA-COLLECTION.md)으로
 별도 보존하며 실제 상품 부재·카탈로그 학습 완료로 해석하지 않는다.
 
+실제 `HTTPResponse` decoder에 종료 chunk가 누락된 자체 wire를 제공해 `IncompleteRead`를
+재현하고 fetch·별도 프로세스의 실제 CLI parser/main이 고정 protocol 진단·exit2·완성 실패
+receipt를 남기며 원문/정제 파일을 생성하지 않는지 확인한다. 네트워크·외부 원천 요청은 없다.
+
 ## 독립 고정 시나리오
 
 단위 테스트 뒤 `scripts/evaluate_baseline.py`가 버전 고정 fixture를 ASGI 앱으로 실행하고,
