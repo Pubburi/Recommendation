@@ -84,3 +84,4 @@ models/
 *.pth
 *.onnx
 .ipynb_checkpoints/
+reports/
