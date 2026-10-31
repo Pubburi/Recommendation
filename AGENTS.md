@@ -10,7 +10,7 @@
 
 ## Delivery and automation
 
-- Follow the approved delivery contract in Backend docs/DELIVERY-PLAN.md (the sibling checkout or its GitHub main). Deadline: 2027-02-05 inclusive Asia/Seoul; no new implementation, commits or merges from 2027-02-06 00:00.
+- Follow this repo's docs/DATA-AND-MODEL-PLAN.md and the latest approved planning in this chat/private context as the canonical recommendation delivery plan. Own data sources, collection/cleaning, catalog/features, models, training/evaluation, experiments and related design/tests here. Backend owns its business database, authentication/product APIs and search/index integration; its delivery docs are integration references rather than the recommendation plan. Deadline: 2027-02-05 inclusive Asia/Seoul; no new implementation, commits or merges from 2027-02-06 00:00.
 - All R01–R08 and F01–F12 are required; P1/P2 determines order only. Keep chatbot, mobile implementation, real payments/shipping and AWS resource creation outside this work. AWS requires a later user instruction.
 - Resume the current chat every two hours. Read latest planning, docs/plans, Git, PR reviews and CI. Prefer finishing verifiable product work over repeated audits.
 - Check active task ownership and acquire this repo's ignored .pubburi/automation-lease using Backend/scripts/automation_lease.py. Never steal a live lease or overwrite user work. Preserve .pubburi/ and private context; never commit or print their sensitive contents.
