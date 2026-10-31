@@ -8,6 +8,12 @@
 - Do not commit datasets, model weights, .venv/, credentials or generated distributions.
 - Use PRs and Conventional Commits. Mobile implementation is separately owned.
 
+## 커밋·PR 작성
+
+- [협업 규칙](CONTRIBUTING.md)에 따라 `feat:`, `fix:`, `test:`, `ci:`, `docs:` 등의 영어 유형과 한국어 제목·필요한 본문을 사용한다. 식별자·제품 이름은 원문을 유지할 수 있다.
+- 한 커밋은 한 가지 검토 가능한 목적을 담고 필요한 구현·테스트·문서를 함께 묶는다. 무관한 모델/데이터·리팩터링·의존성 변경은 분리하며 각 커밋을 빌드·검증 가능한 상태로 유지한다. WIP·빈 커밋·파일별 억지 분할은 하지 않는다.
+- PR 제목과 최종 Squash 제목도 한국어 Conventional Commit 형식으로, 필요한 Squash 본문도 한국어로 작성한다. 기존 Squash 방식을 유지하며 main의 독립 변경 단위는 PR부터 나눈다. 과거 병합 이력은 재작성하지 않는다.
+
 ## Delivery and automation
 
 - Follow this repo's docs/DATA-AND-MODEL-PLAN.md and the latest approved planning in this chat/private context as the canonical recommendation delivery plan. Own data sources, collection/cleaning, catalog/features, models, training/evaluation, experiments and related design/tests here. Backend owns its business database, authentication/product APIs and search/index integration; its delivery docs are integration references rather than the recommendation plan. Deadline: 2027-02-05 inclusive Asia/Seoul; no new implementation, commits or merges from 2027-02-06 00:00.
