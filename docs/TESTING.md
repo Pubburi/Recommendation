@@ -30,6 +30,9 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
 11. 같은 자체 snapshot/receipt로 `package_identity_audit`를 runtime-only `python -I`에서 실제
     실행한다. 문자열 GTIN 체크·포장 필드 부족·완성 receipt와 매핑/fit승격0을 확인한다.
     외부 GTIN 할당 조회나 실제 주류 카탈로그를 CI에서 사용하지 않는다.
+12. 별도 자체 container payload의 offline accepted receipt/명세를 `source_catalog`의 실제
+    runtime-only CLI에 전달한다. source-only 필드/provenance·원래 혼합 분류/hold·명시 scope와
+    완성 receipt, 업무 ID/매핑/wire export/서비스 fit 비승격을 확인한다. 외부 검수 URL은 fetch하지 않는다.
 
 HTTP 과정에 DB·AWS·모델·외부 AI API 환경변수를 전달하지 않는다. 8000 포트를 점유하지 않고
 본인 서버 프로세스와 임시 환경만 정리한다. 현재 검증 대상은 Linux/macOS이며 CI는 Ubuntu다.
@@ -91,6 +94,12 @@ snapshot/receipt/검수 해시와 revision 결속·고정 진단과 자동 매�
 자체 checksum 통과와 실제 원천4항목의 [별도 관측](PACKAGE-IDENTITY-AUDIT.md)은 구분한다.
 
 ## 독립 고정 시나리오
+
+`tests/test_source_catalog.py`는 허구 사실과 고정 수동 명세로 원천/provenance·한정 mixed scope·
+미확인 값·모순/변경 입력·ID/검수 링크·UTC를 검증한다. 미선택 item의 qualified GTIN 충돌도
+선택한 item의 보류를 우회하지 못한다. 실제 subprocess CLI의 새 ignored 출력/기존 결과 보존과
+부분 쓰기 실패의 incomplete receipt·원문/개인 경로 비노출을 확인한다. 이것은 외부 페이지
+권리/진실성 인증이나 서비스 상품 매핑·추천 학습/관련성 검증이 아니다.
 
 단위 테스트 뒤 `scripts/evaluate_baseline.py`가 버전 고정 fixture를 ASGI 앱으로 실행하고,
 `scenario_evaluation`이 생산용 점수/필터 helper와 분리해 결과를 검사한다. `tests/test_scenario_evaluation.py`는

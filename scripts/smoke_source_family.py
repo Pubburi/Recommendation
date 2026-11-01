@@ -5,6 +5,8 @@ import json
 import subprocess
 from pathlib import Path
 
+from smoke_source_catalog import smoke_source_catalog
+
 
 def smoke_source_family(python: Path, work: Path, manifest: Path) -> None:
     def write(name, payload):
@@ -183,3 +185,4 @@ def smoke_source_family(python: Path, work: Path, manifest: Path) -> None:
         or package_receipt["completed"] is not True
     ):
         raise RuntimeError("The installed wheel confused package evidence with SKU approval")
+    smoke_source_catalog(python, work, manifest, entities["Q1"])
