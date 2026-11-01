@@ -84,6 +84,12 @@ ODbL/DBCL·이미지 별도 조건과 API 사용 전 usage form 안내를 확인
 | DAT03 | AI 평가 명세 / BE·FE 입력·계정 연동 | P1 · 2026-11-29 | DAT01·C03, BE04/R01 공동 계약 | [고정 사실 명세·독립 검사기](EVALUATION.md) 증가분 구현. B0의 제약/순서와 모델 관련성을 구분하고 해시·전체 케이스·오류 주입 검증. 실제 SKU·관련성 명세와 시연 계정/찜/피드백 저장·권한·삭제·화면 연동은 미완료 |
 | DAT04 | AI / BE·FE 검증 지원 | P1 · 2027-01-20 | DAT02·DAT03 평가 명세, AI03과 공동 구현 | [실제 업무DEMO1 fit](REVIEWED-CATALOG-FIT.md)·고정9사실과 이전 상품군3/2를 보존. [새 실명 상품군6개4fit/2transform·고정 스타일 사실 검색](SOURCE-FAMILY-EXPERIMENT.md)을 실행했다. 양성1질의/후보4·양성0질의1의 분모/OOV·수치unknown을 구분한다. 사용자 선호·서비스 SKU 품질/최종 평가·Backend B1 연동은 미완료 |
 
+[미관측 제조사 cohort](SOURCE-FAMILY-COHORT.md)는 기존 허용 snapshot2개의 상품군11개/
+source 제조사 관계2개를 별도 authority/검수 그대로 연결했다. 한 제조사5fit·다른6transform에서
+5×7/rank5와 text 지원1/6·zero vector5/6을 관측했다. positive1질의/후보5의 사실 지표와
+나머지5질의의 생략 분모/원순위를 구분한다. 새 원천 획득·서비스 SKU/업무 매핑 승격이 아니며
+기존 별도 DEMO1 fit·API parser 오류 재현과 grain/분모를 합산하지 않는다. 전체 AI03은 미완료다.
+
 DAT01/02의 추가 [포장 식별 도구](PACKAGE-IDENTITY-AUDIT.md)는 accepted source receipt와
 GTIN integrity·수치 단위/unknown·명시 포장/class 혼합·수동 hash/revision 검수를 분리한다.
 새 목적 표본4항목의 체크숫자 통과4/4·같은 item의 용기/GTIN/용량/도수 조합1/4를 확인했다.
