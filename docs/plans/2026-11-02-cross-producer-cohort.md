@@ -13,7 +13,7 @@
   대신 거절하고 그룹·제조사 관계가 fit/transform을 넘지 않게 한다.
 - 17:45:04 UTC에 facts/그룹·5fit/6transform·query/gold/cutoff와 전체 spec hash를 첫 fit 전에
   동결했다. 새6개는 source 수량의 단위/포장 문맥 부족으로 unknown을 유지한다. 실제5×7/
-  rank5·학습 도수5/용량0·변환 양쪽수량0관측을 기록했다. 미관측 producer6/6 OOV·text
+  rank5·학습 도수5/용량0·변환 양쪽수량0관측을 기록했다. 변환 상품군6/6의 producer 토큰OOV·text
   zero5/6/nonzero1/6과 positive1/zero-positive5의 분모/원순위를 함께 남긴다.
 - 최종 같은 입력 두 보고서 전체·fingerprint/원 frozen hash를 재현했다. 이전 단일제조사
   실험과 데이터/분할이 달라 전후 품질/성능 비교로 합산하지 않는다. source class 사실 검색은

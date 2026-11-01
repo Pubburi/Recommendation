@@ -50,7 +50,7 @@ source-backed 업무 DEMO1 fit과 분리한다.
 
 학습 전에 사실/분할/질의/정답·hash를 동결하고 한 제조사5개 fit·다른 제조사6개 transform을
 실행했다. 실제5×7/rank5, 학습 도수5관측·용량0, 변환 도수/용량은 모두unknown이다.
-미관측 제조사6개의 producer 토큰은 모두OOV였고 class까지OOV인5개는 text zero vector였다.
+미관측 제조사 한 곳의 상품군6개에서 producer 토큰은 모두OOV였고 class까지OOV인5개는 text zero vector였다.
 공유 class가 있는1개만 지원했다. 수량·맛/향을 추정하거나 제조사 token을 임의 공통값으로
 치환해 점수/커버리지를 만들지 않았다.
 
