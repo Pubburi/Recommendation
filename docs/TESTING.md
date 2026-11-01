@@ -26,7 +26,9 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
    CLI로 확인한다. CI는 원천 네트워크를 호출하지 않으며 재생을 신규 수집/카탈로그 품질로 쓰지 않는다.
 10. `source_family_experiment`는 자체3항목을 실제 수집 CLI로 offline 재생한 영수증/검수/hash와
     연결해 새 wheel의 runtime-only `python -I`에서 실제2fit/1transform을 실행한다. 학습 어휘·
-    OOV·용량 미지원·fixture 표시를 확인하며 원문·학습 파라미터는 artifact에 포함하지 않는다.
+    OOV·용량 미지원·fixture 표시와 동결 사실 질의의 양성0 지표 생략을 확인한다. 같은 격리
+    패키지에서 직접 작성한 양성 순위의 독립 지표 계산도 검증하며 원문·학습 파라미터는
+    artifact에 포함하지 않는다.
 11. 같은 자체 snapshot/receipt로 `package_identity_audit`를 runtime-only `python -I`에서 실제
     실행한다. 문자열 GTIN 체크·포장 필드 부족·완성 receipt와 매핑/fit승격0을 확인한다.
     외부 GTIN 할당 조회나 실제 주류 카탈로그를 CI에서 사용하지 않는다.
@@ -161,6 +163,12 @@ ASGI 무응답/드립의 절대 deadline·누적 chunk/끊긴 연결은 두 POST
 새 출력·고정 진단·원자 게시·기존/경쟁 파일 보존도 확인한다. 이 직접 작성 회귀와
 [실제 CC0 상품군 fit 관측](measurements/2026-11-01-source-family-fit.md)은 별개다. 추천 순위/
 관련성·서비스 SKU·사람의 선호를 이 검사로 검증했다고 주장하지 않는다.
+
+`tests/test_source_family_evaluation.py`는 직접 쓴 exact-class 정답으로 Recall/NDCG 계산·
+후보 전체/중복·score 유한성/동점·학습/변환 경계·불명/자기 질의/거짓 양성/음성 선언을 검사한다.
+양성0 질의는 지표 생략과 macro 분모를 보존하고, held-out 스타일 변경이 학습 파라미터를
+바꾸지 않으며 OOV와 동점으로 남는지 확인한다. [실제 새 상품군 관측](measurements/2026-11-01-source-family-fact-evaluation.md)은
+원천 사실 검색 관련성의 목적 표본이며 사용자 선호·서비스 B0/B1 품질 검증이 아니다.
 
 근거: [uv export/build](https://docs.astral.sh/uv/reference/cli/),
 [Python isolated mode](https://docs.python.org/3.12/using/cmdline.html#cmdoption-I).

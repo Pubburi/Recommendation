@@ -124,6 +124,16 @@ def smoke_source_family(python: Path, work: Path, manifest: Path) -> None:
             "fit_groups": ["family-a", "family-b"],
             "transform_groups": ["family-c"],
             "expected_facts": facts,
+            "retrieval_cases": [
+                {
+                    "case_id": "authored-unseen-style",
+                    "query_id": "Q3",
+                    "candidate_ids": ["Q1", "Q2"],
+                    "relevant_ids": [],
+                    "cutoffs": [1, 2],
+                    "fact_basis": "Authored Q99 differs from both declared candidate classes.",
+                }
+            ],
         },
     )
     output = work / ".pubburi" / "family-fit.json"
@@ -148,8 +158,33 @@ def smoke_source_family(python: Path, work: Path, manifest: Path) -> None:
         != ["instance_of:Q10", "instance_of:Q11", "producer:Q20"]
         or report["transformed"][0]["unknown_tokens"] != ["instance_of:Q99"]
         or report["fitted_parameters"]["numeric_fit"]["volume_ml"]["active"]
+        or report["ranking_metrics"]["status"] != "not_calculated"
+        or report["ranking_metrics"]["query_count"] != 1
+        or report["ranking_metrics"]["positive_label_queries"] != 0
+        or report["ranking_metrics"]["omitted_no_positive_queries"] != 1
     ):
         raise RuntimeError("The installed wheel violated source-family fit/transform boundaries")
+    # Inspect an independently authored positive ranking, without fitting or synthesizing gold.
+    subprocess.run(
+        [
+            str(python),
+            "-I",
+            "-c",
+            "from pubburi_recommendation.source_family_evaluation import "
+            "FamilyRetrievalCase, inspect_retrieval; "
+            "case=FamilyRetrievalCase(case_id='authored-positive',query_id='Q3',"
+            "candidate_ids=['Q1','Q2'],relevant_ids=['Q2'],cutoffs=[1],"
+            "fact_basis='Authored exact class relation, not real source observations.'); "
+            "result=inspect_retrieval(case,[{'source_record_id':'Q2','score':1.0},"
+            "{'source_record_id':'Q1','score':0.0}]); "
+            "assert result['reference_metrics']['at_k']['1']=={'recall':0,'ndcg':0}; "
+            "assert result['representation_metrics']['at_k']['1']=={'recall':1,'ndcg':1}",
+        ],
+        cwd=work,
+        check=True,
+        timeout=10,
+        stdout=subprocess.DEVNULL,
+    )
     package_output = work / ".pubburi" / "package-audit"
     subprocess.run(
         [
