@@ -35,3 +35,18 @@
   본문 제한·프로덕션10초408도 성공했다. 기존 TestClient deprecation 경고1개는 남는다.
 - PR 생성·최신 head CI/Codex·구체 미해결 지적/native 해결·병합/main CI·브랜치 정리는
   조정자가 담당하며 이 로컬 검증/모델 실행을 서비스 품질·전체 AI03 완료로 표시하지 않는다.
+
+## 명시 관계 메타데이터 경계 보강
+
+- 조정자 읽기 검토에서 P31/P176 bucket과 명시 mainsnak.property/datatype의 모순을 놓치는
+  경계를 지적했다. authored 원문의 property를 다르게 바꾸고 collector receipt/review/hash까지
+  다시 맞춘 입력이 여전히 관계로 승인되는 것을 먼저 실패 재현했다. 실제11원천의 결함이라고
+  주장하지 않는다.
+- 명시 property는 해당 bucket과 같고 datatype은 wikibase-item이어야 한다. 기존 최소형
+  authored/저장 형태의 생략은 bucket·entity-valued 관계로 처리하는 호환성을 보존하되 명시
+  모순은 거절한다. 빠진 metadata를 원문에 덧쓰거나 추정한 제조사로 바꾸지 않는다.
+- 두 property/두 metadata 모순의 전체 authority 재검수와 직접 관계 회귀를 추가했다.
+  source 코어/평가 focused64개가 통과했으며 원11개 명세·모델/관측·평가 분모는 바꾸지 않는다.
+- 보강 뒤 실제11개를 다시 실행한 전체 보고서가 이전 두 최종 보고서와 동일했고 frozen hash도
+  유지됐다. 최신 `./scripts/check.sh`는 pytest528개·Ruff/format·새 sdist/wheel runtime-only
+  cohort/기존 CLI·실제 HTTP 계약까지 모두 통과했다. 기존 TestClient 경고1개는 남는다.

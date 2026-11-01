@@ -93,6 +93,10 @@ def checked_relation_ids(entity: dict, prop: str) -> list[str]:
             or not isinstance(qualifiers, dict)
             or qualifiers
             or snak.get("snaktype") != "value"
+            # Minimal authored/legacy shapes omit redundant snak metadata. Explicit
+            # contradictions must not be treated as a relation merely from its bucket.
+            or ("property" in snak and snak["property"] != prop)
+            or ("datatype" in snak and snak["datatype"] != "wikibase-item")
             or not isinstance(data, dict)
             or data.get("type") != "wikibase-entityid"
             or not isinstance(qid, str)

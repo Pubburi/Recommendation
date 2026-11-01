@@ -171,7 +171,9 @@ ASGI 무응답/드립의 절대 deadline·누적 chunk/끊긴 연결은 두 POST
 `tests/test_source_family_cohort.py`는 별도 authored collector receipt/review로 다중 snapshot을
 연결한다. 각 hash/accepted/revision·검수 grain, source ID 중복·같은 raw 재분할·unknown/
 공유 producer·group 교차를 거절하고 unqualified entity-valued P31/P176과 고정 사실을
-대조한다. held-out 수치 변경에도 fit 파라미터가 불변이고 기존 출력은 원천 읽기/재학습 전에
+대조한다. 명시 snak property/datatype이 모순인 원문은 collector receipt/review/hash를 다시
+맞춰도 관계 근거로 승인되지 않는지 확인한다. 최소형 metadata 생략은 기존대로 허용한다.
+held-out 수치 변경에도 fit 파라미터가 불변이고 기존 출력은 원천 읽기/재학습 전에
 보존하는지 확인한다. [실제11상품군/2제조사 관측](measurements/2026-11-02-cross-producer-cohort.md)은
 별도이며 CI의 authored corpus를 실제 카탈로그나 서비스 추천 품질로 쓰지 않는다.
 

@@ -16,6 +16,9 @@
 - 선택 항목은 이름이 있는 검수 product_family다. P31/P176은 원문의 normal/preferred·
   unqualified·entity-valued 관계와 명시 사실을 대조한다. 이름으로 제조사를 추정하거나
   source ID를 업무 ID로 바꾸지 않는다. 관계가 미확인/문맥 의존/모순이면 별도 검수가 필요하다.
+  최소형/기존 authored 입력은 중복적인 snak `property`/`datatype` 생략을 유지하지만, 원문에
+  명시됐다면 현재 P31/P176 bucket 및 `wikibase-item`과 일치해야 한다. 모순을 버리거나
+  원문에 없는 메타데이터를 보충 저장하지 않는다. 수집 accepted/hash 일치가 관계 사실을 승인하지 않는다.
 - `split_policy=unseen_producer`는 학습/변환의 source P176 관계가 모두 알려져 있고 양쪽에
   겹치지 않아야 한다. 기존 family group 교차 금지도 유지한다. 이는 해당 snapshot의 명시 관계
   분리이지 실제 기업집단/위탁 생산/레시피 독립성의 보증이 아니다.

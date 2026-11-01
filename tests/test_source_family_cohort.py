@@ -188,7 +188,16 @@ def test_matching_file_hashes_cannot_override_receipt_revision_or_family_review(
 
 
 @pytest.mark.parametrize(
-    "mutation", ["rank", "qualifiers", "empty-invalid-qualifiers", "type", "numeric-id"]
+    "mutation",
+    [
+        "rank",
+        "qualifiers",
+        "empty-invalid-qualifiers",
+        "type",
+        "numeric-id",
+        "property",
+        "datatype",
+    ],
 )
 def test_producer_holdout_requires_explicit_consistent_source_relations(mutation):
     row = relation("Q20")
@@ -200,10 +209,41 @@ def test_producer_holdout_requires_explicit_consistent_source_relations(mutation
         row["qualifiers"] = []
     elif mutation == "type":
         row["mainsnak"]["datavalue"]["type"] = "string"
+    elif mutation == "property":
+        row["mainsnak"]["property"] = "P31"
+    elif mutation == "datatype":
+        row["mainsnak"]["datatype"] = "string"
     else:
         row["mainsnak"]["datavalue"]["value"]["numeric-id"] = True
     with pytest.raises(AuditError, match="relation_requires_review"):
         checked_relation_ids({"claims": {"P176": [row]}}, "P176")
+
+
+@pytest.mark.parametrize("prop", ["P31", "P176"])
+@pytest.mark.parametrize("field,bad_value", [("property", "P999"), ("datatype", "string")])
+def test_rehashed_receipts_cannot_approve_contradictory_relation_metadata(
+    tmp_path, prop, field, bad_value
+):
+    spec, manifest, paths = inputs(tmp_path)
+    data = spec.model_dump()
+    source, _, review = paths["holdout"]
+    payload = json.loads(source.read_text())
+    payload["entities"]["Q3"]["claims"][prop][0]["mainsnak"][field] = bad_value
+    source.write_text(json.dumps(payload))
+    # The collector's format acceptance and matching bytes still do not approve relation facts.
+    output = tmp_path / ".pubburi" / "modified-replay"
+    receipt = collect(manifest, ["Q3"], output, source)
+    assert receipt["accepted"] is True
+    checked = json.loads(review.read_text())
+    checked["input_sha256"] = sha(source)
+    review.write_text(json.dumps(checked))
+    receipt_path = output / "receipt.json"
+    paths["holdout"] = (source, receipt_path, review)
+    data["snapshot_bindings"][1].update(
+        input_sha256=sha(source), receipt_sha256=sha(receipt_path), review_sha256=sha(review)
+    )
+    with pytest.raises(AuditError, match="relation_requires_review"):
+        load_cohort(CohortExperiment.model_validate(data), manifest, paths)
 
 
 def test_heldout_facts_do_not_change_fit_parameters_and_existing_output_precedes_reads(
