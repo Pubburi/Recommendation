@@ -82,7 +82,7 @@ ODbL/DBCL·이미지 별도 조건과 API 사용 전 usage form 안내를 확인
 | DAT01 | AI 정본 / 조정자·BE 검수 | P0 · 2026-11-08 | C03와 공동 | CC0 소량 표본·[기존80시드/80자산 감사](LEGACY-SEED-AUDIT.md) 및 [고정 GET/receipt](WIKIDATA-COLLECTION.md) 구현. 이전maxlag 보존 후 정상복구로 새 고유entity7개 확보·그중6개 상품군/브랜드 검수. 판매SKU/fit승격0, 시드/이미지 근거·aT 획득·허용 서비스 카탈로그는 미완료 |
 | DAT02 | AI 수집·정제 / BE 업무 스키마 연동 | P1 · 2026-11-26 | DAT01·F03 | APIerror/ID/revision·불변snapshot/재생→단위/unknown·기존 시드 격리 도구와 [기본 라벨 보존](measurements/2026-11-01-default-labels.md) 구현. 동일6항목·revision 결측3/6→0/6, 새 raw 해시에 이전검수 보류. 검수 판매SKU·legacy fit승격0, 실제 카탈로그/전체 완료는 아님 |
 | DAT03 | AI 평가 명세 / BE·FE 입력·계정 연동 | P1 · 2026-11-29 | DAT01·C03, BE04/R01 공동 계약 | [고정 사실 명세·독립 검사기](EVALUATION.md) 증가분 구현. B0의 제약/순서와 모델 관련성을 구분하고 해시·전체 케이스·오류 주입 검증. 실제 SKU·관련성 명세와 시연 계정/찜/피드백 저장·권한·삭제·화면 연동은 미완료 |
-| DAT04 | AI / BE·FE 검증 지원 | P1 · 2027-01-20 | DAT02·DAT03 평가 명세, AI03과 공동 구현 | [B1](CONTENT-MODEL.md)의 허구 회귀와 별도 상품군3fit/2transform을 보존. [실제 원천 기반 업무DEMO1개 fit](REVIEWED-CATALOG-FIT.md)·고정9사실/제약을 실행했다. known-catalog1상품/1그룹·상수 수량/주종1어휘 한계를 명시하며 카탈로그 확대·다중 그룹 일반화/독립 관련성/최종 평가·Backend B1 연동은 미완료 |
+| DAT04 | AI / BE·FE 검증 지원 | P1 · 2027-01-20 | DAT02·DAT03 평가 명세, AI03과 공동 구현 | [실제 업무DEMO1 fit](REVIEWED-CATALOG-FIT.md)·고정9사실과 이전 상품군3/2를 보존. [새 실명 상품군6개4fit/2transform·고정 스타일 사실 검색](SOURCE-FAMILY-EXPERIMENT.md)을 실행했다. 양성1질의/후보4·양성0질의1의 분모/OOV·수치unknown을 구분한다. 사용자 선호·서비스 SKU 품질/최종 평가·Backend B1 연동은 미완료 |
 
 DAT01/02의 추가 [포장 식별 도구](PACKAGE-IDENTITY-AUDIT.md)는 accepted source receipt와
 GTIN integrity·수치 단위/unknown·명시 포장/class 혼합·수동 hash/revision 검수를 분리한다.
@@ -112,6 +112,12 @@ unknown 맛/향을 유지하며 가격·분류/탐색 가용성의 업무 시연
 기록은 역사 상태로 보존하고 이번 실제 원천 기반 업무 매핑/known-catalog fit1과 구분한다.
 순위 품질·일반화/최종 평가·실판매/재고·전체 AI03은 미완료다. 신규 원천 발견1회는 해당
 can/bottle/volume/ABV 조건에서 기존1ID만 반환해 신규0이며 전체 원천의 부족 추정은 아니다.
+
+후속 [실제 상품군 사실 평가](plans/2026-11-01-source-family-fact-evaluation.md)는 다른 발견 조건으로
+8항목(기존1/신규7)을 확보해6개 명시 상품군을4fit/2transform으로 검수/학습했다. 도수 단위와
+포장 qualifier는 unknown을 유지했다. 학습 전 선언한 같은 P31 사실 검색은 양성1질의/후보4의
+소규모 관측이며 입력 특성을 공유하는 사실 정답이다. 사용자 선호나 서비스 순위 품질로 바꾸지
+않고, 양성0질의1의 OOV/동점과 지표 생략·macro 분모를 남긴다. 이번 신규 서비스 매핑은0이다.
 
 ## 추천 모델을 개발하는 순서
 

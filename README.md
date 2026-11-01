@@ -43,7 +43,7 @@
 | 고정 시나리오 검사 | 수동 기대 사실·명세/응답 해시를 고정하고 추천 엔진과 분리해 제약·중복·결측·이유·후보 부족 확인 |
 | 콘텐츠 추천 HTTP | POST /v1/recommendations/content → 요청 카탈로그의 TF-IDF·관측 수치 fit/점수·실제 기여. 입력·모델/사용자 상태를 저장하지 않고 무정보·OOV·제약 fallback 구분 |
 | 오프라인 콘텐츠 모듈 | 학습군 fit/변환과 명시 취향/선택 상품 유사도. HTTP의 known-catalog 표현을 신규 상품 일반화·실카탈로그 품질 평가와 구분 |
-| 원천 상품군 표현 실험 | 검수 CC0 상품군을 source ID로 분리해 TF-IDF·관측 수치 실제 fit, 그룹 분할·unknown/OOV·차원 검사. 판매 SKU·Backend ID·서비스 추천 품질과 구분 |
+| 원천 상품군 표현 실험 | 검수 CC0 상품군의 fit/transform·unknown/OOV·차원 검사와 사전 고정 스타일 사실 검색 평가. 판매 SKU·Backend ID·사용자 선호/서비스 품질과 구분 |
 | 검수 업무 카탈로그 fit | 실제 원천 사실과 업무 DEMO 매핑에 기존 B1을 실행하고 고정 사실·제약으로 B0와 비교. 단일 상품/상수 수량의 한계와 품질·일반화 미완료를 구분 |
 | API 문서 | FastAPI 자동 생성 /docs와 /openapi.json |
 | 독립 실행 | DB·모델 파일·외부 AI 키 없이 기동 |

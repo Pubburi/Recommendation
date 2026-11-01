@@ -27,6 +27,11 @@ from pubburi_recommendation.catalog_audit import (
 )
 from pubburi_recommendation.collection_snapshot import verify_collection_snapshot
 from pubburi_recommendation.content_model import atomic_tokens, digest
+from pubburi_recommendation.source_family_evaluation import (
+    FamilyRetrievalCase,
+    aggregate_retrieval,
+    inspect_retrieval,
+)
 
 SourceId = Annotated[str, StringConstraints(pattern=r"^Q[1-9][0-9]{0,30}$")]
 Group = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=128)]
@@ -62,6 +67,7 @@ class FamilyExperiment(ContractModel):
     fit_groups: list[Group] = Field(min_length=1, max_length=1000)
     transform_groups: list[Group] = Field(min_length=1, max_length=1000)
     expected_facts: dict[SourceId, FamilyFacts] = Field(min_length=2, max_length=1000)
+    retrieval_cases: list[FamilyRetrievalCase] = Field(default_factory=list, max_length=1000)
 
     @model_validator(mode="after")
     def frozen_partition(self) -> Self:
@@ -74,6 +80,24 @@ class FamilyExperiment(ContractModel):
             raise ValueError("partition_must_cover_exact_family_groups")
         if set(self.expected_facts) != set(self.family_groups):
             raise ValueError("manual_facts_must_cover_exact_selected_families")
+        if len({case.case_id for case in self.retrieval_cases}) != len(self.retrieval_cases):
+            raise ValueError("retrieval_case_ids_must_be_unique")
+        for case in self.retrieval_cases:
+            if (
+                case.query_id not in self.family_groups
+                or self.family_groups[case.query_id] not in transform
+                or any(
+                    qid not in self.family_groups or self.family_groups[qid] not in fit
+                    for qid in case.candidate_ids
+                )
+            ):
+                raise ValueError("retrieval_queries_require_transform_and_candidates_require_fit")
+            query_classes = set(self.expected_facts[case.query_id].instance_of_ids)
+            # Check manually declared exact-P31 judgments against facts, never against scores.
+            for qid in case.candidate_ids:
+                related = bool(query_classes & set(self.expected_facts[qid].instance_of_ids))
+                if related != (qid in case.relevant_ids):
+                    raise ValueError("declared_relevance_conflicts_with_exact_source_class_facts")
         return self
 
 
@@ -190,6 +214,30 @@ def fit_representation(spec: FamilyExperiment, records: list[dict], hashes: dict
         if matrix is None or shape[0] * shape[1] > 1_000_000
         else int(np.linalg.matrix_rank(matrix.toarray()))
     )
+    retrieved = []
+    for case in spec.retrieval_cases:
+        query = (
+            None
+            if vectorizer is None
+            else vectorizer.transform([tokens(spec.expected_facts[case.query_id])])
+        )
+        similarities = (
+            np.zeros(len(fit_ids)) if query is None else (matrix @ query.T).toarray().ravel()
+        )
+        scores = dict(zip(fit_ids, similarities, strict=True))
+        if any(not math.isfinite(float(value)) for value in similarities):
+            raise AuditError("nonfinite_retrieval_similarity")
+        rows = [
+            {"source_record_id": qid, "score": min(1.0, max(0.0, float(scores[qid])))}
+            for qid in case.candidate_ids
+        ]
+        rows.sort(key=lambda row: (-row["score"], row["source_record_id"]))
+        retrieved.append(inspect_retrieval(case, rows))
+    ranking_metrics = (
+        aggregate_retrieval(retrieved)
+        if retrieved
+        else {"status": "not_calculated", "reason": "no_relevance_judgments"}
+    )
     return {
         "schema_version": 1,
         "algorithm": ALGORITHM,
@@ -213,7 +261,7 @@ def fit_representation(spec: FamilyExperiment, records: list[dict], hashes: dict
         "fit_checks": fit_checks,
         "passed_contract": all(fit_checks.values()),
         "transformed": transformed,
-        "ranking_metrics": {"status": "not_calculated", "reason": "no_relevance_judgments"},
+        "ranking_metrics": ranking_metrics,
         "svd": {"fitted": False, "decision": "not_adopted_without_downstream_evaluation"},
         "limitations": [
             "not_service_sku_or_backend_id_mapping",
