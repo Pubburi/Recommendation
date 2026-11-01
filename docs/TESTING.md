@@ -6,6 +6,12 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
 
 ## 배포 산출물 검증
 
+`tests/test_exploration.py`는 허구 카탈로그로 기존 B1 점수/기여·hard 제약 보존, 같은 그룹 제한,
+MMR 선택값과 관련성 floor, unknown의 보수 처리·상위100 한계·부족/콜드스타트·요청 격리를 검증한다.
+새 탐색 endpoint의 엄격한 정책·body cap/deadline·중복 키/원래 media별 문법 오류·startup 경계를
+확인한다. 설치된 새 wheel은 실제 exploration HTTP·OpenAPI·고정 오류·production10초 부분 본문408을
+확인한다. 허구 조건의 그룹 수/순서 차이를 실제 사용자 품질이나 속도 개선으로 해석하지 않는다.
+
 `tests/test_volume_context.py`는 자체 상품군/정의·별도 offline receipt로 P2234 수량과 단일 P518
 문맥의 연결·정확 단위 변환·동일 family_group을 확인한다. 정상 family scalar unknown을 유지하며
 단위 namespace·수량/qualifier 메타·중복/충돌·다중 context·원천/정의 각각의 hash/revision/검수·
