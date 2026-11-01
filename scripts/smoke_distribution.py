@@ -14,6 +14,8 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import ProxyHandler, Request, build_opener
 
+from smoke_source_family import smoke_source_family
+
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_HEALTH = {"status": "ok", "service": "pubburi-recommendation"}
 
@@ -300,6 +302,8 @@ def main(progress: dict[str, str]) -> None:
                 raise RuntimeError(
                     "The installed wheel treated a source error as an accepted catalog"
                 )
+        progress["stage"] = "isolated-source-family-fit-cli"
+        smoke_source_family(python, work, source_manifest)
         progress["stage"] = "isolated-legacy-inventory-cli"
         # Only tiny authored literals/byte signatures, never the real legacy seed or its images.
         legacy_manifest = work / "legacy-manifest.json"
