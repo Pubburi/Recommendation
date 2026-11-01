@@ -12,6 +12,11 @@ from pubburi_recommendation.content_api import (
     ContentRecommendationResponse,
     recommend_content,
 )
+from pubburi_recommendation.exploration import (
+    ExplorationRequest,
+    ExplorationResponse,
+    recommend_exploration,
+)
 from pubburi_recommendation.request_limits import CatalogRequestLimit
 
 app = FastAPI(
@@ -68,3 +73,16 @@ def baseline(request: RecommendationRequest) -> RecommendationResponse:
 def content(request: ContentRecommendationRequest) -> ContentRecommendationResponse:
     """Fit this request's explicit catalog and rank it without retaining model/user state."""
     return recommend_content(request)
+
+
+@app.post(
+    "/v1/recommendations/exploration",
+    response_model=ExplorationResponse,
+    responses={
+        413: {"description": "Catalog request exceeds 524288 bytes"},
+        408: {"description": "Catalog request body timed out"},
+    },
+)
+def exploration(request: ExplorationRequest) -> ExplorationResponse:
+    """Select a bounded diverse pool without relaxing B1 relevance or hard constraints."""
+    return recommend_exploration(request)

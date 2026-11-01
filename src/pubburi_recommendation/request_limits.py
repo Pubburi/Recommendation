@@ -14,7 +14,11 @@ Send = Callable[[Message], Awaitable[None]]
 ASGIApp = Callable[[Message, Receive, Send], Awaitable[None]]
 MAX_CATALOG_REQUEST_BYTES = 512 * 1024
 CATALOG_BODY_TIMEOUT_SECONDS = 10.0
-CATALOG_PATHS = {"/v1/recommendations/baseline", "/v1/recommendations/content"}
+CATALOG_PATHS = {
+    "/v1/recommendations/baseline",
+    "/v1/recommendations/content",
+    "/v1/recommendations/exploration",
+}
 
 
 def json_media_type(scope: Message) -> bool:
