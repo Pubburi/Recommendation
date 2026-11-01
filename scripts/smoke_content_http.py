@@ -9,6 +9,46 @@ from urllib.parse import urlsplit
 PATH = "/v1/recommendations/content"
 
 
+def verify_duplicate_json_http(base_url: str) -> None:
+    target = urlsplit(base_url)
+    for endpoint in ("baseline", "content"):
+        group = ',"sku_group":"authored"' if endpoint == "content" else ""
+        product = '{"product_id":1,"available":true,"abv_percent":40' + group + "}"
+        bodies = [
+            '{"catalog":['
+            + product
+            + '],"constraints":{"max_abv_percent":5,"max_abv_percent":50}}',
+            '{"catalog":['
+            + product.replace('"product_id":1', '"product_id":1,"product_id":2')
+            + "]}",
+        ]
+        for body in bodies:
+            data = body.encode()
+            media = "application/json" if endpoint == "baseline" else "application/vnd.pubburi+json"
+            with socket.create_connection((target.hostname, target.port), timeout=10) as connection:
+                connection.sendall(
+                    (
+                        f"POST /v1/recommendations/{endpoint} HTTP/1.1\r\nHost: {target.netloc}\r\n"
+                        f"Content-Type: {media}\r\nContent-Length: {len(data)}\r\n"
+                        "Connection: close\r\n\r\n"
+                    ).encode()
+                    + data
+                )
+                response = HTTPResponse(connection)
+                response.begin()
+                result = json.loads(response.read(4096))
+                if response.status != 422 or result != {
+                    "detail": [
+                        {
+                            "type": "duplicate_json_key",
+                            "loc": ["body"],
+                            "msg": "Catalog JSON object keys must be unique",
+                        }
+                    ]
+                }:
+                    raise RuntimeError("Installed API accepted ambiguous catalog JSON")
+
+
 def verify_content_http(base_url: str, request_json) -> None:
     # The first nonempty request lazily imports the fit runtime. This is a client bound,
     # not a claim that a CPU worker is cancelled/completed after a server-side timeout.
@@ -20,6 +60,7 @@ def verify_content_http(base_url: str, request_json) -> None:
     schema = request_json(base_url, "/openapi.json")
     if not set(schema["paths"][PATH]["post"]["responses"]) >= {"200", "408", "413", "422"}:
         raise RuntimeError("Installed wheel omitted content/error OpenAPI contracts")
+    verify_duplicate_json_http(base_url)
     body = {
         "catalog": [
             {

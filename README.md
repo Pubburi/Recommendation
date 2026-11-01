@@ -194,76 +194,72 @@ def collect(
         raise
 ~~~
 
-### 후보 부족 때도 필수 조건을 유지하는 기본 추천
+### JSON 해석부터 필수 조건과 상품 ID를 보존한 추천
 
 #### 문제
 
-사용자 행동이나 학습 모델이 없을 때도 기본 목록이 필요하다. 이때 목록 개수를 채우려고 예산·도수·관심 없음 조건을 완화하거나, 누락된 값을 0으로 취급하면 요청한 조건과 다른 상품을 제시할 수 있다. 기존 모델의 장애를 수정한 사례가 아니라 첫 추천 계약에서 방지해야 할 문제다.
+도수 상한을 `5`와 `50`으로 중복 선언한 원문이 B0/B1 모두에서 HTTP200으로 처리돼40도 상품을 반환했다. 상품 ID도 같은 객체에서 중복되면 마지막 ID로 바뀌었다. 실제 서비스 사고 이력이 아니라 기존 서버에 직접 보낸 허구 입력에서 발견한 계약 결함이다.
 
 #### 원인
 
-순위와 필수 조건을 함께 다루면 점수가 높은 상품이나 먼저 들어온 상품이 조건 확인보다 앞서 선택될 수 있다. 미확인 가격·도수는 실제 0원·0%와 의미가 다르고, 입력 순서에는 인기나 선호를 입증하는 근거가 없다.
+JSON decoder가 같은 이름의 마지막 값만 남긴 뒤 Pydantic에 전달했다. 이후 필터는 이미 덮인 상한50을 정상 적용하므로 타입·범위 검사나 조건 우선 필터만으로 원래 요청의 모호성을 발견할 수 없었다. 첫 값을 사용자 의도라고 선택하는 것 역시 근거가 없다.
 
 #### 해결
 
-판매 상태·제외 ID·주종·가격/도수 조건을 먼저 검사하고, 통과 후보만 ID 오름차순으로 정렬한 뒤 limit을 적용했다. unknown은 요청한 조건을 확인할 수 없으면 제외한다. 결과가 부족하면 조건을 완화하지 않고 빈 결과와 사유를 반환한다. 이유 코드는 실제 적용한 필터만 설명하며 선호 점수로 포장하지 않는다.
+기존512KiB·10초 수신 검사 뒤 object별 decoded 필드명 중복을 검사하고 schema·순위/fit 진입 전에 고정422로 거절했다. 같은 값의 중복과 escape로 표기한 동등 이름도 포함한다. 다른 상품 객체에 같은 필드명이 있는 정상 입력은 허용하며 진단에는 중복 이름·값을 넣지 않는다. JSON/+json·Content-Type 생략 처리와 정상 필수 조건·결측/제외 정책은 유지한다.
 
 #### 결과
 
-요청에 가격/도수 조건이 있으면 미확인 속성의 상품이 통과하지 않고, 0원·0%는 경계값으로 처리한다. 카탈로그 입력 순서를 바꿔도 결과 순서가 같으며 제한 개수보다 적은 후보도 그대로 반환한다. 이는 직접 작성한 가상 입력으로 확인한 계약 동작이다. 사용자 선호 품질·모델 학습·실측 성능 개선이나 Backend 통합을 의미하지 않는다.
+중복 도수 상한과 상품 ID를 마지막 값으로 승인하는 경로를 막았다. 같은 정상 상한 요청은 기존처럼 조건 밖 상품을 제외하고, 모델/health의 기동 경계도 유지한다. 이는 입력 의미 보존의 수정이며 추천 선호 품질·실사용 자연 오류율·실측 속도 개선이 아니다.
 
 #### 대체안/회고
 
-입력 순서를 유지하면 구현은 단순하지만 원천별 순서에 결과가 의존한다. 인기순은 근거 있는 행동 데이터가 필요하고, 부족한 결과를 채우는 조건 완화는 명시 요구를 위반한다. 먼저 결정적 B0를 제공하고 이후 B1 콘텐츠 모델을 같은 필수 조건·후보 집합에서 비교하도록 경계를 정했다.
+첫 값 또는 마지막 값을 택하면 구현은 간단하지만 어떤 값이 의도인지 확정할 수 없다. 같은 값만 허용하면 클라이언트의 중복 생성 결함이 남는다. 전체 중복을 거절하는 대신 bounded decoder pass가 추가되는 CPU/메모리 비용을 수용했다. malformed syntax·인코딩/깊이는 기존 framework의4xx 경로가 처리하며,10초 수신 예산을 parser/CPU fit의 취소 보장으로 표현하지 않는다.
 
 #### 코드
 
-필수 조건·결측·순서의 핵심 처리다. [실제 엔진](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/baseline.py) · [내부 API 계약](docs/BASELINE-API.md)
+원문을 다시 내보내지 않는 중복 검사와 수신 게이트 뒤의 고정422 처리다. [실제 입력 경계](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/request_limits.py) · [B0 계약](docs/BASELINE-API.md) · [B1 계약](docs/CONTENT-API.md)
 
 ~~~python
-def within_range(
-    value: float | int | None, lower: float | int | None, upper: float | int | None
-) -> bool:
-    if lower is None and upper is None:
+def duplicate_json_keys(body: bytes) -> bool:
+    def unique_object(pairs):
+        values = {}
+        for key, value in pairs:
+            if key in values:
+                raise DuplicateCatalogKey()
+            values[key] = value
+        return values
+
+    try:
+        # Object hooks see decoded names, so escaped equivalent keys cannot evade this check.
+        # Discard this bounded preflight tree; FastAPI still owns schema/numeric validation.
+        json.loads(body, object_pairs_hook=unique_object)
+    except DuplicateCatalogKey:
         return True
-    if value is None:
-        return False
-    return (lower is None or value >= lower) and (upper is None or value <= upper)
+    except (ValueError, UnicodeError, RecursionError):
+        # Malformed encodings/syntax/depth keep the framework's existing client-error behavior.
+        # This is not a decoder-success signal and none can enter the recommendation engine.
+        pass
+    return False
+~~~
 
+미들웨어는 크기·수신 기한을 확인해 본문을 모은 다음 아래 분기를 실행한다.
 
-def recommend_baseline(request: RecommendationRequest) -> RecommendationResponse:
-    constraints = request.constraints
-    categories = set(constraints.categories)
-    excluded = set(constraints.exclude_product_ids)
-    eligible = [
-        product
-        for product in request.catalog
-        if product.available
-        and product.product_id not in excluded
-        and (not categories or product.category in categories)
-        and within_range(product.price_krw, constraints.min_price_krw, constraints.max_price_krw)
-        and within_range(
-            product.abv_percent, constraints.min_abv_percent, constraints.max_abv_percent
-        )
-    ]
-    # Eligibility precedes limit/order, so scarce candidates never relax constraints.
-    eligible.sort(key=lambda product: product.product_id)
-    reasons: list[Reason] = ["available"]
-    if categories:
-        reasons.append("category_match")
-    if constraints.min_price_krw is not None or constraints.max_price_krw is not None:
-        reasons.append("price_within_range")
-    if constraints.min_abv_percent is not None or constraints.max_abv_percent is not None:
-        reasons.append("abv_within_range")
-    reasons.append("deterministic_baseline")
-    return RecommendationResponse(
-        items=[
-            RecommendationItem(product_id=product.product_id, reasons=reasons.copy())
-            for product in eligible[: request.limit]
-        ],
-        eligible_count=len(eligible),
-        fallback_reason=None if eligible else "no_eligible_products",
-    )
+~~~python
+if json_media_type(scope) and duplicate_json_keys(buffered):
+    await JSONResponse(
+        status_code=422,
+        content={
+            "detail": [
+                {
+                    "type": "duplicate_json_key",
+                    "loc": ["body"],
+                    "msg": "Catalog JSON object keys must be unique",
+                }
+            ]
+        },
+    )(scope, receive, send)
+    return
 ~~~
 
 <a id="development"></a>

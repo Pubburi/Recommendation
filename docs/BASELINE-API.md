@@ -61,6 +61,12 @@
 
 모든 객체는 미정의 필드를 거절한다. min > max는 422다. 카테고리 문자열의 길이와 배열 수 외에
 원문 JSON도 **524,288 bytes(512 KiB)**까지 허용하며 초과하면 파싱 전에 413을 반환한다.
+같은 JSON 객체의 중복 필드명은 마지막 값을 선택하지 않고422 `duplicate_json_key`로 거절한다.
+escape를 푼 이름이 같거나 값이 같아도 거절하며 서로 다른 상품 객체에 같은 필드명이 있는 것은
+정상이다. JSON media type(`application/json`, `application/*+json`)과 Content-Type이 없는
+JSON 요청에 적용한다. 진단은 고정 type/loc/msg이고 중복 key/값·원문을 반사하지 않는다.
+512KiB 수신 후 별도 decoder pass를 수행하는 비용이 있으며 schema/비유한 수치·불완전 JSON/
+인코딩·깊이 오류는 기존 framework의4xx 검증 경로를 유지한다. 계산 속도 개선 주장은 없다.
 Content-Length가 없거나 여러 ASGI body 조각으로 전송해도 누적 크기를 확인한다.
 전체 본문 수신 예산은10초이며 초과하면408 고정 JSON을 반환한다. 조각별로 시간을 갱신하지
 않고 본문 수신 중 연결 종료가 확인되면 파싱/계산하지 않는다. 이는 본문 수신 예산이며 계산 시간의 보장은 아니다.

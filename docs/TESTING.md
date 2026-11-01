@@ -17,6 +17,7 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
    조건을 요구하는 미확인 가격·판매 불가 후보가 제외되고, 중복 ID 요청은 422인지 확인한다.
    B1 content POST도 실제 fit/기여·조건·OOV/빈/무정보·요청 격리·422/413과 production10초의
    실제 부분 HTTP 본문408을 확인한다. 시간 제한을 줄인 서버 설정으로 대체하지 않는다.
+   두 API의 모호한 중복 도수 조건/상품 ID 원문도 새 wheel의 실제 HTTP에서422로 거절한다.
 7. 새 wheel의 runtime-only `python -I`로 `content_experiment`를 실제 실행한다. 직접 작성한
    fixture의 vocabulary/IDF·수치 fit과 명시 상품군 분리·필수 조건 결과를 확인한다. 원문/모델을
    Git이나 artifact에 업로드하지 않으며 실제 상품 품질 평가로 표현하지 않는다.
@@ -139,6 +140,13 @@ Recall/NDCG는 미산출이며 사용자 선호 학습·실서비스 카탈로�
 [모듈·수식·실행 경계](CONTENT-MODEL.md)를 따른다.
 
 ## B1 요청 카탈로그 HTTP 계약
+
+`tests/test_request_json.py`는 두 추천 API의 동일 객체 중복 key·동일 값·escape 동등명·
+JSON/+json/Content-Type 생략·UTF8/16/32·수신 chunk 경계를 확인한다. 다른 객체의 같은 이름/
+문자열 내용은 허용하고, 원문/개인 key를 반사하지 않는 고정422·size 우선413·기존 불완전/
+깊이/잘못된 인코딩의4xx를 검증한다. 거절된 요청이 route/fit을 실행하거나 수치 라이브러리를
+시작 시 로드하지 않는지 별도 프로세스에서도 확인한다. [실제 전후 관측](measurements/2026-11-02-ambiguous-json.md)은
+허구 입력을 직접 HTTP로 재현한 정확성 실험이며 자연 오류율이나 성능/추천 품질 성과가 아니다.
 
 `tests/test_reviewed_catalog_fit.py`는 직접 작성한 facts/cases로 기존 모델의 실제 fit을 실행하고
 모순된 hash/시간/원천 kind/상품 사실·기대 통과 집합은 fit 전에 거절하는지 확인한다. 결과/

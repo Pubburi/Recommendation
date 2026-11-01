@@ -82,6 +82,11 @@ no_matching_features로 구분한다. 점수는 예측 만족 확률이나 추�
 카탈로그·태그·문자열·원문 상한으로 실행 입력을 제한한다.
 
 422 진단에는 type/loc/msg만 포함해 원문 카탈로그·비유한 값·개인 데이터를 다시 내보내지 않는다.
+같은 객체의 중복 JSON key는 마지막 필드로 덮어쓰기 전에422 `duplicate_json_key`로 거절한다.
+필수 조건·상품 ID뿐 아니라 동일 값의 중복/escape 동등 key도 포함하며 다른 상품 객체에서
+같은 이름을 쓰는 것은 허용한다. JSON/+json·Content-Type 없는 JSON의 bounded decoder
+검사는 fit/schema보다 앞서고, 고정 진단에는 key/값을 넣지 않는다. 기존 malformed/인코딩/깊이·
+비유한 수치/타입 검증 경로는 유지한다. 추가 decoder 비용과 수신/CPU fit 예산은 구분한다.
 기존 health/B0·프로세스 가용성 의미는 유지한다. 새 wheel의 실제 HTTP·부분 본문408·입력 오류와
 요청 간 격리는 [검증 안내](TESTING.md)에서 확인한다. 전후 지연/품질 개선을 주장하지 않는다.
 
