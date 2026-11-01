@@ -8,6 +8,10 @@ DB·외부 AI API 없이 직접 작성한 fixture로 fit/transform과 실패 경
 근거이며 서비스 카탈로그 학습·신규 상품 일반화 품질·AI03/DAT04 전체 완료를 뜻하지 않는다.
 상품 표현 학습은 사용자 선호 학습이나 협업 필터링과 다르다.
 
+별도 [원천 상품군 표현 실험](SOURCE-FAMILY-EXPERIMENT.md)은 실제 CC0 상품군5개를 source QID로
+3/2 분리해 표현을 fit했다. 이 실험은 이 문서의 서비스 SKU ContentProduct·추천 순위 모듈을
+사용하거나 변경하지 않으며 source 상품군 학습을 서비스 B1 fit 완료로 승격하지 않는다.
+
 ## 입력과 담당 경계
 
 - `ContentProduct`: B0의 `product_id/available/category/price_krw/abv_percent`에 `sku_group`,

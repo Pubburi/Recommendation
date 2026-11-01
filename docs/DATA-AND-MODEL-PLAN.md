@@ -69,6 +69,9 @@ aT의 여러 도수·용량과 제품 변형은 같은 SKU인지 확인한다. �
 직접 평가의 기준/평가자를 기록하고, 미확인 값은 unknown으로 보존한다. 상품명·도수·LLM 추정으로
 관능 점수를 만들어 관측값처럼 쓰지 않는다. 이미지·소개 문장·리뷰는 상품 사실 정보와 권리를 따로 판단한다.
 Open Food Facts 등 별도 DB/이미지 라이선스 의무가 있는 원천은 기본 원천으로 승인하지 않는다.
+2026-11-01의 [OFF 공식 API 문서](https://openfoodfacts.github.io/openfoodfacts-server/api/) 재검토는
+ODbL/DBCL·이미지 별도 조건과 API 사용 전 usage form 안내를 확인한 단계다. CC0와 동일하게
+취급하지 않았고 폼/계정/외부 연락·실제 데이터 수집을 진행하지 않아 기존 채택 상태는 유지한다.
 
 ## 데이터·학습 기술 작업
 
@@ -77,7 +80,7 @@ Open Food Facts 등 별도 DB/이미지 라이선스 의무가 있는 원천은 
 | DAT01 | AI 정본 / 조정자·BE 검수 | P0 · 2026-11-08 | C03와 공동 | CC0 소량 표본·[기존80시드/80자산 감사](LEGACY-SEED-AUDIT.md) 및 [고정 GET/receipt](WIKIDATA-COLLECTION.md) 구현. 이전maxlag 보존 후 정상복구로 새 고유entity7개 확보·그중6개 상품군/브랜드 검수. 판매SKU/fit승격0, 시드/이미지 근거·aT 획득·허용 서비스 카탈로그는 미완료 |
 | DAT02 | AI 수집·정제 / BE 업무 스키마 연동 | P1 · 2026-11-26 | DAT01·F03 | APIerror/ID/revision·불변snapshot/재생→단위/unknown·기존 시드 격리 도구와 [기본 라벨 보존](measurements/2026-11-01-default-labels.md) 구현. 동일6항목·revision 결측3/6→0/6, 새 raw 해시에 이전검수 보류. 검수 판매SKU·legacy fit승격0, 실제 카탈로그/전체 완료는 아님 |
 | DAT03 | AI 평가 명세 / BE·FE 입력·계정 연동 | P1 · 2026-11-29 | DAT01·C03, BE04/R01 공동 계약 | [고정 사실 명세·독립 검사기](EVALUATION.md) 증가분 구현. B0의 제약/순서와 모델 관련성을 구분하고 해시·전체 케이스·오류 주입 검증. 실제 SKU·관련성 명세와 시연 계정/찜/피드백 저장·권한·삭제·화면 연동은 미완료 |
-| DAT04 | AI / BE·FE 검증 지원 | P1 · 2027-01-20 | DAT02·DAT03 평가 명세, AI03과 공동 구현 | [오프라인 B1](CONTENT-MODEL.md)의 vocabulary/IDF·관측 수치 실제 fit, 필수 조건·기여·콜드스타트·상품군 분리 코드 증가분 구현. 현재 허구 fixture 회귀이며 실SKU0. 서비스 카탈로그 fit·독립 관련성/최종 평가·채택 근거·서버 연동은 미완료 |
+| DAT04 | AI / BE·FE 검증 지원 | P1 · 2027-01-20 | DAT02·DAT03 평가 명세, AI03과 공동 구현 | [서비스 B1](CONTENT-MODEL.md)은 허구 fixture 회귀·실SKU0. 별도 [실CC0 상품군 표현](SOURCE-FAMILY-EXPERIMENT.md)의3fit/2transform·어휘/IDF/관측 수치/누수·OOV/차원 검사를 실행. 상품군 표현과 서비스 SKU fit/품질을 구분하며 서비스 카탈로그·독립 관련성/최종 평가·채택 근거·서버 연동은 미완료 |
 
 ## 추천 모델을 개발하는 순서
 

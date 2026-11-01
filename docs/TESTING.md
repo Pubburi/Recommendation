@@ -22,6 +22,9 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
    감사한다. 실제80행/이미지는 CI가 읽지 않으며 결과가 자동 학습 승격을 만들지 않는지 확인한다.
 9. `wikidata_collect`는 자체 item payload의 성공 offline 재생·maxlag/깊은JSON 실패를 새 wheel의 실제
    CLI로 확인한다. CI는 원천 네트워크를 호출하지 않으며 재생을 신규 수집/카탈로그 품질로 쓰지 않는다.
+10. `source_family_experiment`는 자체3항목을 실제 수집 CLI로 offline 재생한 영수증/검수/hash와
+    연결해 새 wheel의 runtime-only `python -I`에서 실제2fit/1transform을 실행한다. 학습 어휘·
+    OOV·용량 미지원·fixture 표시를 확인하며 원문·학습 파라미터는 artifact에 포함하지 않는다.
 
 HTTP 과정에 DB·AWS·모델·외부 AI API 환경변수를 전달하지 않는다. 8000 포트를 점유하지 않고
 본인 서버 프로세스와 임시 환경만 정리한다. 현재 검증 대상은 Linux/macOS이며 CI는 Ubuntu다.
@@ -94,6 +97,16 @@ CI는 `reports/baseline-scenarios.json` 요약만 업로드하고 `baseline-resp
 고정 fixture의 B0/B1 순서 비교는 품질 개선이나 최종 holdout이 아니다. 독립 관련성 라벨이 없어
 Recall/NDCG는 미산출이며 사용자 선호 학습·실서비스 카탈로그 fit·HTTP B1/Backend 통합은 남아 있다.
 [모듈·수식·실행 경계](CONTENT-MODEL.md)를 따른다.
+
+## source 상품군의 별도 표현 실험
+
+`tests/test_source_family_experiment.py`는 수동 DF-IDF·관측 수치 범위, held-out 사실 변화 시
+학습 파라미터/fingerprint 불변, 그룹 교차/미지정·브랜드/SKU 비승격·사실 모순과 unknown/실제0·
+상수/빈 어휘·OOV를 검증한다. 실제 collector receipt를 써서 파일/검증 모델 해시를 구분하고
+권리·변경된 hash·API 오류/실패 영수증·모드/revision을 확인한다. 별도 프로세스 CLI는 비공개
+새 출력·고정 진단·원자 게시·기존/경쟁 파일 보존도 확인한다. 이 직접 작성 회귀와
+[실제 CC0 상품군 fit 관측](measurements/2026-11-01-source-family-fit.md)은 별개다. 추천 순위/
+관련성·서비스 SKU·사람의 선호를 이 검사로 검증했다고 주장하지 않는다.
 
 근거: [uv export/build](https://docs.astral.sh/uv/reference/cli/),
 [Python isolated mode](https://docs.python.org/3.12/using/cmdline.html#cmdoption-I).
