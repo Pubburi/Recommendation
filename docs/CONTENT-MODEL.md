@@ -1,8 +1,8 @@
 # B1 오프라인 상품 표현 fit
 
-`content_model`은 상품 표현을 **실제로 fit하는 메모리 내 모듈**이다. 현재 HTTP API는 기존 B0와
-health뿐이며 B1 서버 경로·모델 저장/로드·Backend 특성 API 연동은 아직 없다. 자동 수집·다운로드·
-DB·외부 AI API 없이 직접 작성한 fixture로 fit/transform과 실패 경계를 실행한다.
+`content_model`은 상품 표현을 **실제로 fit하는 메모리 내 모듈**이다. [B1 HTTP adapter](CONTENT-API.md)는
+명시한 각 요청 카탈로그를 지역적으로 fit/rank한다. 모델 저장/로드·Backend B1 연동은 아직 없고,
+자동 수집·다운로드·DB·외부 AI API 없이 직접 작성한 fixture로 HTTP와 fit/transform 경계를 검증한다.
 
 실제 감사한 CC0 표본의 검수 판매 SKU는 여전히 0개다. 이 증가분은 모델 코드가 동작한다는
 근거이며 서비스 카탈로그 학습·신규 상품 일반화 품질·AI03/DAT04 전체 완료를 뜻하지 않는다.
@@ -55,7 +55,9 @@ DB·외부 AI API 없이 직접 작성한 fixture로 fit/transform과 실패 경
 공유 특성이 전혀 없으면 `no_matching_features`와 B0 ID순서·0점을 반환한다. 후보 자체가 없으면
 `no_eligible_products`다. 이는 로컬 엔진의 대체 동작이며 Backend의 서버 지연/장애 fallback은 별도다.
 모델 fingerprint는 버전·학습 입력 해시·어휘/IDF·수치 fit 요약에 바인딩한다. 모델을 파일로 저장하거나
-HTTP 프로세스 시작 때 불러오지 않는다.
+HTTP 프로세스 시작 때 불러오지 않는다. HTTP adapter의 request_catalog fit은 카탈로그 검색의
+표현 학습이며 아래의 상품군 분리 실험과 다른 평가 grain이다. 기존 ContentResponse를 바꾸지 않고
+HTTP 응답만 usable representation 의미와 nullable fingerprint를 확장한다.
 
 ## 고정 fit/transform 시연
 
@@ -89,7 +91,8 @@ CLI는 `authored_model_fixture`만 받는다. 제공자가 검수하지 않은 �
 ## 후속 작업과 공식 근거
 
 검수 서비스 SKU 확보·실제 source-to-feature 매핑, 관련성 명세·개발/검증/최종 평가와 신규 상품
-평가, B1 HTTP·버전별 준비 상태/장애 계약·Backend/Frontend 연동은 남아 있다. TruncatedSVD는 현재의
+평가, 버전별 준비 상태/장애 계약·Backend/Frontend B1 연동은 남아 있다. B1 HTTP 연결 검증이
+실서비스 데이터 fit/품질 완료는 아니다. TruncatedSVD는 현재의
 작은 회귀 fixture로 채택하거나 기각하지 않았고, 충분한 실카탈로그 차원/다양성에서 비교한다.
 
 2026-11-01 확인한 [TF-IDF analyzer/IDF/L2](https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html),

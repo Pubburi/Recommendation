@@ -131,11 +131,12 @@ UCI 품질 예측은 선택적 별도 실험이며 카탈로그 추천 학습/�
 
 ## 검증과 인계
 
-현재 제공 HTTP 기능은 GET /health, 명시 카탈로그를 받는 POST /v1/recommendations/baseline의 B0
-결정적 기본순이다. [B0 계약](BASELINE-API.md)은 필수/제외 조건을 먼저 적용하며 학습·개인화 점수를
+현재 제공 HTTP 기능은 GET /health, POST /v1/recommendations/baseline의 B0 결정적 기본순과
+[POST /v1/recommendations/content](CONTENT-API.md)의 요청 카탈로그 B1 표현/순위다. B1 HTTP는
+허구 입력의 연결·상태 격리 검증이며 서비스 데이터 fit/관련성 평가는 아니다. [B0 계약](BASELINE-API.md)은 필수/제외 조건을 먼저 적용하며 학습·개인화 점수를
 제공하지 않는다. [B1 오프라인 모듈](CONTENT-MODEL.md)은 허구 입력에서 TF-IDF vocabulary/IDF와
 관측 수치 변환을 실제 fit하고 명시 취향/선택 상품 점수·기여·대체 동작을 계산한다. 상품군 학습/변환
-분리·누수 방지 코드는 회귀 검증이며 서비스 카탈로그 fit·독립 관련성/최종 평가·B1 HTTP·Backend
+분리·누수 방지 코드는 회귀 검증이며 서비스 카탈로그 fit·독립 관련성/최종 평가·Backend B1
 연동은 미완료다. 현재 SKU 부족을 fixture의 품질 성과로 대신하지 않는다.
 실제 작업의 계획·구현·검증·병합을 구분하고 결과와 미완료를 docs/plans 및 PR에 기록한다.
 

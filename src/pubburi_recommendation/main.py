@@ -7,11 +7,19 @@ from pubburi_recommendation.baseline import (
     RecommendationResponse,
     recommend_baseline,
 )
+from pubburi_recommendation.content_api import (
+    ContentRecommendationRequest,
+    ContentRecommendationResponse,
+    recommend_content,
+)
 from pubburi_recommendation.request_limits import CatalogRequestLimit
 
 app = FastAPI(
     title="Pubburi Recommendation",
-    description="Stateless constrained B0 baseline. No trained model or user preference learning.",
+    description=(
+        "Stateless constrained B0 and request-local B1 known-catalog representations. "
+        "No model persistence or user preference learning."
+    ),
     version="0.1.0",
 )
 app.add_middleware(CatalogRequestLimit)
@@ -39,8 +47,24 @@ def health() -> dict[str, str]:
 @app.post(
     "/v1/recommendations/baseline",
     response_model=RecommendationResponse,
-    responses={413: {"description": "Catalog request exceeds 524288 bytes"}},
+    responses={
+        413: {"description": "Catalog request exceeds 524288 bytes"},
+        408: {"description": "Catalog request body timed out"},
+    },
 )
 def baseline(request: RecommendationRequest) -> RecommendationResponse:
     """Filter an explicit catalog, then return an untrained product-ID baseline."""
     return recommend_baseline(request)
+
+
+@app.post(
+    "/v1/recommendations/content",
+    response_model=ContentRecommendationResponse,
+    responses={
+        413: {"description": "Catalog request exceeds 524288 bytes"},
+        408: {"description": "Catalog request body timed out"},
+    },
+)
+def content(request: ContentRecommendationRequest) -> ContentRecommendationResponse:
+    """Fit this request's explicit catalog and rank it without retaining model/user state."""
+    return recommend_content(request)

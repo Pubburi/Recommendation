@@ -14,6 +14,7 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import ProxyHandler, Request, build_opener
 
+from smoke_content_http import verify_content_http
 from smoke_source_family import smoke_source_family
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,7 +26,12 @@ def run(uv: str, *args: str, cwd: Path = ROOT, stdout: int | None = None) -> Non
 
 
 def request_json(
-    base_url: str, path: str, *, body: dict | None = None, expected_status: int = 200
+    base_url: str,
+    path: str,
+    *,
+    body: dict | None = None,
+    expected_status: int = 200,
+    timeout: float = 1,
 ) -> dict:
     # Local verification must not depend on a developer's HTTP proxy configuration.
     request = Request(
@@ -34,7 +40,7 @@ def request_json(
         headers={} if body is None else {"Content-Type": "application/json"},
     )
     try:
-        response = build_opener(ProxyHandler({})).open(request, timeout=1)
+        response = build_opener(ProxyHandler({})).open(request, timeout=timeout)
     except HTTPError as error:
         if error.code != expected_status:
             raise
@@ -138,7 +144,8 @@ def verify_http(python: Path, work: Path) -> None:
                 )
                 if not rejected.get("detail"):
                     raise RuntimeError("The installed wheel accepted duplicate catalog IDs")
-                print("Installed wheel passed isolated health, baseline and OpenAPI verification.")
+                verify_content_http(base_url, request_json)
+                print("Installed wheel passed isolated health, B0/B1 and OpenAPI verification.")
             except BaseException:
                 log.flush()
                 log.seek(0)
@@ -207,7 +214,11 @@ def main(progress: dict[str, str]) -> None:
         probe = (
             "import pathlib, sys; import pubburi_recommendation.main as m; "
             "assert pathlib.Path(m.__file__).resolve().is_relative_to("
-            "pathlib.Path(sys.prefix).resolve()), 'Wheel imported outside its isolated environment'"
+            "pathlib.Path(sys.prefix).resolve()), "
+            "'Wheel imported outside its isolated environment'; "
+            "m.app.openapi(); "
+            "assert 'sklearn' not in sys.modules and 'numpy' not in sys.modules, "
+            "'Health/OpenAPI startup imported numerical model libraries'"
         )
         subprocess.run([str(python), "-I", "-c", probe], cwd=work, check=True, timeout=10)
         progress["stage"] = "isolated-catalog-cli"
