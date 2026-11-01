@@ -54,15 +54,11 @@ class FamilyFacts(ContractModel):
         return self
 
 
-class FamilyExperiment(ContractModel):
+class FamilyPartition(ContractModel):
     schema_version: Literal[1]
     experiment_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{0,99}$")
     evidence_kind: Literal["reviewed_public_source", "authored_regression_fixture"]
     data_kind: Literal["reviewed_source_product_families"]
-    input_sha256: Hash
-    review_sha256: Hash
-    manifest_sha256: Hash
-    receipt_sha256: Hash
     family_groups: dict[SourceId, Group] = Field(min_length=2, max_length=1000)
     fit_groups: list[Group] = Field(min_length=1, max_length=1000)
     transform_groups: list[Group] = Field(min_length=1, max_length=1000)
@@ -101,6 +97,13 @@ class FamilyExperiment(ContractModel):
         return self
 
 
+class FamilyExperiment(FamilyPartition):
+    input_sha256: Hash
+    review_sha256: Hash
+    manifest_sha256: Hash
+    receipt_sha256: Hash
+
+
 def verify_receipt(
     receipt: dict, payload: dict, spec: FamilyExperiment, manifest_model_hash: str
 ) -> None:
@@ -113,7 +116,7 @@ def tokens(facts: FamilyFacts) -> list[str]:
     ]
 
 
-def fit_representation(spec: FamilyExperiment, records: list[dict], hashes: dict) -> dict:
+def fit_representation(spec: FamilyPartition, records: list[dict], hashes: dict) -> dict:
     by_id = {row["source_record_id"]: row for row in records}
     for qid, facts in spec.expected_facts.items():
         row = by_id.get(qid)

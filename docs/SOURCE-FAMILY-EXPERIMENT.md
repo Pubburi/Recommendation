@@ -66,6 +66,9 @@ Recall@k·NDCG@k를 계산한다. Recall 분모는 선언 양성 수, ideal DCG�
 선택했다. 양성1질의/후보4와 양성0질의1을 사전 고정한 목적 표본이며 무작위/대표 표본이 아니다.
 이 새6개는 같은 제조사여서 제조사 간 일반화를 평가하지 않는다.
 
+다음 [미관측 제조사 cohort](SOURCE-FAMILY-COHORT.md)는 별도 두 accepted snapshot을 각각
+검증해11상품군/2제조사를 연결한다. 이 단일 snapshot 계약을 유지하며 같은 fit/평가기를 재사용한다.
+
 TF-IDF4×5/rank4와 학습 부분만의 어휘/IDF를 확인했다. 도수는 source 단위가 공식 P2665의
 허용 volume-percent와 달랐고 용량은 포장별 qualifier가 있어 둘 다 unknown으로 보존했다.
 0–100 범위나 다른 웹페이지의 숫자만 보고 단위를 바꾸거나330mL와20L를 하나로 고르지 않았다.

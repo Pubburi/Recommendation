@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 
 from smoke_source_catalog import smoke_source_catalog
+from smoke_source_cohort import smoke_source_cohort
 
 
 def smoke_source_family(python: Path, work: Path, manifest: Path) -> None:
@@ -45,8 +46,30 @@ def smoke_source_family(python: Path, work: Path, manifest: Path) -> None:
             "lastrevid": 7,
             "labels": {"mul": {"value": "Authored family, not actual source data"}},
             "claims": {
-                "P31": [{"mainsnak": {"datavalue": {"value": {"id": row["instance_of_ids"][0]}}}}],
-                "P176": [{"mainsnak": {"datavalue": {"value": {"id": "Q20"}}}}],
+                "P31": [
+                    {
+                        "rank": "normal",
+                        "mainsnak": {
+                            "snaktype": "value",
+                            "datavalue": {
+                                "type": "wikibase-entityid",
+                                "value": {"id": row["instance_of_ids"][0]},
+                            },
+                        },
+                    }
+                ],
+                "P176": [
+                    {
+                        "rank": "normal",
+                        "mainsnak": {
+                            "snaktype": "value",
+                            "datavalue": {
+                                "type": "wikibase-entityid",
+                                "value": {"id": "Q20"},
+                            },
+                        },
+                    }
+                ],
                 "P2665": [
                     {
                         "rank": "normal",
@@ -220,4 +243,5 @@ def smoke_source_family(python: Path, work: Path, manifest: Path) -> None:
         or package_receipt["completed"] is not True
     ):
         raise RuntimeError("The installed wheel confused package evidence with SKU approval")
+    smoke_source_cohort(python, work, manifest, raw, receipt, review, facts)
     smoke_source_catalog(python, work, manifest, entities["Q1"])

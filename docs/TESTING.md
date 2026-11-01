@@ -30,6 +30,8 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
     OOV·용량 미지원·fixture 표시와 동결 사실 질의의 양성0 지표 생략을 확인한다. 같은 격리
     패키지에서 직접 작성한 양성 순위의 독립 지표 계산도 검증하며 원문·학습 파라미터는
     artifact에 포함하지 않는다.
+    별도 authored snapshot을 하나 더 검수해 `source_family_cohort` CLI의2fit/1transform·
+    제조사 분리·두 authority/변환 producer OOV·사실 평가를 같은 격리 wheel에서 실행한다.
 11. 같은 자체 snapshot/receipt로 `package_identity_audit`를 runtime-only `python -I`에서 실제
     실행한다. 문자열 GTIN 체크·포장 필드 부족·완성 receipt와 매핑/fit승격0을 확인한다.
     외부 GTIN 할당 조회나 실제 주류 카탈로그를 CI에서 사용하지 않는다.
@@ -165,6 +167,15 @@ ASGI 무응답/드립의 절대 deadline·누적 chunk/끊긴 연결은 두 POST
 고정408/413 또는 연결 종료로 처리한다. 요청 전달 fixture를 실제 서비스 SKU 학습/품질로 쓰지 않는다.
 
 ## source 상품군의 별도 표현 실험
+
+`tests/test_source_family_cohort.py`는 별도 authored collector receipt/review로 다중 snapshot을
+연결한다. 각 hash/accepted/revision·검수 grain, source ID 중복·같은 raw 재분할·unknown/
+공유 producer·group 교차를 거절하고 unqualified entity-valued P31/P176과 고정 사실을
+대조한다. 명시 snak property/datatype이 모순인 원문은 collector receipt/review/hash를 다시
+맞춰도 관계 근거로 승인되지 않는지 확인한다. 최소형 metadata 생략은 기존대로 허용한다.
+held-out 수치 변경에도 fit 파라미터가 불변이고 기존 출력은 원천 읽기/재학습 전에
+보존하는지 확인한다. [실제11상품군/2제조사 관측](measurements/2026-11-02-cross-producer-cohort.md)은
+별도이며 CI의 authored corpus를 실제 카탈로그나 서비스 추천 품질로 쓰지 않는다.
 
 `tests/test_source_family_experiment.py`는 수동 DF-IDF·관측 수치 범위, held-out 사실 변화 시
 학습 파라미터/fingerprint 불변, 그룹 교차/미지정·브랜드/SKU 비승격·사실 모순과 unknown/실제0·
