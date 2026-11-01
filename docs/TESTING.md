@@ -15,6 +15,8 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
 5. checkout 밖에서 `python -I`로 import 경로가 임시 환경에 있는지 확인하고 실제 Uvicorn을 실행한다.
 6. OS가 할당한 loopback 포트에서 `/health`·`/openapi.json`과 B0 추천 POST를 검증한다.
    조건을 요구하는 미확인 가격·판매 불가 후보가 제외되고, 중복 ID 요청은 422인지 확인한다.
+   B1 content POST도 실제 fit/기여·조건·OOV/빈/무정보·요청 격리·422/413과 production10초의
+   실제 부분 HTTP 본문408을 확인한다. 시간 제한을 줄인 서버 설정으로 대체하지 않는다.
 7. 새 wheel의 runtime-only `python -I`로 `content_experiment`를 실제 실행한다. 직접 작성한
    fixture의 vocabulary/IDF·수치 fit과 명시 상품군 분리·필수 조건 결과를 확인한다. 원문/모델을
    Git이나 artifact에 업로드하지 않으며 실제 상품 품질 평가로 표현하지 않는다.
@@ -28,6 +30,9 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
 
 HTTP 과정에 DB·AWS·모델·외부 AI API 환경변수를 전달하지 않는다. 8000 포트를 점유하지 않고
 본인 서버 프로세스와 임시 환경만 정리한다. 현재 검증 대상은 Linux/macOS이며 CI는 Ubuntu다.
+격리 import/OpenAPI 검사는 기존10초 제한을 유지하며 NumPy/sklearn 미로드를 확인한다. 첫
+nonempty B1 요청의 지연 로딩은 별도의 HTTP 클라이언트30초 한계에서 검사하고 기존 health/B0의
+1초 클라이언트 한계는 유지한다. 이것은 서비스 지연 개선이나 CPU 작업 취소의 보장이 아니다.
 성공한 새 배포 파일은 로컬 `dist/`에 보존한다. 생성물·runtime 요구사항·서버 로그는 Git에 추가하지 않는다.
 CI는 성공/실패와 무관하게 JUnit과 단계/결과만 담은 smoke JSON을 artifact로 7일 보관한다.
 원문 서버 로그·실제 환경변수·venv·데이터는 artifact에 포함하지 않는다. 보고서는 로컬 `reports/`에 생성되며 무시된다.
@@ -95,8 +100,19 @@ CI는 `reports/baseline-scenarios.json` 요약만 업로드하고 `baseline-resp
 나누어 8개 계약 시나리오를 실제 실행한다. 학습에 없는 태그·수치가 vocabulary/범위에 유입되지
 않는지 확인한다. `reports/content-fit-summary.json`만 7일 보관하고 원문·응답·어휘/IDF는 제외한다.
 고정 fixture의 B0/B1 순서 비교는 품질 개선이나 최종 holdout이 아니다. 독립 관련성 라벨이 없어
-Recall/NDCG는 미산출이며 사용자 선호 학습·실서비스 카탈로그 fit·HTTP B1/Backend 통합은 남아 있다.
+Recall/NDCG는 미산출이며 사용자 선호 학습·실서비스 카탈로그 fit·Backend B1 통합은 남아 있다.
 [모듈·수식·실행 경계](CONTENT-MODEL.md)를 따른다.
+
+## B1 요청 카탈로그 HTTP 계약
+
+`tests/test_content_api.py`는 허구 입력으로 실제 엔진의 HTTP 연결을 검증한다. 필수/제외·unknown/
+실제0·기여 합/이유·soft/hard 구분·빈/OOV/공유 특성 없음·빈/무정보 catalog의 usable representation,
+엄격 타입/상한·422원문 비노출·512KiB를 확인한다. 단독/순열·동시 요청에서 vocabulary/scaler/
+fingerprint와 결과가 다른 요청의 상태에 영향받지 않는지 검증하고 시작/health/B0 fit도 금지한다.
+새 프로세스의 main/OpenAPI에서 수치 라이브러리 미로드도 확인한다. 경량 계약을 분리하고 기존
+offline import 경로를 재노출해 서버 스키마 초기화가 학습 라이브러리 로딩을 요구하지 않게 한다.
+ASGI 무응답/드립의 절대 deadline·누적 chunk/끊긴 연결은 두 POST에 적용하며 parser/fit 진입 전에
+고정408/413 또는 연결 종료로 처리한다. 요청 전달 fixture를 실제 서비스 SKU 학습/품질로 쓰지 않는다.
 
 ## source 상품군의 별도 표현 실험
 
