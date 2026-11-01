@@ -206,6 +206,34 @@ def curate_catalog(
     return catalog, report
 
 
+def load_source_catalog(
+    manifest_path: Path, input_path: Path, receipt_path: Path, curation_path: Path
+) -> tuple[dict, dict]:
+    """Recompute the catalog from its authorities; never trust an edited projection alone."""
+    manifest_data, manifest_hash = read_json(manifest_path)
+    manifest = SourceManifest.model_validate(manifest_data)
+    if (
+        manifest.source_id != "wikidata-structured"
+        or manifest.license_label != "CC0-1.0"
+        or not manifest.local_structured_normalization
+    ):
+        raise AuditError("source_catalog_normalization_not_approved")
+    payload, input_hash = read_json(input_path)
+    receipt, receipt_hash = read_json(receipt_path)
+    model_hash = hashlib.sha256(manifest.model_dump_json().encode()).hexdigest()
+    records = verify_collection_snapshot(receipt, payload, input_hash, model_hash)
+    curation_data, curation_hash = read_json(curation_path)
+    curation = CatalogCuration.model_validate(curation_data)
+    hashes = {
+        "input_sha256": input_hash,
+        "receipt_sha256": receipt_hash,
+        "manifest_sha256": manifest_hash,
+        "curation_sha256": curation_hash,
+    }
+    _, source_rows = audit_packages(payload, records, hashes, curation.evidence_kind)
+    return curate_catalog(curation, source_rows, hashes)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("manifest", "input", "receipt", "curation", "output-dir"):
@@ -214,28 +242,9 @@ def main() -> int:
     try:
         if ".pubburi" not in args.output_dir.resolve().parts:
             raise AuditError("source_catalog_outputs_require_private_pubburi_directory")
-        manifest_data, manifest_hash = read_json(args.manifest)
-        manifest = SourceManifest.model_validate(manifest_data)
-        if (
-            manifest.source_id != "wikidata-structured"
-            or manifest.license_label != "CC0-1.0"
-            or not manifest.local_structured_normalization
-        ):
-            raise AuditError("source_catalog_normalization_not_approved")
-        payload, input_hash = read_json(args.input)
-        receipt, receipt_hash = read_json(args.receipt)
-        model_hash = hashlib.sha256(manifest.model_dump_json().encode()).hexdigest()
-        records = verify_collection_snapshot(receipt, payload, input_hash, model_hash)
-        curation_data, curation_hash = read_json(args.curation)
-        curation = CatalogCuration.model_validate(curation_data)
-        hashes = {
-            "input_sha256": input_hash,
-            "receipt_sha256": receipt_hash,
-            "manifest_sha256": manifest_hash,
-            "curation_sha256": curation_hash,
-        }
-        _, source_rows = audit_packages(payload, records, hashes, curation.evidence_kind)
-        catalog, report = curate_catalog(curation, source_rows, hashes)
+        catalog, report = load_source_catalog(
+            args.manifest, args.input, args.receipt, args.curation
+        )
         args.output_dir.mkdir(parents=True, exist_ok=False)
         write_receipt(args.output_dir, {"algorithm": ALGORITHM, "completed": False})
         for name, value in (("source-catalog.json", catalog), ("curation-report.json", report)):
@@ -244,7 +253,12 @@ def main() -> int:
             )
         write_receipt(
             args.output_dir,
-            {"algorithm": ALGORITHM, "completed": True, "hashes": hashes, "wire_exports": 0},
+            {
+                "algorithm": ALGORITHM,
+                "completed": True,
+                "hashes": catalog["hashes"],
+                "wire_exports": 0,
+            },
         )
         print(
             json.dumps(

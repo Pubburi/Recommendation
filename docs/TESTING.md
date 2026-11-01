@@ -33,6 +33,9 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
 12. 별도 자체 container payload의 offline accepted receipt/명세를 `source_catalog`의 실제
     runtime-only CLI에 전달한다. source-only 필드/provenance·원래 혼합 분류/hold·명시 scope와
     완성 receipt, 업무 ID/매핑/wire export/서비스 fit 비승격을 확인한다. 외부 검수 URL은 fetch하지 않는다.
+13. 그 authored source와 별도 authored 업무7/8필드 snapshot·명시 mapping을 새 wheel의
+    `business_export` CLI에서 처리한다. 생성한 exact B0/B1 요청 파일을 같은 격리 서버의
+    실제 HTTP에 보내 반환 ID를 확인한다. live Backend나 실제 source 매핑/품질 검증은 아니다.
 
 HTTP 과정에 DB·AWS·모델·외부 AI API 환경변수를 전달하지 않는다. 8000 포트를 점유하지 않고
 본인 서버 프로세스와 임시 환경만 정리한다. 현재 검증 대상은 Linux/macOS이며 CI는 Ubuntu다.
@@ -111,6 +114,12 @@ CI는 `reports/baseline-scenarios.json` 요약만 업로드하고 `baseline-resp
 [EVALUATION.md](EVALUATION.md)를 따른다. 이 ASGI runner는 실제 서버 간 통합 E2E가 아니다.
 
 ## B1 오프라인 fit·누수 경계
+
+`tests/test_business_export.py`는 strict ID·전체 응답/파일 hash·원천/업무 참조·그룹·quantity와
+unknown·무매핑 비추론·origin/capture/future/span/stale·검수 시각·중복과 명시 browse 선택을
+검증한다. CLI 파일 저장·완료 receipt/기존 결과 보존·원문/개인 경로 비노출도 확인한다.
+root가 실제 전용 업무 API로 생성/읽은 owned DEMO flow는 [별도 작업 근거](plans/2026-11-01-reviewed-business-export.md)다.
+시연 snapshot과 실제 허용 주류 매핑·사용자 관련성/서비스 fit 결과를 합산하지 않는다.
 
 `tests/test_content_model.py`는 vocabulary/수동 계산 IDF·관측 수치 범위의 실제 fit,
 한국어 한 글자/띄어쓰기 태그·맛/향 namespace, fit 미호출 transform, unknown과 실제0·분모/기여,
