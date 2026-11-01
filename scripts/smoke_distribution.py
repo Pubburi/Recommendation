@@ -145,6 +145,17 @@ def verify_http(python: Path, work: Path) -> None:
                 if not rejected.get("detail"):
                     raise RuntimeError("The installed wheel accepted duplicate catalog IDs")
                 verify_content_http(base_url, request_json)
+                # Send exact artifacts from the installed mapping/export CLI.
+                for filename, path in (
+                    ("b0-demo-request.json", "/v1/recommendations/baseline"),
+                    ("b1-demo-request.json", "/v1/recommendations/content"),
+                ):
+                    body = json.loads(
+                        (work / ".pubburi" / "business-export" / filename).read_text()
+                    )
+                    result = request_json(base_url, path, body=body, timeout=30)
+                    if [item["product_id"] for item in result["items"]] != [37]:
+                        raise RuntimeError("Installed wheel rejected its reviewed export contract")
                 print("Installed wheel passed isolated health, B0/B1 and OpenAPI verification.")
             except BaseException:
                 log.flush()

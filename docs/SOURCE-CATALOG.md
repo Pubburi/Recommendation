@@ -48,8 +48,9 @@ item의 qualified GTIN도 공유 식별자 충돌 검사에 포함한다. shared
 수동 scope로 기록한다. 입력 변경·검수 사실 모순·미지정 item·중복 문자열 ID는 실패한다.
 
 `backend_product_id` 등 업무 ID/가용성·외부 권리 승인 flag를 입력에 추가하는 것은 거절한다.
-이번 CLI에는 업무 매핑·B0/B1 요청 내보내기·fit이 없다. 실제 Backend snapshot과 명시적인
-매핑 계약을 확보한 후 별도 구현해야 하며, 현재 wire export와 서비스 fit 승격은 항상0이다.
+이번 CLI에는 업무 매핑·B0/B1 요청 내보내기·fit이 없다. 별도 [시연 export gate](BUSINESS-EXPORT.md)는
+업무 snapshot·명시 검수 매핑을 소비한다. 이 source-only 출력을 자동 승격하지 않으며 실제
+공개 원천의 실매핑·서비스 fit은 아직 미완료다.
 
 ## 출력과 실제 실행
 

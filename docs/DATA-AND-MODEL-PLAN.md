@@ -99,6 +99,12 @@ fit승격은0으로 유지하며, 일부 필드 확보를 DAT01/02 전체 완료
 서비스 SKU/실제 Backend 매핑·B0/B1 wire export·서비스 fit승격은0이다. DAT01/02/03 전체와
 실제 업무 snapshot/명시 매핑·독립 관련성 명세/서비스 B1 평가는 후속 조건으로 남는다.
 
+[업무 시연 export gate](BUSINESS-EXPORT.md)는 기존7/8필드 API snapshot과 source/전체응답
+hash·명시 ID/그룹·일치 수량·UTC 검수/freshness·origin 경계를 구현했다. 전용 업무 API의
+허구 DEMO상품1개로 명시 mapping→각 B0/B1 export1·실제 추천 HTTP를 검증했다. 이것은
+fixture 계약 증거다. 실제 CC0 후보1개와 기존 업무80개는 무매핑/export0이며 실제 서비스
+SKU/실매핑·실카탈로그 fit/관련성·DAT02 전체 완료는 아니다.
+
 ## 추천 모델을 개발하는 순서
 
 **AI03은 사용자 없이 가능한 카탈로그 기반 학습·비교로 확정한다.** 협업 필터링·행동 기반
