@@ -27,6 +27,9 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
 10. `source_family_experiment`는 자체3항목을 실제 수집 CLI로 offline 재생한 영수증/검수/hash와
     연결해 새 wheel의 runtime-only `python -I`에서 실제2fit/1transform을 실행한다. 학습 어휘·
     OOV·용량 미지원·fixture 표시를 확인하며 원문·학습 파라미터는 artifact에 포함하지 않는다.
+11. 같은 자체 snapshot/receipt로 `package_identity_audit`를 runtime-only `python -I`에서 실제
+    실행한다. 문자열 GTIN 체크·포장 필드 부족·완성 receipt와 매핑/fit승격0을 확인한다.
+    외부 GTIN 할당 조회나 실제 주류 카탈로그를 CI에서 사용하지 않는다.
 
 HTTP 과정에 DB·AWS·모델·외부 AI API 환경변수를 전달하지 않는다. 8000 포트를 점유하지 않고
 본인 서버 프로세스와 임시 환경만 정리한다. 현재 검증 대상은 Linux/macOS이며 CI는 Ubuntu다.
@@ -77,6 +80,15 @@ receipt를 남기며 원문/정제 파일을 생성하지 않는지 확인한다
 선언 길이보다 짧지만 완결된 JSON인 자체 응답도 같은 실패 경계를 검증한다. 정확한 길이·길이 없는
 EOF·정상 chunked의 성공을 보존하고, 잘못된/중복 Content-Length·길이와 전송 인코딩의 충돌·
 네이티브 decoder가 처리하지 않는 인코딩·상한 초과 선언을 본문 읽기 전에 거절하는지 확인한다.
+
+`tests/test_package_identity_audit.py`는 작은 자체 GTIN/원천 shape로8/12/13/14자리와 검증 숫자·
+ASCII/선행0/all-zero, qualifier/deprecated/다중/공유 식별자·브랜드/container 혼합을 확인한다.
+한쪽만 qualifier가 있는 활성 GTIN도 양쪽 공유키 보류가 되어 수동 후보로 우회하지 못하는지,
+deprecated 식별자를 활성 충돌로 잘못 집계하지 않는지도 확인한다.
+수량 statement의 rank/snak/type·문맥과 기존 단위/범위/다중 값 처리에서 unsupported 값이
+포장 근거가 되지 않는지 검증한다. 실제 CLI의 새 ignored 출력/완성 receipt·기존 결과 보존·
+snapshot/receipt/검수 해시와 revision 결속·고정 진단과 자동 매핑/fit 비승격도 확인한다.
+자체 checksum 통과와 실제 원천4항목의 [별도 관측](PACKAGE-IDENTITY-AUDIT.md)은 구분한다.
 
 ## 독립 고정 시나리오
 

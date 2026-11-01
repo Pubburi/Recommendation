@@ -61,6 +61,16 @@ def smoke_source_family(python: Path, work: Path, manifest: Path) -> None:
                 ],
             },
         }
+    # A self-authored checksum example, not a GS1 assignment or actual source product.
+    entities["Q1"]["claims"]["P3962"] = [
+        {
+            "rank": "normal",
+            "mainsnak": {
+                "snaktype": "value",
+                "datavalue": {"type": "string", "value": "12345670"},
+            },
+        }
+    ]
     raw = write("authored-families.json", {"success": 1, "entities": entities})
     collection = work / ".pubburi" / "family-collection"
     subprocess.run(
@@ -138,3 +148,38 @@ def smoke_source_family(python: Path, work: Path, manifest: Path) -> None:
         or report["fitted_parameters"]["numeric_fit"]["volume_ml"]["active"]
     ):
         raise RuntimeError("The installed wheel violated source-family fit/transform boundaries")
+    package_output = work / ".pubburi" / "package-audit"
+    subprocess.run(
+        [
+            str(python),
+            "-I",
+            "-m",
+            "pubburi_recommendation.package_identity_audit",
+            "--manifest",
+            str(manifest),
+            "--input",
+            str(raw),
+            "--receipt",
+            str(receipt),
+            "--evidence-kind",
+            "authored_regression_fixture",
+            "--output-dir",
+            str(package_output),
+        ],
+        cwd=work,
+        check=True,
+        timeout=10,
+        stdout=subprocess.DEVNULL,
+    )
+    package_report = json.loads((package_output / "audit-report.json").read_text())
+    package_receipt = json.loads((package_output / "receipt.json").read_text())
+    if (
+        package_report["entities"] != 3
+        or package_report["checksum_valid_claims"] != 1
+        or package_report["package_field_combination_entities"] != 0
+        or package_report["backend_mappings_approved"] != 0
+        or package_report["feature_fit_promotions"] != 0
+        or package_report["evidence_kind"] != "authored_regression_fixture"
+        or package_receipt["completed"] is not True
+    ):
+        raise RuntimeError("The installed wheel confused package evidence with SKU approval")
