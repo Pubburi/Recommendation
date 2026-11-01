@@ -36,6 +36,9 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
 13. 그 authored source와 별도 authored 업무7/8필드 snapshot·명시 mapping을 새 wheel의
     `business_export` CLI에서 처리한다. 생성한 exact B0/B1 요청 파일을 같은 격리 서버의
     실제 HTTP에 보내 반환 ID를 확인한다. live Backend나 실제 source 매핑/품질 검증은 아니다.
+14. 같은 명시 mapping에 학습 전 선언한 authored 사실/제약 명세를 적용해 `reviewed_catalog_fit`을
+    runtime-only `python -I`로 실행한다. 실제 B1 fit·B0 비교와 어휘/IDF/상수 수량 비활성·지표
+    미산출을 확인한다. CI는 실제 원천이나 모델 파라미터를 업로드하지 않는다.
 
 HTTP 과정에 DB·AWS·모델·외부 AI API 환경변수를 전달하지 않는다. 8000 포트를 점유하지 않고
 본인 서버 프로세스와 임시 환경만 정리한다. 현재 검증 대상은 Linux/macOS이며 CI는 Ubuntu다.
@@ -134,6 +137,11 @@ Recall/NDCG는 미산출이며 사용자 선호 학습·실서비스 카탈로�
 [모듈·수식·실행 경계](CONTENT-MODEL.md)를 따른다.
 
 ## B1 요청 카탈로그 HTTP 계약
+
+`tests/test_reviewed_catalog_fit.py`는 직접 작성한 facts/cases로 기존 모델의 실제 fit을 실행하고
+모순된 hash/시간/원천 kind/상품 사실·기대 통과 집합은 fit 전에 거절하는지 확인한다. 결과/
+기여·활성 조건/중복·fallback 오염과 기존 출력 재학습/덮어쓰기를 검사하며 같은 명세의 파라미터/
+결과 재현을 확인한다. 실제 원천 기반1상품의 관측과 fixture 회귀를 구분한다.
 
 `tests/test_content_api.py`는 허구 입력으로 실제 엔진의 HTTP 연결을 검증한다. 필수/제외·unknown/
 실제0·기여 합/이유·soft/hard 구분·빈/OOV/공유 특성 없음·빈/무정보 catalog의 usable representation,
