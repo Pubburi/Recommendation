@@ -83,6 +83,8 @@ EOF·정상 chunked의 성공을 보존하고, 잘못된/중복 Content-Length·
 
 `tests/test_package_identity_audit.py`는 작은 자체 GTIN/원천 shape로8/12/13/14자리와 검증 숫자·
 ASCII/선행0/all-zero, qualifier/deprecated/다중/공유 식별자·브랜드/container 혼합을 확인한다.
+한쪽만 qualifier가 있는 활성 GTIN도 양쪽 공유키 보류가 되어 수동 후보로 우회하지 못하는지,
+deprecated 식별자를 활성 충돌로 잘못 집계하지 않는지도 확인한다.
 수량 statement의 rank/snak/type·문맥과 기존 단위/범위/다중 값 처리에서 unsupported 값이
 포장 근거가 되지 않는지 검증한다. 실제 CLI의 새 ignored 출력/완성 receipt·기존 결과 보존·
 snapshot/receipt/검수 해시와 revision 결속·고정 진단과 자동 매핑/fit 비승격도 확인한다.

@@ -154,6 +154,33 @@ def test_mixed_brand_container_grain_and_shared_identifier_are_independent_holds
     assert rows[1]["gtin_claims"][0]["value"] == "00000012345670"
 
 
+def test_contextual_active_gtin_still_blocks_a_shared_identifier_on_the_other_item():
+    source = payload(
+        package(),
+        package("Q2", P3962=[claim("00000012345670", qualifiers={"P518": [{}]})]),
+    )
+    report, rows = inspect(source)
+    assert rows[1]["gtin_claims"][0]["structurally_usable"]
+    assert not rows[1]["gtin_claims"][0]["usable_without_context"]
+    assert report["shared_identifier_groups"] == 1
+    assert all("identifier_shared_across_source_items" in row["hold_reasons"] for row in rows)
+    with pytest.raises(AuditError, match="manual_candidate_conflicts_with_source_hold"):
+        inspect(source, review("candidate_for_manual_mapping"))
+
+
+def test_deprecated_identifier_does_not_create_an_active_collision():
+    source = payload(
+        package(),
+        package("Q2", P3962=[claim("00000012345670", rank="deprecated")]),
+    )
+    report, rows = inspect(source, review("candidate_for_manual_mapping"))
+    assert report["shared_identifier_groups"] == 0
+    assert rows[0]["hold_reasons"] == []
+    assert rows[1]["deprecated_gtin_statements"] == 1
+    assert rows[0]["manual_review"] == "candidate_for_manual_mapping"
+    assert not rows[0]["backend_mapping_approved"]
+
+
 @pytest.mark.parametrize("prop,field", [("P2665", "abv_percent"), ("P2234", "volume_ml")])
 @pytest.mark.parametrize("mutation", ["unsupported_rank", "nonquantity_value"])
 def test_unsupported_quantity_statements_stay_unknown_and_cannot_support_manual_candidates(

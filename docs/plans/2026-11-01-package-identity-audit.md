@@ -62,3 +62,25 @@ API/모델/브라우저의 가상 성능 수치나 실측되지 않은 감소율
 - 구현/로컬 검증까지 완료했으며 PR 생성·최신 head Codex/필수 CI·병합/main CI는 아직
   조정자의 최종 게이트가 필요하다. 최신 PR 근거는 병합 후 연결한다. DAT01/02 전체와 서비스
   SKU/매핑·B1 데이터 fit·관련성/최종 평가의 미완료는 유지한다.
+
+## PR16 정식 리뷰 — 문맥 있는 활성 GTIN의 충돌 보존
+
+- [원래 리뷰 스레드](https://github.com/Pubburi/Recommendation/pull/16#discussion_r4434587118)를
+  전체 확인했다. 같은 정상 GTIN을 가진 두 item 중 한쪽 claim에 qualifier가 있으면
+  `usable_without_context`만 인덱싱하던 코드가 그 항목을 누락해 공유 그룹0·다른 항목의
+  수동 후보 허용이 가능했다. 자체 입력에서 공유 그룹이1이어야 한다는 회귀가 수정 전0으로
+  실패함을 재현했다. 실제4원천에 이 충돌이 있었다는 의미는 아니다.
+- 문맥 없는 단독 사용 판정과 구조적 식별자 충돌 증거를 분리했다. 구조적으로 유효한 활성
+  GTIN은 문맥 보류 여부와 무관하게 canonical 키에 포함하고 양쪽 item에 공유 보류를 붙인다.
+  deprecated는 기존대로 제외한다. 수동 후보의 보류 우회 차단과 deprecated 비충돌을 검증한다.
+- 추가 네트워크 요청 없이 동일한 실제4항목의 raw/receipt/review로 새 디렉터리에 재감사했다.
+  checksum4/4·포장 필드 조합1/4·manual hold4/4·공유 그룹0·매핑/fit0이며 기존 사실과
+  판정이 같다. 원문/검수·projection은 ignored에 유지하고 서비스 데이터 승격을 하지 않는다.
+- 관련73회귀를 통과했다. 최신 head의 전체 검증·커밋과 push 결과를 아래에 기록하며 조정자가
+  원스레드를 다시 읽어 한국어 답글/실제 Resolve·새 head CI/Codex 게이트를 처리한다.
+  앞 head의 CI/리뷰 성공을 새 head의 성공으로 재사용하지 않는다.
+- 수정 후 `check.sh`는 locked/저장소·Ruff·pytest395·B0/B1 각각8/8·새 wheel runtime-only
+  포장 감사 및 기존 CLI·실제 health/B0/B1/OpenAPI·production10초 부분본문408까지 통과했다.
+  기존 TestClient deprecation1건은 동일하다. 원래 feature 커밋을 보존하고 같은 목적의 별도
+  한국어 fix 커밋으로 반영한다. 실제4개 원천의 판정 유지와 CI/회귀 통과를 성능 개선 수치나
+  추천 품질 성과로 표시하지 않는다.

@@ -26,7 +26,7 @@ maxlag5·최대10ID·본문/전송 오류·revision/정확 ID·실패 receipt �
 |---|---|
 | snapshot | accepted receipt의 모드/HTTP·CC0·원문/manifest 모델 해시·요청 ID와 revision을 확인한다. 실패/변경 원문은 사용하지 않는다. 상품군 표현 실험과 같은 경량 gate를 재사용한다. |
 | GTIN 문자열 | ASCII 숫자8/12/13/14자리만 받으며 trim·정수 변환으로 원문을 바꾸지 않는다. 마지막 숫자를 제외하고 오른쪽부터3/1 가중치를 적용해 mod10 검증한다. all-zero는 수학적 통과와 별개로 사용하지 않는다. |
-| 중복 비교 | 선행0을 보존하고14자리0-padding 비교 키를 별도로 만든다. 새 GTIN 발급/포맷 지정이 아니며, 서로 다른 item이 같은 키를 쓰면 보류한다. |
+| 중복 비교 | 선행0을 보존하고14자리0-padding 비교 키를 별도로 만든다. 새 GTIN 발급/포맷 지정이 아니다. 구조적으로 유효한 활성 GTIN은 qualifier 등으로 단독 사용이 보류돼도 충돌 검사에 포함하며, 서로 다른 item이 같은 키를 쓰면 양쪽 모두 보류한다. deprecated claim은 활성 충돌에서 제외한다. |
 | claim 문맥 | deprecated GTIN은 제외하고 수를 기록한다. qualifier·알 수 없는 값/타입·비정상 rank·다중 식별자는 자동 확정하지 않는다. source reference 개수는 근거 링크의 존재 수이며 진실성 점수가 아니다. |
 | 수치/포장 | quantity 타입과 normal/preferred rank, value snak 및 문맥을 확인한다. 검수 단위의 `http(s)://www.wikidata.org/entity/` URI만 허용하며 bare QID·외부 호스트의 같은 suffix를 단위로 해석하지 않는다. L→mL와 vol%는 지원하지만 일반 percent를 vol%로 대체하지 않는다. 다중/범위/문맥·미지원 단위는 unknown이다. 이름의 `500`이나 이미지로 포장을 채우지 않는다. 현재 검수한 container class는 [beverage can](https://www.wikidata.org/wiki/Q1121690)뿐이다. |
 | grain | 같은 item에 명시 용기·단일 GTIN·라벨·용량·도수가 있는지와 브랜드/container 혼합을 따로 표시한다. 같은 item의 필드 조합도 개별 변형·묶음수를 확정하지 않는다. |

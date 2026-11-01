@@ -254,7 +254,9 @@ def audit_packages(
             "backend_mapping_approved": False,
             "feature_fit_eligible": False,
         }
-        for key in unique:
+        # Context limits standalone use, not collision evidence. A qualified active claim
+        # still shares its identifier with another item and must hold both for review.
+        for key in {claim["comparison_key_14"] for claim in claims if claim["structurally_usable"]}:
             identifiers[key].add(qid)
         rows.append(row)
     if review is not None and set(review.records) - {row["source_record_id"] for row in rows}:
@@ -263,7 +265,7 @@ def audit_packages(
         if any(
             len(identifiers[claim["comparison_key_14"]]) > 1
             for claim in row["gtin_claims"]
-            if claim["usable_without_context"]
+            if claim["structurally_usable"]
         ):
             row["hold_reasons"].append("identifier_shared_across_source_items")
         decision = None if review is None else review.records.get(row["source_record_id"])
