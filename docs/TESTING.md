@@ -6,6 +6,13 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
 
 ## 배포 산출물 검증
 
+`tests/test_volume_context.py`는 자체 상품군/정의·별도 offline receipt로 P2234 수량과 단일 P518
+문맥의 연결·정확 단위 변환·동일 family_group을 확인한다. 정상 family scalar unknown을 유지하며
+단위 namespace·수량/qualifier 메타·중복/충돌·다중 context·원천/정의 각각의 hash/revision/검수·
+동결 사실 불일치·출력 원자성/덮어쓰기 금지를 검증한다. 실제 원천 관측 수를 고정 회귀 개수로 쓰지
+않는다. 설치된 wheel의 `python -I -m pubburi_recommendation.volume_context`는 별도 authored
+입력으로 실제 CLI 성공·stale authority 실패/고정 진단·출력 미발행을 확인한다. 외부 원천 요청은 없다.
+
 `uv run --locked python scripts/smoke_distribution.py`는 아래를 확인한다.
 
 1. 빈 임시 디렉터리에 sdist와 wheel을 새로 빌드한다. 기존 `dist/`에 남은 오래된 wheel을 선택하지 않는다.

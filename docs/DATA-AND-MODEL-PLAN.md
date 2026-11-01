@@ -174,6 +174,11 @@ UCI 품질 예측은 선택적 별도 실험이며 카탈로그 추천 학습/�
 
 ## 검증과 인계
 
+[포장 문맥별 용량 관측](VOLUME-CONTEXT.md)은 검수 상품군의 P2234/P518 statement를 별도 grain으로
+보존한다.6상품군의11명시 수량/문맥을 분리했으나 가족 scalar volume은6/6 unknown이며 동일 family
+group을 유지한다. 문맥 정의 수집4개는 신규 주류 SKU가 아니다. 이번 신규 업무 매핑/fit0이고,
+기존 source curation/export의 정체성·필수 필드·명시 업무 연결 조건을 완화하지 않는다.
+
 현재 제공 HTTP 기능은 GET /health, POST /v1/recommendations/baseline의 B0 결정적 기본순과
 [POST /v1/recommendations/content](CONTENT-API.md)의 요청 카탈로그 B1 표현/순위다. B1 HTTP는
 허구 입력의 연결·상태 격리 검증이며 서비스 데이터 fit/관련성 평가는 아니다. [B0 계약](BASELINE-API.md)은 필수/제외 조건을 먼저 적용하며 학습·개인화 점수를
