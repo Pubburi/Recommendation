@@ -206,7 +206,7 @@ JSON decoder가 같은 이름의 마지막 값만 남긴 뒤 Pydantic에 전달�
 
 #### 해결
 
-기존512KiB·10초 수신 검사 뒤 object별 decoded 필드명 중복을 검사하고 schema·순위/fit 진입 전에 고정422로 거절했다. 같은 값의 중복과 escape로 표기한 동등 이름도 포함한다. 다른 상품 객체에 같은 필드명이 있는 정상 입력은 허용하며 진단에는 중복 이름·값을 넣지 않는다. JSON/+json·Content-Type 생략 처리와 정상 필수 조건·결측/제외 정책은 유지한다.
+기존512KiB·10초 수신 검사 뒤 object별 decoded 필드명 중복을 기록하고, 전체 JSON 문법 검증이 끝난 경우에만 schema·순위/fit 진입 전에 고정422로 거절했다. 같은 값의 중복과 escape로 표기한 동등 이름도 포함한다. 다른 상품 객체에 같은 필드명이 있는 정상 입력은 허용하며 진단에는 중복 이름·값을 넣지 않는다. JSON/+json·Content-Type 생략 처리와 정상 필수 조건·결측/제외 정책은 유지한다.
 
 #### 결과
 
@@ -222,11 +222,14 @@ JSON decoder가 같은 이름의 마지막 값만 남긴 뒤 Pydantic에 전달�
 
 ~~~python
 def duplicate_json_keys(body: bytes) -> bool:
+    duplicate = False
+
     def unique_object(pairs):
+        nonlocal duplicate
         values = {}
         for key, value in pairs:
             if key in values:
-                raise DuplicateCatalogKey()
+                duplicate = True
             values[key] = value
         return values
 
@@ -234,13 +237,11 @@ def duplicate_json_keys(body: bytes) -> bool:
         # Object hooks see decoded names, so escaped equivalent keys cannot evade this check.
         # Discard this bounded preflight tree; FastAPI still owns schema/numeric validation.
         json.loads(body, object_pairs_hook=unique_object)
-    except DuplicateCatalogKey:
-        return True
     except (ValueError, UnicodeError, RecursionError):
         # Malformed encodings/syntax/depth keep the framework's existing client-error behavior.
-        # This is not a decoder-success signal and none can enter the recommendation engine.
-        pass
-    return False
+        # A duplicate found before a later parse error must not mask that error.
+        return False
+    return duplicate
 ~~~
 
 미들웨어는 크기·수신 기한을 확인해 본문을 모은 다음 아래 분기를 실행한다.

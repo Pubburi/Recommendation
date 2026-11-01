@@ -144,8 +144,10 @@ Recall/NDCG는 미산출이며 사용자 선호 학습·실서비스 카탈로�
 `tests/test_request_json.py`는 두 추천 API의 동일 객체 중복 key·동일 값·escape 동등명·
 JSON/+json/Content-Type 생략·UTF8/16/32·수신 chunk 경계를 확인한다. 다른 객체의 같은 이름/
 문자열 내용은 허용하고, 원문/개인 key를 반사하지 않는 고정422·size 우선413·기존 불완전/
-깊이/잘못된 인코딩의4xx를 검증한다. 거절된 요청이 route/fit을 실행하거나 수치 라이브러리를
-시작 시 로드하지 않는지 별도 프로세스에서도 확인한다. [실제 전후 관측](measurements/2026-11-02-ambiguous-json.md)은
+깊이/잘못된 인코딩의4xx를 검증한다.
+중복 객체 뒤의 truncated/trailing/escape·깊이 오류도 일반 FastAPI 대조 앱과 오류 type/loc/msg를
+그대로 비교해 기존 `json_invalid`/400 우선순위를 보존한다. 거절된 요청이 route/fit을 실행하거나
+수치 라이브러리를 시작 시 로드하지 않는지 별도 프로세스에서도 확인한다. [실제 전후 관측](measurements/2026-11-02-ambiguous-json.md)은
 허구 입력을 직접 HTTP로 재현한 정확성 실험이며 자연 오류율이나 성능/추천 품질 성과가 아니다.
 
 `tests/test_reviewed_catalog_fit.py`는 직접 작성한 facts/cases로 기존 모델의 실제 fit을 실행하고

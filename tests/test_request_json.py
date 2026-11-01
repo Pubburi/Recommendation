@@ -6,9 +6,11 @@ import subprocess
 import sys
 
 import pytest
+from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.testclient import TestClient
 
-from pubburi_recommendation.main import app
+from pubburi_recommendation.main import app, validation_error
 from pubburi_recommendation.request_limits import CatalogRequestLimit
 
 EXPECTED = {
@@ -64,6 +66,55 @@ def test_duplicate_object_names_are_rejected_without_echoing_key_or_values(endpo
         )
     assert response.status_code == 422
     assert response.json() == EXPECTED
+
+
+@pytest.mark.parametrize("endpoint", ["baseline", "content"])
+@pytest.mark.parametrize(
+    "body",
+    [
+        '{"constraints":{"max_abv_percent":5,"max_abv_percent":50},"catalog":',
+        '{"catalog":[],"catalog":[]} trailing_invalid_input',
+        '{"constraints":{"m\\u0061x_abv_percent":5,"max_abv_percent":50},"catalog":oops}',
+        '{"catalog":[{"product_id":1,"product_id":2},',
+        '{"catalog":[],"catalog":[],}',
+        '{"constraints":{"max_abv_percent":5,"max_abv_percent":50},"catalog":'
+        + "[" * 10000
+        + "0"
+        + "]" * 10000
+        + "}",
+    ],
+    ids=[
+        "nested-truncated",
+        "root-trailing",
+        "escaped-invalid",
+        "array-truncated",
+        "root-comma",
+        "parser-depth",
+    ],
+)
+def test_incomplete_or_invalid_json_after_duplicates_keeps_framework_error_priority(endpoint, body):
+    control = FastAPI()
+    control.add_exception_handler(RequestValidationError, validation_error)
+
+    @control.post("/control")
+    def plain_framework_route(request: dict):
+        pytest.fail("Malformed input reached a route")
+
+    with TestClient(control, raise_server_exceptions=False) as plain:
+        expected = plain.post(
+            "/control", content=body, headers={"Content-Type": "application/json"}
+        )
+    with TestClient(app, raise_server_exceptions=False) as client:
+        actual = client.post(
+            "/v1/recommendations/" + endpoint,
+            content=body,
+            headers={"Content-Type": "application/json"},
+        )
+    assert expected.status_code in (400, 422)
+    if expected.status_code == 422:
+        assert expected.json()["detail"][0]["type"] == "json_invalid"
+    assert actual.status_code == expected.status_code
+    assert actual.json() == expected.json()
 
 
 @pytest.mark.parametrize(

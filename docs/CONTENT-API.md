@@ -87,6 +87,8 @@ no_matching_features로 구분한다. 점수는 예측 만족 확률이나 추�
 같은 이름을 쓰는 것은 허용한다. JSON/+json·Content-Type 없는 JSON의 bounded decoder
 검사는 fit/schema보다 앞서고, 고정 진단에는 key/값을 넣지 않는다. 기존 malformed/인코딩/깊이·
 비유한 수치/타입 검증 경로는 유지한다. 추가 decoder 비용과 수신/CPU fit 예산은 구분한다.
+object hook은 중복 flag만 남기며 본문 끝까지 decode가 성공해야 `duplicate_json_key`를
+반환한다. 중복 뒤의 문법 오류/잘린 값·trailing data·깊이 오류를 중복 오류로 덮지 않는다.
 기존 health/B0·프로세스 가용성 의미는 유지한다. 새 wheel의 실제 HTTP·부분 본문408·입력 오류와
 요청 간 격리는 [검증 안내](TESTING.md)에서 확인한다. 전후 지연/품질 개선을 주장하지 않는다.
 

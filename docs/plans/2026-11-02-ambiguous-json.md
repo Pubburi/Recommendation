@@ -30,3 +30,24 @@
   통과했다. 필수 검사를 생략/완화하거나 실패를 성공으로 기록하지 않았다.
 - PR 생성·최신 head 필수CI/완료Codex·구체 미해결 지적·병합/main CI와 브랜치 정리는 조정자
   인계 후 처리하며 로컬 성공을 병합/PG 전환 완료로 표시하지 않는다.
+
+## PR21 오류 우선순위 리뷰 수정
+
+- [정식 지적](https://github.com/Pubburi/Recommendation/pull/21#discussion_r4436350617)은 hook의
+  즉시 예외가 중복 객체 뒤의 잘린 값/trailing 문법 오류를 `duplicate_json_key`로 덮는 경계였다.
+  일반 FastAPI 대조 앱은 같은 원문을 `json_invalid`로 거절하지만 이전 head는 중복 오류로
+  바뀌는 것을 두 endpoint 회귀에서 먼저 실패 재현했다.
+- hook은 요청별 중복 flag만 남기고 전체 `json.loads` 성공 뒤에만 flag를 반환한다. syntax/
+  encoding/depth 오류는 False로 기존 framework에 위임하며 불필요한 예외 클래스를 제거했다.
+  정상 JSON의 중복 거절·고정 진단·object/media/escaped 이름·기동 경계는 유지한다.
+- nested/root·truncated/trailing·escaped 중복과 parser 깊이 오류를 양쪽 endpoint에서 일반
+  framework의 응답 type/loc/msg/상태와 직접 비교한다. 이 runtime에서2000중첩은 실제 decode가
+  성공하므로 깊이 오류 재현에는 실제 RecursionError가 난10000중첩(본문 상한 내)을 사용했다.
+  새12조건과 기존100개를 합한 focused112개를 통과했다.
+- README 실제 helper 발췌와 API/운영 문서를 같은 flag/전체 문법 검증 순서로 맞췄다. 기존
+  동결4조건은 유효한 JSON의 중복 재현이므로 그 전후 결과/분모를 보존한다. 새 문법 우선순위
+  회귀를 오승인4조건의 분모에 합산하지 않는다. 답글/native 해결은 조정자만 처리한다.
+- 최신 수정의 `./scripts/check.sh`는 Python3.12.14·Ruff/format·pytest500개·새 sdist/wheel의
+  runtime-only CLI·실제 HTTP 유효중복4조건과 별도 문법우선4조건·health/B0/B1/OpenAPI·
+  프로덕션10초408을 모두 통과했다. 기존 TestClient 경고1개는 남는다. 이전488개 결과와 최신
+  500개 결과의 source head를 구분하고 최신 CI/완료 리뷰·native 해결은 조정자에게 재인계한다.

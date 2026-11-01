@@ -17,10 +17,6 @@ CATALOG_BODY_TIMEOUT_SECONDS = 10.0
 CATALOG_PATHS = {"/v1/recommendations/baseline", "/v1/recommendations/content"}
 
 
-class DuplicateCatalogKey(ValueError):
-    """Fixed diagnostic only; never carry the untrusted key or catalog contents."""
-
-
 def json_media_type(scope: Message) -> bool:
     content_type = next(
         (
@@ -40,11 +36,14 @@ def json_media_type(scope: Message) -> bool:
 
 
 def duplicate_json_keys(body: bytes) -> bool:
+    duplicate = False
+
     def unique_object(pairs):
+        nonlocal duplicate
         values = {}
         for key, value in pairs:
             if key in values:
-                raise DuplicateCatalogKey()
+                duplicate = True
             values[key] = value
         return values
 
@@ -52,13 +51,11 @@ def duplicate_json_keys(body: bytes) -> bool:
         # Object hooks see decoded names, so escaped equivalent keys cannot evade this check.
         # Discard this bounded preflight tree; FastAPI still owns schema/numeric validation.
         json.loads(body, object_pairs_hook=unique_object)
-    except DuplicateCatalogKey:
-        return True
     except (ValueError, UnicodeError, RecursionError):
         # Malformed encodings/syntax/depth keep the framework's existing client-error behavior.
-        # This is not a decoder-success signal and none can enter the recommendation engine.
-        pass
-    return False
+        # A duplicate found before a later parse error must not mask that error.
+        return False
+    return duplicate
 
 
 class CatalogRequestLimit:

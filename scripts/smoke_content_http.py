@@ -15,14 +15,25 @@ def verify_duplicate_json_http(base_url: str) -> None:
         group = ',"sku_group":"authored"' if endpoint == "content" else ""
         product = '{"product_id":1,"available":true,"abv_percent":40' + group + "}"
         bodies = [
-            '{"catalog":['
-            + product
-            + '],"constraints":{"max_abv_percent":5,"max_abv_percent":50}}',
-            '{"catalog":['
-            + product.replace('"product_id":1', '"product_id":1,"product_id":2')
-            + "]}",
+            (
+                '{"catalog":['
+                + product
+                + '],"constraints":{"max_abv_percent":5,"max_abv_percent":50}}',
+                "duplicate_json_key",
+            ),
+            (
+                '{"catalog":['
+                + product.replace('"product_id":1', '"product_id":1,"product_id":2')
+                + "]}",
+                "duplicate_json_key",
+            ),
+            (
+                '{"constraints":{"max_abv_percent":5,"max_abv_percent":50},"catalog":',
+                "json_invalid",
+            ),
+            ('{"catalog":[],"catalog":[]} trailing_invalid_input', "json_invalid"),
         ]
-        for body in bodies:
+        for body, expected_type in bodies:
             data = body.encode()
             media = "application/json" if endpoint == "baseline" else "application/vnd.pubburi+json"
             with socket.create_connection((target.hostname, target.port), timeout=10) as connection:
@@ -37,7 +48,12 @@ def verify_duplicate_json_http(base_url: str) -> None:
                 response = HTTPResponse(connection)
                 response.begin()
                 result = json.loads(response.read(4096))
-                if response.status != 422 or result != {
+                if (
+                    response.status != 422
+                    or result.get("detail", [{}])[0].get("type") != expected_type
+                ):
+                    raise RuntimeError("Installed API changed catalog JSON validation priority")
+                if expected_type == "duplicate_json_key" and result != {
                     "detail": [
                         {
                             "type": "duplicate_json_key",

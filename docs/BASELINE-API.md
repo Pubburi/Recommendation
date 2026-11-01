@@ -65,6 +65,8 @@
 escape를 푼 이름이 같거나 값이 같아도 거절하며 서로 다른 상품 객체에 같은 필드명이 있는 것은
 정상이다. JSON media type(`application/json`, `application/*+json`)과 Content-Type이 없는
 JSON 요청에 적용한다. 진단은 고정 type/loc/msg이고 중복 key/값·원문을 반사하지 않는다.
+중복은 요청별 flag로만 기록하고 전체 JSON 문법 검증이 성공한 경우에만 이 진단을 반환한다.
+중복 객체 뒤에 잘린 값/잘못된 trailing data가 있으면 기존 `json_invalid` 등이 우선한다.
 512KiB 수신 후 별도 decoder pass를 수행하는 비용이 있으며 schema/비유한 수치·불완전 JSON/
 인코딩·깊이 오류는 기존 framework의4xx 검증 경로를 유지한다. 계산 속도 개선 주장은 없다.
 Content-Length가 없거나 여러 ASGI body 조각으로 전송해도 누적 크기를 확인한다.

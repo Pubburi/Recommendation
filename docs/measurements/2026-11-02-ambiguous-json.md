@@ -39,5 +39,10 @@ harness로 직접 Uvicorn HTTP를 비교했다. OS가 예약한 독립 loopback 
 않는다. malformed syntax/인코딩·깊이/RecursionError는 정상으로 승인하지 않고 기존 framework의
 4xx 경로에 맡긴다. 모델 수치·스키마 검증은 Pydantic이 그대로 소유한다.
 
+PR21 리뷰에서 중복 hook의 즉시 예외가 뒤의 문법 오류보다 먼저 반환되는 경계를 수정했다.
+중복은 요청별 flag로만 기록하고 전체 decode 성공 뒤에만 반환한다. 중복 뒤 truncated/trailing/
+escape·깊이 오류는 일반 framework 응답과 직접 비교했다. 이 추가 우선순위 검사는 위 유효한
+JSON4조건의 전후 정확성 관측과 다른 분모이며 원래4조건 결과를 변경하거나 합산하지 않는다.
+
 근거: [Python JSON의 repeated names/object_pairs_hook](https://docs.python.org/3.12/library/json.html),
 [RFC8259 객체 이름의 상호운용성](https://www.rfc-editor.org/rfc/rfc8259#section-4).
