@@ -116,3 +116,67 @@ def smoke_business_export(
         or json.loads((output / "receipt.json").read_text())["completed"] is not True
     ):
         raise RuntimeError("Installed wheel violated reviewed business-demo export boundaries")
+    # Declare facts and expected hard-constraint outcomes before the first fit CLI invocation.
+    spec = write(
+        "authored-reviewed-fit-spec.json",
+        {
+            "schema_version": 1,
+            "experiment_id": "authored-reviewed-fit-v1",
+            "evidence_kind": "authored_regression_fixture",
+            "source_catalog_sha256": digest(catalog),
+            "frozen_at_utc": datetime.now(UTC).isoformat(),
+            "expected_facts": {
+                row["catalog_record_id"]: {
+                    "available": True,
+                    "category": "맥주",
+                    "price_krw": 1000,
+                    "abv_percent": 5,
+                    "volume_ml": 500,
+                    "sku_group": row["source_variant_group"],
+                    "taste_tags": None,
+                    "aroma_tags": None,
+                }
+            },
+            "scenarios": [
+                {
+                    "case_id": name,
+                    "profile": profile,
+                    "constraints": constraints,
+                    "exclude_keys": [],
+                    "expected_eligible_keys": keys,
+                    "expected_item_count": count,
+                    "expected_b1_fallback": fallback,
+                    "fact_basis": "Declared authored numeric/category facts.",
+                }
+                for name, profile, constraints, keys, count, fallback in [
+                    ("cold", {}, {}, [row["catalog_record_id"]], 1, "no_supported_preferences"),
+                    ("category", {"categories": ["맥주"]}, {}, [row["catalog_record_id"]], 1, None),
+                    ("hard", {}, {"max_abv_percent": 4.99}, [], 0, "no_eligible_products"),
+                ]
+            ],
+        },
+    )
+    fit_output = work / ".pubburi" / "reviewed-fit"
+    fit_command = [str(python), "-I", "-m", "pubburi_recommendation.reviewed_catalog_fit"]
+    for name, path in {
+        "manifest": manifest,
+        "input": raw,
+        "source-receipt": receipt,
+        "curation": curation,
+        "business-snapshot": snapshot_path,
+        "mapping": mapping,
+        "spec": spec,
+        "output-dir": fit_output,
+    }.items():
+        fit_command += ["--" + name, str(path)]
+    subprocess.run(fit_command, cwd=work, check=True, timeout=60, stdout=subprocess.DEVNULL)
+    result = json.loads((fit_output / "fit-report.json").read_text())
+    if (
+        result["passed_cases"] != 3
+        or not result["passed"]
+        or result["fit_summary"]["training_products"] != 1
+        or result["vocabulary"] != ["category:맥주"]
+        or any(value["active"] for value in result["fit_summary"]["numeric_fit"].values())
+        or result["ranking_metrics"]["status"] != "not_calculated"
+    ):
+        raise RuntimeError("Installed wheel violated frozen reviewed-fit facts or singleton limits")

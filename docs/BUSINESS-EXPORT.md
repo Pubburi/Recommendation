@@ -86,6 +86,10 @@ API가 반환한 ID로 각 B0/B1 요청에1개 상품을 내보내고 동적 loo
 이름/순서로 대응을 만들지 않았다. 실제 허용 서비스 SKU·실매핑·서비스 B1 fit·독립 관련성/
 최종 평가는 미완료다. 이번 결과는 학습/품질·판매/재고·성능·서버 revision 완료가 아니다.
 
+이후 [실제 원천 기반 업무DEMO1개 연결/fit](REVIEWED-CATALOG-FIT.md)을 별도로 실행했다.
+위 무매핑0/허구 fixture 기록은 이전 상태로 보존하며 실원천 업무DEMO 증가분과 구분한다.
+전체 카탈로그 품질/서비스 B1 자동 연동·판매/재고 검증은 여전히 미완료다.
+
 [구현](../src/pubburi_recommendation/business_export.py) ·
 [회귀](../tests/test_business_export.py) ·
 [작업/검증](plans/2026-11-01-reviewed-business-export.md)

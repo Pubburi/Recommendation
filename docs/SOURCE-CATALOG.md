@@ -80,6 +80,9 @@ uv run --locked python -m pubburi_recommendation.source_catalog \
 독립 사실 명세는 모델 점수 함수·UI/행동 데이터와 분리해 고정했으며 실제 원본/명세/출력은 ignored,
 공개 근거는 구현·자체 fixture와 집계/한계다.
 
+이 source-only 단계 뒤 [명시 업무 매핑과 실제 fit1개](REVIEWED-CATALOG-FIT.md)를 별도로
+실행했다. source-only 후보/원래 보류와 업무DEMO 연결·known-catalog fit의 완료 조건을 구분한다.
+
 [구현](../src/pubburi_recommendation/source_catalog.py) ·
 [회귀](../tests/test_source_catalog.py) ·
 [작업/검증](plans/2026-11-01-reviewed-source-catalog.md)
