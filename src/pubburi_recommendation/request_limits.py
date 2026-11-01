@@ -1,7 +1,9 @@
 """Bound the internal catalog JSON request before FastAPI parses it."""
 
 import asyncio
+import json
 from collections.abc import Awaitable, Callable
+from email.message import Message as MimeMessage
 from typing import Any
 
 from fastapi.responses import JSONResponse
@@ -13,6 +15,47 @@ ASGIApp = Callable[[Message, Receive, Send], Awaitable[None]]
 MAX_CATALOG_REQUEST_BYTES = 512 * 1024
 CATALOG_BODY_TIMEOUT_SECONDS = 10.0
 CATALOG_PATHS = {"/v1/recommendations/baseline", "/v1/recommendations/content"}
+
+
+def json_media_type(scope: Message) -> bool:
+    content_type = next(
+        (
+            value.decode("latin-1")
+            for name, value in scope.get("headers", [])
+            if name == b"content-type"
+        ),
+        None,
+    )
+    if content_type is None:
+        return True  # Match FastAPI's JSON handling when the content type is absent.
+    mime = MimeMessage()
+    mime["content-type"] = content_type
+    return mime.get_content_maintype() == "application" and (
+        mime.get_content_subtype() == "json" or mime.get_content_subtype().endswith("+json")
+    )
+
+
+def duplicate_json_keys(body: bytes) -> bool:
+    duplicate = False
+
+    def unique_object(pairs):
+        nonlocal duplicate
+        values = {}
+        for key, value in pairs:
+            if key in values:
+                duplicate = True
+            values[key] = value
+        return values
+
+    try:
+        # Object hooks see decoded names, so escaped equivalent keys cannot evade this check.
+        # Discard this bounded preflight tree; FastAPI still owns schema/numeric validation.
+        json.loads(body, object_pairs_hook=unique_object)
+    except (ValueError, UnicodeError, RecursionError):
+        # Malformed encodings/syntax/depth keep the framework's existing client-error behavior.
+        # A duplicate found before a later parse error must not mask that error.
+        return False
+    return duplicate
 
 
 class CatalogRequestLimit:
@@ -60,6 +103,20 @@ class CatalogRequestLimit:
             return
 
         buffered = b"".join(chunks)
+        if json_media_type(scope) and duplicate_json_keys(buffered):
+            await JSONResponse(
+                status_code=422,
+                content={
+                    "detail": [
+                        {
+                            "type": "duplicate_json_key",
+                            "loc": ["body"],
+                            "msg": "Catalog JSON object keys must be unique",
+                        }
+                    ]
+                },
+            )(scope, receive, send)
+            return
         delivered = False
 
         async def replay_body() -> Message:
