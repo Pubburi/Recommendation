@@ -53,7 +53,9 @@ API 키는 로컬 환경변수로 관리한다. 원본 데이터·모델·권한
 ## 확인한 원천과 채택 상태
 
 2026-11-01 공식 문서 재확인 기준이다. 명시 CC0인 Wikidata의 이전 구조화4항목과 새 고유7항목을
-서로 구분해 감사했고 aT는 메타데이터만 확인했다. 활용신청/외부 문의는 하지 않았다. [실제 감사와 한계](CATALOG-AUDIT.md)를
+서로 구분해 감사했다. 추가로 GTIN/도수 조건의4항목(신규3·기존1)을 실제 수집해
+[포장 식별/수동 보류](PACKAGE-IDENTITY-AUDIT.md)를 실행했다. aT는 메타데이터만 확인했고
+활용신청/외부 문의는 하지 않았다. [실제 감사와 한계](CATALOG-AUDIT.md)를
 따르며 소량 entity 표본을 판매 SKU 카탈로그로 간주하지 않는다.
 
 | 원천 | 확보 가능한 정보·용도 | 확인 조건·현재 판단 |
@@ -81,6 +83,14 @@ ODbL/DBCL·이미지 별도 조건과 API 사용 전 usage form 안내를 확인
 | DAT02 | AI 수집·정제 / BE 업무 스키마 연동 | P1 · 2026-11-26 | DAT01·F03 | APIerror/ID/revision·불변snapshot/재생→단위/unknown·기존 시드 격리 도구와 [기본 라벨 보존](measurements/2026-11-01-default-labels.md) 구현. 동일6항목·revision 결측3/6→0/6, 새 raw 해시에 이전검수 보류. 검수 판매SKU·legacy fit승격0, 실제 카탈로그/전체 완료는 아님 |
 | DAT03 | AI 평가 명세 / BE·FE 입력·계정 연동 | P1 · 2026-11-29 | DAT01·C03, BE04/R01 공동 계약 | [고정 사실 명세·독립 검사기](EVALUATION.md) 증가분 구현. B0의 제약/순서와 모델 관련성을 구분하고 해시·전체 케이스·오류 주입 검증. 실제 SKU·관련성 명세와 시연 계정/찜/피드백 저장·권한·삭제·화면 연동은 미완료 |
 | DAT04 | AI / BE·FE 검증 지원 | P1 · 2027-01-20 | DAT02·DAT03 평가 명세, AI03과 공동 구현 | [서비스 B1](CONTENT-MODEL.md)은 허구 fixture 회귀·실SKU0. 별도 [실CC0 상품군 표현](SOURCE-FAMILY-EXPERIMENT.md)의3fit/2transform·어휘/IDF/관측 수치/누수·OOV/차원 검사를 실행. 상품군 표현과 서비스 SKU fit/품질을 구분하며 서비스 카탈로그·독립 관련성/최종 평가·채택 근거·서버 연동은 미완료 |
+
+DAT01/02의 추가 [포장 식별 도구](PACKAGE-IDENTITY-AUDIT.md)는 accepted source receipt와
+GTIN integrity·수치 단위/unknown·명시 포장/class 혼합·수동 hash/revision 검수를 분리한다.
+새 목적 표본4항목의 체크숫자 통과4/4·같은 item의 용기/GTIN/용량/도수 조합1/4를 확인했다.
+그1개도 브랜드/container 혼합으로 보류했고 수동 결론은4/4 hold다. Backend 매핑·서비스 SKU·
+fit승격은0으로 유지하며, 일부 필드 확보를 DAT01/02 전체 완료로 처리하지 않는다. 제조사/묶음수
+등 실제 누락은 unknown으로 보존하고 독립 처리/검수를 계속한다. 실제 수집/상품군 fit과 별개로
+검수 서비스 카탈로그 확보·명시 업무 ID 연동·서비스 B1 fit/관련성 평가는 남아 있다.
 
 ## 추천 모델을 개발하는 순서
 

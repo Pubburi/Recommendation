@@ -25,8 +25,8 @@ from pubburi_recommendation.catalog_audit import (
     audit,
     read_json,
 )
+from pubburi_recommendation.collection_snapshot import verify_collection_snapshot
 from pubburi_recommendation.content_model import atomic_tokens, digest
-from pubburi_recommendation.wikidata_collect import check_payload
 
 SourceId = Annotated[str, StringConstraints(pattern=r"^Q[1-9][0-9]{0,30}$")]
 Group = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=128)]
@@ -80,35 +80,7 @@ class FamilyExperiment(ContractModel):
 def verify_receipt(
     receipt: dict, payload: dict, spec: FamilyExperiment, manifest_model_hash: str
 ) -> None:
-    entities = payload.get("entities", {})
-    expected_revisions = {qid: entity.get("lastrevid") for qid, entity in entities.items()}
-    requested = receipt.get("requested_ids")
-    revisions = receipt.get("revisions")
-    mode = receipt.get("mode")
-    if (
-        type(receipt.get("schema_version")) is not int
-        or receipt["schema_version"] != 1
-        or receipt.get("accepted") is not True
-        or receipt.get("error_code") is not None
-        or mode not in {"live_get", "offline_replay"}
-        or (
-            mode == "live_get"
-            and (type(receipt.get("http_status")) is not int or receipt["http_status"] != 200)
-        )
-        or (mode == "offline_replay" and receipt.get("http_status") is not None)
-        or receipt.get("structured_data_license") != "CC0-1.0"
-        or receipt.get("response_sha256") != spec.input_sha256
-        or receipt.get("manifest_sha256") != manifest_model_hash
-        or not isinstance(revisions, dict)
-        or any(type(value) is not int or value < 1 for value in revisions.values())
-        or revisions != expected_revisions
-        or not isinstance(requested, list)
-        or len(requested) != len(entities)
-        or any(not isinstance(qid, str) for qid in requested)
-        or set(requested) != set(entities)
-    ):
-        raise AuditError("accepted_matching_source_receipt_required")
-    check_payload(payload, requested)
+    verify_collection_snapshot(receipt, payload, spec.input_sha256, manifest_model_hash)
 
 
 def tokens(facts: FamilyFacts) -> list[str]:

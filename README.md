@@ -291,6 +291,8 @@ uv sync --locked
 
 소량 원천 GET과 오류·revision·영수증/오프라인 재생은 [수집 경계](docs/WIKIDATA-COLLECTION.md)를 따릅니다. HTTP 성공을 데이터 확보·상품 부재·모델 준비와 구분합니다.
 
+GTIN·명시 포장/단위와 수동 검수의 분리는 [포장 식별 감사](docs/PACKAGE-IDENTITY-AUDIT.md)를 따릅니다. 바코드 검증 숫자가 맞아도 판매 SKU·Backend 매핑이나 모델 학습을 자동 승인하지 않습니다.
+
 추천 결과의 재현 가능한 계약 검사는 [시나리오·평가 경계](docs/EVALUATION.md)를 따릅니다. 직접 작성한 입력의 조건 검증을 실제 사용자 선호나 모델 관련성 평가와 구분합니다.
 
 상품군을 나눈 실제 TF-IDF·수치 변환 fit과 오프라인 유사도 실행은 [콘텐츠 모듈 안내](docs/CONTENT-MODEL.md)를 따릅니다. 미확인 맛/향을 생성하지 않으며 설명 원문·이미지·행동 로그를 학습에 사용하지 않습니다.
