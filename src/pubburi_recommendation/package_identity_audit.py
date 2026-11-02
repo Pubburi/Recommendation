@@ -133,14 +133,15 @@ def container_signals(entity: dict) -> tuple[list[str], list[str]]:
     for statement in statements(entity, "P31"):
         if statement.get("rank") == "deprecated":
             continue
+        if requires_context_review(statement):
+            issues.add("container_context_requires_review")
+            continue
         ids = set(item_ids({"claims": {"P31": [statement]}}, "P31")) & CONTAINER_CLASSES
         if not ids:
             continue
         snak = statement["mainsnak"]
         data = snak.get("datavalue")
-        if requires_context_review(statement):
-            issues.add("container_context_requires_review")
-        elif (
+        if (
             statement.get("rank") not in ("normal", "preferred")
             or snak.get("snaktype") != "value"
             or not isinstance(data, dict)
@@ -203,6 +204,13 @@ def audit_packages(
         usable = [claim for claim in claims if claim["usable_without_context"]]
         unique = {claim["comparison_key_14"] for claim in usable}
         containers, holds = container_signals(entity)
+        class_relations_unknown = any(
+            issue.startswith("instance_of:") for issue in record["issues"]
+        )
+        if class_relations_unknown:
+            # Dropping a malformed brand beside a valid container must not hide grain.
+            # A scoped mixed-type note can resolve only known types, never this hold.
+            holds.append("instance_of_relations_require_review")
         quantities, quantity_issues = package_quantities(entity, record)
         holds.extend(quantity_issues)
         if record["label"] is None:
@@ -231,6 +239,7 @@ def audit_packages(
                 len(unique) == 1
                 and all(claim["usable_without_context"] for claim in claims)
                 and containers
+                and not class_relations_unknown
                 and record["label"] is not None
                 and quantities["volume_ml"] is not None
                 and quantities["abv_percent"] is not None

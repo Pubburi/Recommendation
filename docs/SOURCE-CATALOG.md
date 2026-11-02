@@ -27,6 +27,11 @@
 
 ## 입력 계약과 보류
 
+P31 관계 자체의 명시 모순/unknown은 `instance_of_relations_require_review` 보류다.
+정상 container 옆의 malformed brand를 제거해 혼합이 해결됐다고 간주하지 않으며,
+`mixed_type_interpretation`도 이 보류를 덮을 수 없다. 확인된 brand/container 혼합에 대한
+기존 한정 scope와 다른 경계다. [실제 전후 재현](measurements/2026-11-03-source-relation-integrity.md)을 따른다.
+
 curation 명세는 `schema_version=1`, `algorithm=source-container-curation-v1`, 자료 성격,
 raw/receipt/manifest **파일 해시**, 카탈로그 버전, UTC 검수 시각, QID별 선택을 가진다.
 receipt 내부 manifest 해시는 기존처럼 검증 모델의 canonical 해시이며 파일 해시와 구분한다.

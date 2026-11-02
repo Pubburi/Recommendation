@@ -90,6 +90,12 @@ source 제조사 관계2개를 별도 authority/검수 그대로 연결했다. �
 나머지5질의의 생략 분모/원순위를 구분한다. 새 원천 획득·서비스 SKU/업무 매핑 승격이 아니며
 기존 별도 DEMO1 fit·API parser 오류 재현과 grain/분모를 합산하지 않는다. 전체 AI03은 미완료다.
 
+[관계 정합성 수정](plans/2026-11-03-source-relation-integrity.md)은 단독 원천→상품군 fit의
+명시 P31/P176 metadata/item identity 모순이 문서·DF-IDF에 들어가는 결함을 수정했다.
+동결 자체 손상12조건의 거짓 관계 fit12/12→0/12와 별도 포장 curation2/2→0/2를 확인했고
+기존 실제11상품군 B1/M1·원천 포장 후보1의 전체 보고서는 불변이다. 새 원천/업무 매핑이나
+서비스 SKU fit·품질/전체 AI03 완료가 아니며 수량 손상10조건·업무 DEMO1과 합산하지 않는다.
+
 [원천 수량→학습 입력 정합성 수정](plans/2026-11-02-source-quantity-fit-integrity.md)은
 동결한 허구 손상 표본에서 단위 접미사/명시 수량 메타 모순이 실제 source-family CLI의 수치
 관측으로 승인되는 경계를 재현했다. 정확한 지원 URI와 명시 metadata 일치를 정규화에서 확인해

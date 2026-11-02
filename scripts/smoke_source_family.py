@@ -8,6 +8,7 @@ from pathlib import Path
 
 from smoke_source_catalog import smoke_source_catalog
 from smoke_source_cohort import smoke_source_cohort
+from smoke_source_relations import smoke_family_relations
 
 
 def smoke_source_family(python: Path, work: Path, manifest: Path) -> None:
@@ -342,5 +343,6 @@ def smoke_source_family(python: Path, work: Path, manifest: Path) -> None:
         or package_receipt["completed"] is not True
     ):
         raise RuntimeError("The installed wheel confused package evidence with SKU approval")
+    smoke_family_relations(python, work, manifest, raw, review, spec)
     smoke_source_cohort(python, work, manifest, raw, receipt, review, facts)
     smoke_source_catalog(python, work, manifest, entities["Q1"])

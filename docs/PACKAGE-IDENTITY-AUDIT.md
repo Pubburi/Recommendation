@@ -22,6 +22,12 @@ maxlag5·최대10ID·본문/전송 오류·revision/정확 ID·실패 receipt �
 
 ## 검증과 보류
 
+명시 P31 relation metadata·item/numeric identity에 모순이나 불명확한 활성 문맥이 있으면
+분류 전체는 unknown이다. `instance_of_relations_require_review`를 보류하고 필드 조합을
+완성으로 표시하지 않는다. 잘못된 brand를 버린 뒤 정상 can만 남겨 grain을 숨길 수 없으며
+수동 mixed-type scope로 이 보류를 해제할 수 없다. 수량/GTIN과 원문은 그대로 보존한다.
+[실제 collector→curation 손상 재현](measurements/2026-11-03-source-relation-integrity.md)을 따른다.
+
 | 경계 | 처리 |
 |---|---|
 | snapshot | accepted receipt의 모드/HTTP·CC0·원문/manifest 모델 해시·요청 ID와 revision을 확인한다. 실패/변경 원문은 사용하지 않는다. 상품군 표현 실험과 같은 경량 gate를 재사용한다. |

@@ -7,6 +7,7 @@ import subprocess
 from pathlib import Path
 
 from smoke_business_export import smoke_business_export
+from smoke_source_relations import smoke_package_relations
 
 
 def smoke_source_catalog(python: Path, work: Path, manifest: Path, authored_entity: dict) -> None:
@@ -135,3 +136,4 @@ def smoke_source_catalog(python: Path, work: Path, manifest: Path, authored_enti
     ):
         raise RuntimeError("The installed wheel violated source curation or business-ID isolation")
     smoke_business_export(python, work, manifest, raw, receipt, curation, catalog)
+    smoke_package_relations(python, work, manifest, raw, curation)
