@@ -12,6 +12,11 @@ from pubburi_recommendation.content_api import (
     ContentRecommendationResponse,
     recommend_content,
 )
+from pubburi_recommendation.context_api import (
+    ContextRecommendationRequest,
+    ContextRecommendationResponse,
+    recommend_context,
+)
 from pubburi_recommendation.exploration import (
     ExplorationRequest,
     ExplorationResponse,
@@ -104,3 +109,16 @@ def exploration(request: ExplorationRequest) -> ExplorationResponse:
 def similar(request: SimilarRecommendationRequest) -> SimilarRecommendationResponse:
     """Rank against known reference facts without returning that reference or its variants."""
     return recommend_similar(request)
+
+
+@app.post(
+    "/v1/recommendations/context",
+    response_model=ContextRecommendationResponse,
+    responses={
+        413: {"description": "Catalog request exceeds 524288 bytes"},
+        408: {"description": "Catalog request body timed out"},
+    },
+)
+def context(request: ContextRecommendationRequest) -> ContextRecommendationResponse:
+    """Match explicit cart/demo-order facts without claiming co-purchase or whole-cart fit."""
+    return recommend_context(request)

@@ -15,6 +15,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import ProxyHandler, Request, build_opener
 
 from smoke_content_http import verify_content_http
+from smoke_context_http import verify_context_http
 from smoke_exploration_http import verify_exploration_http
 from smoke_similar_http import verify_similar_http
 from smoke_source_family import smoke_source_family
@@ -150,6 +151,7 @@ def verify_http(python: Path, work: Path) -> None:
                 verify_content_http(base_url, request_json)
                 verify_exploration_http(base_url, request_json)
                 verify_similar_http(base_url, request_json)
+                verify_context_http(base_url, request_json)
                 # Send exact artifacts from the installed mapping/export CLI.
                 for filename, path in (
                     ("b0-demo-request.json", "/v1/recommendations/baseline"),
@@ -162,7 +164,7 @@ def verify_http(python: Path, work: Path) -> None:
                     if [item["product_id"] for item in result["items"]] != [37]:
                         raise RuntimeError("Installed wheel rejected its reviewed export contract")
                 print(
-                    "Installed wheel passed isolated health, B0/B1/exploration/similar "
+                    "Installed wheel passed isolated health, B0/B1/exploration/similar/context "
                     "and OpenAPI verification."
                 )
             except BaseException:
@@ -236,6 +238,11 @@ def main(progress: dict[str, str]) -> None:
             "pathlib.Path(sys.prefix).resolve()), "
             "'Wheel imported outside its isolated environment'; "
             "m.app.openapi(); "
+            "from pubburi_recommendation.context_api import "
+            "ContextRecommendationRequest as C, recommend_context as context; "
+            "assert context(C(catalog=[], reference_product_ids=[1])).eligible_count is None; "
+            "assert context(C(catalog=[{'product_id':1,'sku_group':'a','available':False}], "
+            "reference_product_ids=[1,2])).model_fingerprint is None; "
             "assert 'sklearn' not in sys.modules and 'numpy' not in sys.modules, "
             "'Health/OpenAPI startup imported numerical model libraries'"
         )
