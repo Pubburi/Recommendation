@@ -38,6 +38,15 @@ HTTP200의 API error는 카탈로그 부재/성공으로 처리하지 않으며 
 
 ## 단위·범위·정체성
 
+- P31/P176의 ID 모양만으로 분류·생산자 사실을 승인하지 않는다. [Wikibase JSON 명세](https://doc.wikimedia.org/Wikibase/master/php/docs_topics_json.html)의
+  property·`wikibase-item`/`wikibase-entityid`·item ID/명시 numeric-id와 snak/rank 의미를 대조한다.
+  생략된 중복 legacy metadata는 유지하지만 명시 모순이나 qualified/불명확한 활성 관계가
+  하나라도 있으면 해당 property 전체를 `[]`와 `relation_statement_requires_review` 또는
+  `context_requires_review`로 보존한다. 이는 검수한 관계 부재가 아닌 unknown 집합이다.
+  deprecated는 제외하며 다른 property/수량을 삭제하지 않는다. `relation_issues`는 수량과
+  별도 집계다. 거짓 nonempty 사실의 단독 fit과 malformed P31 포장 scope 우회는
+  [동결 CLI 재현](measurements/2026-11-03-source-relation-integrity.md)으로 확인했다.
+
 - 지원 단위는 정확한 `http(s)://www.wikidata.org/entity/…` URI로만 식별한다. bare QID·
   외부 호스트/사용자 정보·다른 경로의 접미사를 잘라 같은 단위로 추측하지 않는다.
   snak property/datatype·datavalue type이 명시되면 해당 property/`quantity`와 일치해야 한다.

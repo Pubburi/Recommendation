@@ -17,6 +17,11 @@
 - 학습 전 명세에 `family_groups`, 서로 겹치지 않는 fit/transform 그룹과 전체 선택 항목의
   수동 사실 명세를 고정한다. P31/P176·관측 도수/용량을 원문 감사 결과와 대조하고 모순은 거절한다.
   자동 점수나 모델 결과로 사실 기대값·관련성 정답을 생성하지 않는다.
+- 공통 정규화는 명시 P31/P176 metadata·item/numeric identity 모순이나 qualified/불명확한
+  활성 관계를 전체 property의 빈 ID/고정 issue로 보존한다. 빈 ID와 issue는 unknown이며
+  nonempty 사실로 선언하면 기존 사실 대조가 fit 전에 거절한다. honest empty는 다른 정상
+  사실만 fit할 수 있다. legacy metadata 생략·deprecated 제외와 cohort의 더 강한 필수
+  relation gate는 유지한다. [실제 손상 CLI 전후](measurements/2026-11-03-source-relation-integrity.md)를 따른다.
 - `evidence_kind`는 실제 검수 원천과 `authored_regression_fixture`를 구분한다. CI는 직접 쓴
   허구 항목만 사용하고 실제 원문·개별 카탈로그·학습 파라미터를 Git/CI artifact에 올리지 않는다.
 

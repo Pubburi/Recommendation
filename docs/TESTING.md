@@ -97,6 +97,14 @@ unknown과 0의 구분, 후보 부족 시 조건 유지, 필터 뒤 limit, 입�
 
 ## 오프라인 원천 감사
 
+`tests/test_source_relation_integrity.py`는 자체 P31/P176 모순12종의 fixed issue/전체 집합
+unknown과 fit 전 거절·honest empty의 정상 어휘/DF-IDF·수량 보존을 검증한다. 최소형 metadata
+생략·정상/선호·deprecated·손상 이웃/문맥·엄격 identity/상한과 non-overridable 포장 P31 보류를
+확인한다. 실제 subprocess CLI는 accepted offline receipt/review/hash가 같아도 거짓 관계
+사실이 fit되지 않는지 확인한다. 새 wheel의 runtime-only `python -I`는 별도 authored
+관계4조건의 collector→단독 fit 거절/honest unknown fit과 포장2조건의 실제 curation 미발행을
+검증한다. 이 분모는 실제 동결12/별도2 전후와 합산하지 않으며 CI에 원천/모델을 올리지 않는다.
+
 `tests/test_catalog_audit.py`는 직접 작성한 가상 entity로 권리 보류를 입력 읽기 전에 확인하는지,
 단위 변환·범위/문맥/다중 값의 unknown·deprecated·라벨 누락·브랜드/SKU 분리·원문 해시와
 검수 mapping·명시 Backend ID/그룹/시연 가용성·가격·B0 계약·출력 덮어쓰기 차단을 검증한다.

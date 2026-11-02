@@ -116,16 +116,47 @@ def statements(entity: dict, prop: str) -> list[dict]:
     return values
 
 
-def item_ids(entity: dict, prop: str) -> list[str]:
-    ids = set()
+def item_relations(entity: dict, prop: str) -> tuple[list[str], list[str]]:
+    """Preserve unknown relation sets; a QID-shaped value cannot repair explicit contradictions."""
+    ids, issues = set(), set()
     for statement in statements(entity, prop):
         if statement.get("rank") == "deprecated":
             continue
-        data = statement["mainsnak"].get("datavalue")
+        snak = statement["mainsnak"]
+        data = snak.get("datavalue")
         value = data.get("value") if isinstance(data, dict) else None
-        if isinstance(value, dict) and QID.fullmatch(str(value.get("id", ""))):
-            ids.add(value["id"])
-    return sorted(ids)
+        qid = value.get("id") if isinstance(value, dict) else None
+        qualifiers = statement.get("qualifiers", {})
+        if not isinstance(qualifiers, dict) or qualifiers:
+            issues.add("context_requires_review")
+            continue
+        # Omitted redundant legacy metadata remains compatible. If supplied, every
+        # part must describe this unqualified item relation, including its identity.
+        if (
+            ("rank" in statement and statement["rank"] not in ("normal", "preferred"))
+            or ("snaktype" in snak and snak["snaktype"] != "value")
+            or ("property" in snak and snak["property"] != prop)
+            or ("datatype" in snak and snak["datatype"] != "wikibase-item")
+            or not isinstance(data, dict)
+            or ("type" in data and data["type"] != "wikibase-entityid")
+            or not isinstance(qid, str)
+            or len(qid) > 32
+            or not QID.fullmatch(qid)
+            or ("entity-type" in value and value["entity-type"] != "item")
+            or (
+                "numeric-id" in value
+                and (type(value["numeric-id"]) is not int or value["numeric-id"] != int(qid[1:]))
+            )
+        ):
+            issues.add("relation_statement_requires_review")
+            continue
+        ids.add(qid)
+    # Do not turn a partly unknown set into a complete positive fact declaration.
+    return ([] if issues else sorted(ids)), sorted(issues)
+
+
+def item_ids(entity: dict, prop: str) -> list[str]:
+    return item_relations(entity, prop)[0]
 
 
 def wikidata_unit_factors(units: dict[str, Decimal]) -> dict[str, Decimal]:
@@ -225,6 +256,8 @@ def normalize_entities(payload: dict) -> list[dict]:
                 break
         abv, abv_issues = scalar_quantity(entity, "P2665", ABV_UNITS, Decimal(100))
         volume, volume_issues = scalar_quantity(entity, "P2234", VOLUME_UNITS, Decimal(1_000_000))
+        classes, class_issues = item_relations(entity, "P31")
+        producers, producer_issues = item_relations(entity, "P176")
         records.append(
             {
                 "source_id": "wikidata-structured",
@@ -233,8 +266,8 @@ def normalize_entities(payload: dict) -> list[dict]:
                 "source_url": f"https://www.wikidata.org/wiki/{qid}?oldid={revision}",
                 "label": name,
                 "label_language": name_language,
-                "instance_of_ids": item_ids(entity, "P31"),
-                "producer_ids": item_ids(entity, "P176"),
+                "instance_of_ids": classes,
+                "producer_ids": producers,
                 "abv_percent": abv,
                 "volume_ml": volume,
                 "price_krw": None,
@@ -245,6 +278,8 @@ def normalize_entities(payload: dict) -> list[dict]:
                 "issues": [
                     *(f"abv:{issue}" for issue in abv_issues),
                     *(f"volume:{issue}" for issue in volume_issues),
+                    *(f"instance_of:{issue}" for issue in class_issues),
+                    *(f"producer:{issue}" for issue in producer_issues),
                 ],
             }
         )
@@ -303,7 +338,24 @@ def audit(
             for field in ("label", "abv_percent", "volume_ml", "price_krw", "sku_group")
         },
         "quantity_issues": dict(
-            sorted(Counter(issue for record in records for issue in record["issues"]).items())
+            sorted(
+                Counter(
+                    issue
+                    for record in records
+                    for issue in record["issues"]
+                    if issue.startswith(("abv:", "volume:"))
+                ).items()
+            )
+        ),
+        "relation_issues": dict(
+            sorted(
+                Counter(
+                    issue
+                    for record in records
+                    for issue in record["issues"]
+                    if issue.startswith(("instance_of:", "producer:"))
+                ).items()
+            )
         ),
         "b0_demo_exported": len(catalog),
         "catalog_mode": "demo" if reviews else None,
