@@ -201,6 +201,15 @@ ASGI 무응답/드립의 절대 deadline·누적 chunk/끊긴 연결은 두 POST
 
 ## source 상품군의 별도 표현 실험
 
+`tests/test_source_representation_comparison.py`는 실제 authored TF-IDF/SVD fit의 수동 산술
+에너지/재구성·중심화 분산 구분, fit 행/어휘 관찰·held-out 사실 변경에도 파라미터/지문 불변,
+OOV 영벡터/0양성 분모·signed cosine 원순위와 기본 비음수 검사를 확인한다. 고정 프로토콜/
+버전/해시·degenerate rank/밀집 상한·변경 source/receipt/review/baseline·기존 출력은 후보
+fit/발행 전에 거절한다. 실제 subprocess CLI의 전체 baseline 보존·결정적 replay를 검증한다.
+새 runtime-only wheel의 `python -I`는 실제 offline collector/cohort→SVD CLI를 실행하고,
+별도로 바꾼 held-out 원문/receipt/review의 transform만 달라지는지와 stale authority의 exit2/
+미발행을 확인한다. 실제11상품군 실측·서비스 SKU/선호 품질과 CI의 authored corpus는 구분한다.
+
 `tests/test_source_family_cohort.py`는 별도 authored collector receipt/review로 다중 snapshot을
 연결한다. 각 hash/accepted/revision·검수 grain, source ID 중복·같은 raw 재분할·unknown/
 공유 producer·group 교차를 거절하고 unqualified entity-valued P31/P176과 고정 사실을
