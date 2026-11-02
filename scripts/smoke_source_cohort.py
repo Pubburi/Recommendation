@@ -5,6 +5,8 @@ import hashlib
 import json
 import subprocess
 
+from smoke_source_comparison import smoke_source_comparison
+
 
 def smoke_source_cohort(python, work, manifest, raw, receipt, review, facts):
     def write(name, value):
@@ -107,29 +109,26 @@ def smoke_source_cohort(python, work, manifest, raw, receipt, review, facts):
         },
     )
     output = work / ".pubburi" / "cohort-fit.json"
+    arguments = [
+        "--manifest",
+        str(manifest),
+        "--spec",
+        str(spec),
+        "--output",
+        str(output),
+        "--snapshot",
+        "known",
+        str(raw),
+        str(receipt),
+        str(review),
+        "--snapshot",
+        "unseen",
+        str(second),
+        str(second_receipt),
+        str(second_review),
+    ]
     subprocess.run(
-        [
-            str(python),
-            "-I",
-            "-m",
-            "pubburi_recommendation.source_family_cohort",
-            "--manifest",
-            str(manifest),
-            "--spec",
-            str(spec),
-            "--output",
-            str(output),
-            "--snapshot",
-            "known",
-            str(raw),
-            str(receipt),
-            str(review),
-            "--snapshot",
-            "unseen",
-            str(second),
-            str(second_receipt),
-            str(second_review),
-        ],
+        [str(python), "-I", "-m", "pubburi_recommendation.source_family_cohort", *arguments],
         cwd=work,
         check=True,
         timeout=60,
@@ -147,3 +146,4 @@ def smoke_source_cohort(python, work, manifest, raw, receipt, review, facts):
         or result["ranking_metrics"]["positive_label_queries"] != 1
     ):
         raise RuntimeError("Installed cohort violated separate authorities or producer holdout")
+    smoke_source_comparison(python, work, arguments)
