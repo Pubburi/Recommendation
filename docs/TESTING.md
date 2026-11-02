@@ -51,6 +51,9 @@ MMR 선택값과 관련성 floor, unknown의 보수 처리·상위100 한계·�
     artifact에 포함하지 않는다.
     별도 authored snapshot을 하나 더 검수해 `source_family_cohort` CLI의2fit/1transform·
     제조사 분리·두 authority/변환 producer OOV·사실 평가를 같은 격리 wheel에서 실행한다.
+    단위 namespace·명시 property/datatype/value type 모순을 각각 넣고 실제 offline 수집 CLI로
+    새 receipt/review/hash를 만든 뒤에도 숫자 사실 선언은 fit/report 전에 거절되는지 확인한다.
+    같은 원문의 사실을 null로 선언하면 남은 관측만 fit하며 상수 열을 비활성화해야 한다.
 11. 같은 자체 snapshot/receipt로 `package_identity_audit`를 runtime-only `python -I`에서 실제
     실행한다. 문자열 GTIN 체크·포장 필드 부족·완성 receipt와 매핑/fit승격0을 확인한다.
     외부 GTIN 할당 조회나 실제 주류 카탈로그를 CI에서 사용하지 않는다.
@@ -94,6 +97,9 @@ unknown과 0의 구분, 후보 부족 시 조건 유지, 필터 뒤 limit, 입�
 ko/en 우선순위·mul-only 기본 라벨·원천 label_language·실제 unknown·설명/별칭 비추론·라벨 상한과
 동일 revision이라도 새 raw 해시에 이전 검수가 재사용되지 않는 경계도 검증한다. 새 wheel의 실제
 수집 CLI는 직접 작성한 mul-only payload를 offline 재생해 라벨과 원천 언어가 보존되는지 확인한다.
+bare ID·외부/위장 호스트·비HTTP·다른 경로/질의/fragment 단위와 명시 수량 메타데이터 모순은
+숫자로 관측하지 않는다. HTTP/HTTPS의 기존 모든 지원 단위·0 도수·최소형 메타 생략을 보존하며
+유효 statement 옆의 활성 손상값도 숨기지 않는다. 이 검사는 실제 원천 오류 발생률이 아니다.
 
 `tests/test_legacy_seed_audit.py`는 작은 직접 작성 SQL·로컬 바이트 fixture로 활성 INSERT/주석·
 quoted text·컬럼/리터럴 상한·지원 불가/변경문 거절, 사용자/암호 행 비노출, Decimal 타입/정확값·

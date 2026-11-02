@@ -1,0 +1,293 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "authored_regression_fixture",
+  "baseline_commit": "38b32b8",
+  "frozen_at_utc": "2026-11-02T06:54:00.135652+00:00",
+  "frozen_spec_sha256": "bc00f3fb04c283185398ca186768a228d1cb8612ffd30b2a7ef960bb904b1d99",
+  "python": "3.12.14",
+  "scikit_learn": "1.9.1",
+  "sample_unit": "One authored corruption of a single Q1 P2665 statement per run; never real source observations.",
+  "denominator": 10,
+  "before": {
+    "false_numeric_observations": 10,
+    "false_numeric_fit_acceptances": 10,
+    "error_rate_percent": 100
+  },
+  "after": {
+    "false_numeric_observations": 0,
+    "false_numeric_fit_acceptances": 0,
+    "error_rate_percent": 0
+  },
+  "error_rate_percentage_point_difference": -100,
+  "cases": [
+    {
+      "case_id": "bare-item-id",
+      "before_normalized_abv": 5.0,
+      "after_normalized_abv": null,
+      "after_issues": [
+        "abv:unsupported_unit"
+      ],
+      "before_false_numeric_fit_exit": 0,
+      "after_false_numeric_fit_exit": 2,
+      "after_false_numeric_report_published": false,
+      "before_numeric_fit": {
+        "observed_training_values": 2,
+        "minimum": 5.0,
+        "maximum": 15.0,
+        "active": true,
+        "inactive_reason": null
+      },
+      "after_corrected_facts_numeric_fit": {
+        "observed_training_values": 1,
+        "minimum": 15.0,
+        "maximum": 15.0,
+        "active": false,
+        "inactive_reason": "constant"
+      }
+    },
+    {
+      "case_id": "foreign-unit-host",
+      "before_normalized_abv": 5.0,
+      "after_normalized_abv": null,
+      "after_issues": [
+        "abv:unsupported_unit"
+      ],
+      "before_false_numeric_fit_exit": 0,
+      "after_false_numeric_fit_exit": 2,
+      "after_false_numeric_report_published": false,
+      "before_numeric_fit": {
+        "observed_training_values": 2,
+        "minimum": 5.0,
+        "maximum": 15.0,
+        "active": true,
+        "inactive_reason": null
+      },
+      "after_corrected_facts_numeric_fit": {
+        "observed_training_values": 1,
+        "minimum": 15.0,
+        "maximum": 15.0,
+        "active": false,
+        "inactive_reason": "constant"
+      }
+    },
+    {
+      "case_id": "host-suffix-spoof",
+      "before_normalized_abv": 5.0,
+      "after_normalized_abv": null,
+      "after_issues": [
+        "abv:unsupported_unit"
+      ],
+      "before_false_numeric_fit_exit": 0,
+      "after_false_numeric_fit_exit": 2,
+      "after_false_numeric_report_published": false,
+      "before_numeric_fit": {
+        "observed_training_values": 2,
+        "minimum": 5.0,
+        "maximum": 15.0,
+        "active": true,
+        "inactive_reason": null
+      },
+      "after_corrected_facts_numeric_fit": {
+        "observed_training_values": 1,
+        "minimum": 15.0,
+        "maximum": 15.0,
+        "active": false,
+        "inactive_reason": "constant"
+      }
+    },
+    {
+      "case_id": "userinfo-host-spoof",
+      "before_normalized_abv": 5.0,
+      "after_normalized_abv": null,
+      "after_issues": [
+        "abv:unsupported_unit"
+      ],
+      "before_false_numeric_fit_exit": 0,
+      "after_false_numeric_fit_exit": 2,
+      "after_false_numeric_report_published": false,
+      "before_numeric_fit": {
+        "observed_training_values": 2,
+        "minimum": 5.0,
+        "maximum": 15.0,
+        "active": true,
+        "inactive_reason": null
+      },
+      "after_corrected_facts_numeric_fit": {
+        "observed_training_values": 1,
+        "minimum": 15.0,
+        "maximum": 15.0,
+        "active": false,
+        "inactive_reason": "constant"
+      }
+    },
+    {
+      "case_id": "non-http-unit",
+      "before_normalized_abv": 5.0,
+      "after_normalized_abv": null,
+      "after_issues": [
+        "abv:unsupported_unit"
+      ],
+      "before_false_numeric_fit_exit": 0,
+      "after_false_numeric_fit_exit": 2,
+      "after_false_numeric_report_published": false,
+      "before_numeric_fit": {
+        "observed_training_values": 2,
+        "minimum": 5.0,
+        "maximum": 15.0,
+        "active": true,
+        "inactive_reason": null
+      },
+      "after_corrected_facts_numeric_fit": {
+        "observed_training_values": 1,
+        "minimum": 15.0,
+        "maximum": 15.0,
+        "active": false,
+        "inactive_reason": "constant"
+      }
+    },
+    {
+      "case_id": "scheme-relative-unit",
+      "before_normalized_abv": 5.0,
+      "after_normalized_abv": null,
+      "after_issues": [
+        "abv:unsupported_unit"
+      ],
+      "before_false_numeric_fit_exit": 0,
+      "after_false_numeric_fit_exit": 2,
+      "after_false_numeric_report_published": false,
+      "before_numeric_fit": {
+        "observed_training_values": 2,
+        "minimum": 5.0,
+        "maximum": 15.0,
+        "active": true,
+        "inactive_reason": null
+      },
+      "after_corrected_facts_numeric_fit": {
+        "observed_training_values": 1,
+        "minimum": 15.0,
+        "maximum": 15.0,
+        "active": false,
+        "inactive_reason": "constant"
+      }
+    },
+    {
+      "case_id": "non-entity-path",
+      "before_normalized_abv": 5.0,
+      "after_normalized_abv": null,
+      "after_issues": [
+        "abv:unsupported_unit"
+      ],
+      "before_false_numeric_fit_exit": 0,
+      "after_false_numeric_fit_exit": 2,
+      "after_false_numeric_report_published": false,
+      "before_numeric_fit": {
+        "observed_training_values": 2,
+        "minimum": 5.0,
+        "maximum": 15.0,
+        "active": true,
+        "inactive_reason": null
+      },
+      "after_corrected_facts_numeric_fit": {
+        "observed_training_values": 1,
+        "minimum": 15.0,
+        "maximum": 15.0,
+        "active": false,
+        "inactive_reason": "constant"
+      }
+    },
+    {
+      "case_id": "contradictory-property",
+      "before_normalized_abv": 5.0,
+      "after_normalized_abv": null,
+      "after_issues": [
+        "abv:quantity_statement_requires_review"
+      ],
+      "before_false_numeric_fit_exit": 0,
+      "after_false_numeric_fit_exit": 2,
+      "after_false_numeric_report_published": false,
+      "before_numeric_fit": {
+        "observed_training_values": 2,
+        "minimum": 5.0,
+        "maximum": 15.0,
+        "active": true,
+        "inactive_reason": null
+      },
+      "after_corrected_facts_numeric_fit": {
+        "observed_training_values": 1,
+        "minimum": 15.0,
+        "maximum": 15.0,
+        "active": false,
+        "inactive_reason": "constant"
+      }
+    },
+    {
+      "case_id": "contradictory-datatype",
+      "before_normalized_abv": 5.0,
+      "after_normalized_abv": null,
+      "after_issues": [
+        "abv:quantity_statement_requires_review"
+      ],
+      "before_false_numeric_fit_exit": 0,
+      "after_false_numeric_fit_exit": 2,
+      "after_false_numeric_report_published": false,
+      "before_numeric_fit": {
+        "observed_training_values": 2,
+        "minimum": 5.0,
+        "maximum": 15.0,
+        "active": true,
+        "inactive_reason": null
+      },
+      "after_corrected_facts_numeric_fit": {
+        "observed_training_values": 1,
+        "minimum": 15.0,
+        "maximum": 15.0,
+        "active": false,
+        "inactive_reason": "constant"
+      }
+    },
+    {
+      "case_id": "contradictory-value-type",
+      "before_normalized_abv": 5.0,
+      "after_normalized_abv": null,
+      "after_issues": [
+        "abv:quantity_statement_requires_review"
+      ],
+      "before_false_numeric_fit_exit": 0,
+      "after_false_numeric_fit_exit": 2,
+      "after_false_numeric_report_published": false,
+      "before_numeric_fit": {
+        "observed_training_values": 2,
+        "minimum": 5.0,
+        "maximum": 15.0,
+        "active": true,
+        "inactive_reason": null
+      },
+      "after_corrected_facts_numeric_fit": {
+        "observed_training_values": 1,
+        "minimum": 15.0,
+        "maximum": 15.0,
+        "active": false,
+        "inactive_reason": "constant"
+      }
+    }
+  ],
+  "existing_real_corpus": {
+    "new_acquisition": false,
+    "snapshots": 2,
+    "families": 11,
+    "fit": 5,
+    "transform": 6,
+    "same_full_report_bytes": true,
+    "report_sha256": "dcdea43cca59628cd6c3041db2f00393bf1e1ca0c3f5be781f529ae6adad73e2",
+    "fit_fingerprint": "0b1dea7937e89b8bf3cbe5180ec2ea8a6a9fbe467725a5e9340021bde0853748",
+    "source_authorities_unchanged": true
+  },
+  "new_source_gets": 0,
+  "new_service_mappings": 0,
+  "new_service_catalog_fits": 0,
+  "limitations": [
+    "Fixed authored corruption sample, not natural source error frequency.",
+    "Numerical integrity, not ranking relevance, user preference or service performance.",
+    "Existing source-family fit replay is not new service SKU training."
+  ]
+}

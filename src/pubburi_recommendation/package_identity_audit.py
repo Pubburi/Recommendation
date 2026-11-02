@@ -19,6 +19,7 @@ from pubburi_recommendation.catalog_audit import (
     item_ids,
     read_json,
     statements,
+    wikidata_unit_factors,
 )
 from pubburi_recommendation.collection_snapshot import verify_collection_snapshot
 from pubburi_recommendation.wikidata_collect import write_receipt
@@ -155,11 +156,7 @@ def package_quantities(entity: dict, record: dict) -> tuple[dict, list[str]]:
     values, issues = {}, []
     for field, prop in (("abv_percent", "P2665"), ("volume_ml", "P2234")):
         units = ABV_UNITS if prop == "P2665" else VOLUME_UNITS
-        allowed_units = {
-            f"{scheme}://www.wikidata.org/entity/{unit}"
-            for scheme in ("http", "https")
-            for unit in units
-        }
+        allowed_units = wikidata_unit_factors(units)
         malformed = False
         for statement in statements(entity, prop):
             if statement.get("rank") == "deprecated":
@@ -178,8 +175,8 @@ def package_quantities(entity: dict, record: dict) -> tuple[dict, list[str]]:
                 or requires_context_review(statement)
             ):
                 malformed = True
-        # The existing scalar normalizer handles units, bounds, multiplicity and range. Its
-        # older permissive rank/type handling is not sufficient evidence for package identity.
+        # Scalar normalization permits omitted redundant metadata; package evidence still
+        # requires an explicit rank/type as well as the same canonical unit URI policy.
         values[field] = None if malformed else record[field]
         if malformed:
             issues.append(f"{field}_statement_requires_review")

@@ -1,5 +1,6 @@
 """Run source-family fit through a runtime-only installed wheel using authored records."""
 
+import copy
 import hashlib
 import json
 import subprocess
@@ -187,6 +188,104 @@ def smoke_source_family(python: Path, work: Path, manifest: Path) -> None:
         or report["ranking_metrics"]["omitted_no_positive_queries"] != 1
     ):
         raise RuntimeError("The installed wheel violated source-family fit/transform boundaries")
+    for case, field, value in (
+        ("foreign-unit", "unit", "https://example.invalid/Q2080811"),
+        ("property", "property", "P2234"),
+        ("datatype", "datatype", "string"),
+        ("value-type", "type", "string"),
+    ):
+        corrupted = copy.deepcopy(entities)
+        snak = corrupted["Q1"]["claims"]["P2665"][0]["mainsnak"]
+        target = (
+            snak["datavalue"]["value"]
+            if field == "unit"
+            else snak["datavalue"]
+            if field == "type"
+            else snak
+        )
+        target[field] = value
+        corrupt_raw = write(f"quantity-{case}.json", {"success": 1, "entities": corrupted})
+        corrupt_collection = work / ".pubburi" / f"quantity-{case}-collection"
+        subprocess.run(
+            [
+                str(python),
+                "-I",
+                "-m",
+                "pubburi_recommendation.wikidata_collect",
+                "--manifest",
+                str(manifest),
+                "--ids",
+                "Q1",
+                "Q2",
+                "Q3",
+                "--snapshot",
+                str(corrupt_raw),
+                "--output-dir",
+                str(corrupt_collection),
+            ],
+            cwd=work,
+            check=True,
+            timeout=10,
+            stdout=subprocess.DEVNULL,
+        )
+        corrupt_review = json.loads(review.read_text())
+        corrupt_review["input_sha256"] = sha(corrupt_raw)
+        review_path = write(f"quantity-{case}-review.json", corrupt_review)
+        corrupt_spec = json.loads(spec.read_text())
+        corrupt_spec.update(
+            input_sha256=sha(corrupt_raw),
+            review_sha256=sha(review_path),
+            receipt_sha256=sha(corrupt_collection / "receipt.json"),
+        )
+        spec_path = write(f"quantity-{case}-spec.json", corrupt_spec)
+        output_path = work / ".pubburi" / f"quantity-{case}-fit.json"
+        quantity_command = [
+            str(python),
+            "-I",
+            "-m",
+            "pubburi_recommendation.source_family_experiment",
+        ]
+        for name, path in {
+            "manifest": manifest,
+            "input": corrupt_raw,
+            "receipt": corrupt_collection / "receipt.json",
+            "review": review_path,
+            "spec": spec_path,
+            "output": output_path,
+        }.items():
+            quantity_command += ["--" + name, str(path)]
+        rejected = subprocess.run(
+            quantity_command,
+            cwd=work,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if (
+            rejected.returncode != 2
+            or rejected.stderr.strip()
+            != ("Source family experiment failed: manual_facts_conflict_with_reviewed_source")
+            or output_path.exists()
+        ):
+            raise RuntimeError("The installed wheel admitted a contradictory source quantity")
+        corrupt_spec["expected_facts"]["Q1"]["abv_percent"] = None
+        write(spec_path.name, corrupt_spec)
+        subprocess.run(
+            quantity_command,
+            cwd=work,
+            check=True,
+            timeout=60,
+            stdout=subprocess.DEVNULL,
+        )
+        unknown_fit = json.loads(output_path.read_text())["fitted_parameters"]["numeric_fit"]
+        if unknown_fit["abv_percent"] != {
+            "observed_training_values": 1,
+            "minimum": 15,
+            "maximum": 15,
+            "active": False,
+            "inactive_reason": "constant",
+        }:
+            raise RuntimeError("The installed wheel filled an unknown quantity before fit")
     # Inspect an independently authored positive ranking, without fitting or synthesizing gold.
     subprocess.run(
         [

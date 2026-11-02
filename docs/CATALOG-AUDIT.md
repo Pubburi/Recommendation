@@ -38,6 +38,14 @@ HTTP200의 API error는 카탈로그 부재/성공으로 처리하지 않으며 
 
 ## 단위·범위·정체성
 
+- 지원 단위는 정확한 `http(s)://www.wikidata.org/entity/…` URI로만 식별한다. bare QID·
+  외부 호스트/사용자 정보·다른 경로의 접미사를 잘라 같은 단위로 추측하지 않는다.
+  snak property/datatype·datavalue type이 명시되면 해당 property/`quantity`와 일치해야 한다.
+  기존 최소형 입력의 생략된 중복 메타데이터는 허용하지만 명시 모순은
+  `quantity_statement_requires_review`와 null로 보존한다. 포장/용량 문맥 도구도 같은 URI
+  변환표를 사용하며 각 도구의 더 엄격한 명시 메타데이터/문맥 조건은 그대로 적용한다.
+  [Wikibase JSON 공식 명세](https://doc.wikimedia.org/Wikibase/master/php/docs_topics_json.html)와
+  [실제 audit→fit 손상 입력 재현](measurements/2026-11-02-source-quantity-fit-integrity.md)을 참고한다.
 - [P2665](https://www.wikidata.org/wiki/Property:P2665)는 명시된 volume-percent 단위만
   0–100 도수로 받는다. 무단위·미지원 단위·비유한 값·범위·문맥 qualifier·서로 다른 여러 값은
   unknown과 검토 사유로 남긴다. 0%는 미확인 값과 다르다.

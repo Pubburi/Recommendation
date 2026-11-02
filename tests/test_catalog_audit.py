@@ -109,6 +109,100 @@ def test_unit_conversion_preserves_known_zero_abv_and_missing_label():
 
 
 @pytest.mark.parametrize(
+    "prop,unit,field,amount,expected",
+    [
+        ("P2665", "Q2080811", "abv_percent", "+0", 0),
+        ("P2234", "Q2332346", "volume_ml", "+750", 750),
+        ("P2234", "Q11582", "volume_ml", "+0.75", 750),
+        ("P2234", "Q1815100", "volume_ml", "+75", 750),
+    ],
+)
+@pytest.mark.parametrize("scheme", ["http", "https"])
+@pytest.mark.parametrize("explicit_metadata", [False, True])
+def test_canonical_units_preserve_minimal_and_explicit_quantity_shapes(
+    prop, unit, field, amount, expected, scheme, explicit_metadata
+):
+    statement = quantity(amount, unit)
+    snak = statement["mainsnak"]
+    snak["datavalue"]["value"]["unit"] = f"{scheme}://www.wikidata.org/entity/{unit}"
+    if explicit_metadata:
+        snak.update(property=prop, datatype="quantity")
+        snak["datavalue"]["type"] = "quantity"
+    records = normalize_entities(payload(entity(claims={prop: [statement]})))
+    assert records[0][field] == expected
+    assert records[0]["issues"] == []
+
+
+@pytest.mark.parametrize(
+    "prop,unit,field",
+    [
+        ("P2665", "Q2080811", "abv_percent"),
+        ("P2234", "Q2332346", "volume_ml"),
+    ],
+)
+@pytest.mark.parametrize(
+    "template",
+    [
+        "{unit}",
+        "https://example.invalid/{unit}",
+        "https://www.wikidata.org.example.invalid/entity/{unit}",
+        "https://www.wikidata.org@example.invalid/entity/{unit}",
+        "ftp://www.wikidata.org/entity/{unit}",
+        "//www.wikidata.org/entity/{unit}",
+        "https://www.wikidata.org/wiki/{unit}",
+        "https://www.wikidata.org/entity/{unit}?unit=1",
+        "https://www.wikidata.org/entity/{unit}#unit",
+    ],
+)
+def test_unit_identity_cannot_be_inferred_from_bare_ids_or_url_suffixes(
+    prop, unit, field, template
+):
+    statement = quantity("+5", unit)
+    statement["mainsnak"]["datavalue"]["value"]["unit"] = template.format(unit=unit)
+    records = normalize_entities(payload(entity(claims={prop: [statement]})))
+    assert records[0][field] is None
+    assert records[0]["issues"] == [f"{'abv' if prop == 'P2665' else 'volume'}:unsupported_unit"]
+
+
+@pytest.mark.parametrize("prop,field", [("P2665", "abv_percent"), ("P2234", "volume_ml")])
+@pytest.mark.parametrize(
+    "location,key,value",
+    [
+        ("mainsnak", "property", "P999"),
+        ("mainsnak", "datatype", "string"),
+        ("datavalue", "type", "string"),
+        ("mainsnak", "property", None),
+        ("mainsnak", "datatype", True),
+        ("datavalue", "type", []),
+    ],
+)
+def test_explicit_quantity_metadata_conflicts_never_become_observations(
+    prop, field, location, key, value
+):
+    statement = quantity("+5", "Q2080811" if prop == "P2665" else "Q2332346")
+    target = statement["mainsnak"]
+    if location == "datavalue":
+        target = target["datavalue"]
+    target[key] = value
+    records = normalize_entities(payload(entity(claims={prop: [statement]})))
+    assert records[0][field] is None
+    assert records[0]["issues"] == [
+        f"{'abv' if prop == 'P2665' else 'volume'}:quantity_statement_requires_review"
+    ]
+
+
+def test_malformed_active_quantity_cannot_hide_beside_a_valid_statement_but_deprecated_is_ignored():
+    malformed = quantity("+5")
+    malformed["mainsnak"]["datavalue"]["value"]["unit"] = "https://example.invalid/Q2080811"
+    claims = {"P2665": [quantity("+5"), malformed]}
+    record = normalize_entities(payload(entity(claims=claims)))[0]
+    assert record["abv_percent"] is None and record["issues"] == ["abv:unsupported_unit"]
+    malformed["rank"] = "deprecated"
+    record = normalize_entities(payload(entity(claims=claims)))[0]
+    assert record["abv_percent"] == 5 and record["issues"] == []
+
+
+@pytest.mark.parametrize(
     "labels,expected,language",
     [
         ({"mul": {"value": "Shared authored name"}}, "Shared authored name", "mul"),

@@ -24,6 +24,7 @@ from pubburi_recommendation.catalog_audit import (
     audit,
     read_json,
     statements,
+    wikidata_unit_factors,
 )
 from pubburi_recommendation.collection_snapshot import verify_collection_snapshot
 from pubburi_recommendation.package_identity_audit import Hash, SourceId, reference_count
@@ -97,11 +98,7 @@ def contextual_quantity(statement: dict, contexts: dict) -> tuple[str | None, st
     ):
         issues.append("quantity_statement_requires_review")
     else:
-        units = {
-            f"{scheme}://www.wikidata.org/entity/{qid}": factor
-            for qid, factor in VOLUME_UNITS.items()
-            for scheme in ("http", "https")
-        }
+        units = wikidata_unit_factors(VOLUME_UNITS)
         try:
             amount = value.get("amount")
             if not isinstance(amount, str) or len(amount) > 128:
