@@ -128,9 +128,19 @@ def item_ids(entity: dict, prop: str) -> list[str]:
     return sorted(ids)
 
 
+def wikidata_unit_factors(units: dict[str, Decimal]) -> dict[str, Decimal]:
+    """Only the supported Wikidata entity URIs name these conversion factors."""
+    return {
+        f"{scheme}://www.wikidata.org/entity/{qid}": factor
+        for qid, factor in units.items()
+        for scheme in ("http", "https")
+    }
+
+
 def scalar_quantity(entity: dict, prop: str, units: dict, maximum: Decimal):
     values = set()
     issues = set()
+    unit_factors = wikidata_unit_factors(units)
     for statement in statements(entity, prop):
         if statement.get("rank") == "deprecated":
             continue
@@ -143,8 +153,17 @@ def scalar_quantity(entity: dict, prop: str, units: dict, maximum: Decimal):
         if snak.get("snaktype") != "value" or not isinstance(value, dict):
             issues.add("unknown_statement")
             continue
-        unit = str(value.get("unit", "")).rsplit("/", 1)[-1]
-        if unit not in units:
+        # Minimal legacy/authored inputs omit redundant metadata. An explicit conflict
+        # cannot be repaired from its claims bucket or from a quantity-shaped value.
+        if (
+            ("property" in snak and snak["property"] != prop)
+            or ("datatype" in snak and snak["datatype"] != "quantity")
+            or ("type" in data and data["type"] != "quantity")
+        ):
+            issues.add("quantity_statement_requires_review")
+            continue
+        unit = value.get("unit")
+        if not isinstance(unit, str) or unit not in unit_factors:
             issues.add("unsupported_unit")
             continue
         try:
@@ -159,7 +178,7 @@ def scalar_quantity(entity: dict, prop: str, units: dict, maximum: Decimal):
             if any(bound != amount for bound in bounds):
                 issues.add("range_requires_review")
                 continue
-            converted = amount * units[unit]
+            converted = amount * unit_factors[unit]
             if converted < 0 or converted > maximum:
                 raise InvalidOperation
             if amount != 0 and (converted == 0 or float(converted) == 0):

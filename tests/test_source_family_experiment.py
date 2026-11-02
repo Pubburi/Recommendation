@@ -321,10 +321,10 @@ def test_incomplete_or_racing_report_never_overwrites_a_model(tmp_path, monkeypa
     assert list(output.parent.iterdir()) == [output]
 
 
-def write_inputs(tmp_path):
+def write_inputs(tmp_path, raw=None):
     paths = {name: tmp_path / f"{name}.json" for name in ("input", "review", "receipt", "spec")}
     paths["manifest"] = ROOT / "sources/wikidata-structured.json"
-    paths["input"].write_text(json.dumps(raw_fixture()))
+    paths["input"].write_text(json.dumps(raw_fixture() if raw is None else raw))
     input_hash = read_json(paths["input"])[1]
     paths["review"].write_text(json.dumps(review_fixture(input_hash)))
     collection = tmp_path / ".pubburi" / "authored-collection"
@@ -363,6 +363,62 @@ def test_real_cli_fits_private_output_and_preserves_existing_report(tmp_path):
     again = subprocess.run(command(paths, output), capture_output=True, text=True, check=False)
     assert again.returncode == 2 and "existing_model_report_must_be_preserved" in again.stderr
     assert json.loads(output.read_text()) == report
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("unit", "https://example.invalid/Q2080811"),
+        ("property", "P2234"),
+        ("datatype", "string"),
+        ("type", "string"),
+    ],
+)
+def test_rehashed_offline_source_cannot_turn_contradictory_quantities_into_fit_observations(
+    tmp_path, field, value
+):
+    raw = raw_fixture()
+    snak = raw["entities"]["Q1"]["claims"]["P2665"][0]["mainsnak"]
+    target = (
+        snak["datavalue"]["value"]
+        if field == "unit"
+        else (snak["datavalue"] if field == "type" else snak)
+    )
+    target[field] = value
+    # Collector acceptance and a freshly hash-bound review approve provenance, not a
+    # contradictory quantity. Rebuilding both must not bypass the numerical boundary.
+    paths = write_inputs(tmp_path, raw)
+    receipt = read_json(paths["receipt"])[0]
+    assert receipt["accepted"] is True and receipt["mode"] == "offline_replay"
+    assert read_json(paths["review"])[0]["input_sha256"] == read_json(paths["input"])[1]
+    output = tmp_path / ".pubburi" / "rejected-numeric-fit.json"
+    rejected = subprocess.run(command(paths, output), capture_output=True, text=True, check=False)
+    assert rejected.returncode == 2
+    assert rejected.stderr.strip() == (
+        "Source family experiment failed: manual_facts_conflict_with_reviewed_source"
+    )
+    assert not output.exists() and "example.invalid" not in rejected.stderr
+
+    spec = read_json(paths["spec"])[0]
+    spec["expected_facts"]["Q1"]["abv_percent"] = None
+    paths["spec"].write_text(json.dumps(spec))
+    output = tmp_path / ".pubburi" / "unknown-quantity-fit.json"
+    accepted = subprocess.run(command(paths, output), capture_output=True, text=True, check=False)
+    assert accepted.returncode == 0, accepted.stderr
+    report = read_json(output)[0]
+    assert report["passed_contract"] and report["fit_records"] == 2
+    assert report["fitted_parameters"]["numeric_fit"]["abv_percent"] == {
+        "observed_training_values": 1,
+        "minimum": 15,
+        "maximum": 15,
+        "active": False,
+        "inactive_reason": "constant",
+    }
+    assert report["transformed"][0]["numeric"]["abv_percent"] == {
+        "observed": True,
+        "scaled_value": None,
+        "outside_fit_range": False,
+    }
 
 
 def test_real_cli_rejects_changed_inputs_without_raw_values_or_partial_model(tmp_path):

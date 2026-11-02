@@ -266,6 +266,129 @@ if json_media_type(scope) and duplicate_json_keys(buffered):
     return
 ~~~
 
+### 원천 수량의 의미를 지켜 잘못된 학습 관측 차단
+
+#### 문제
+
+다른 호스트의 단위 URI나 수량 메타데이터가 모순인 허구 원문도 정상 도수5로 바뀌었다.
+새 offline 수집 영수증·검수·파일 해시를 갖춘 이 입력이 기존 source-family CLI의 실제
+MinMax fit 관측으로 승인됐다. 실제 원천 오염이나 사용자 사고를 관측한 것이 아니라
+별도 손상 입력으로 재현한 정규화→학습 경계 결함이다.
+
+#### 원인
+
+`scalar_quantity`가 단위 문자열의 마지막 `/` 뒤 QID만 비교해 URI의 원천/경로를 잃었다.
+claims bucket의 property와 명시 snak property/datatype·datavalue type이 모순이어도
+수량 모양과 숫자 범위가 맞으면 통과했다. 원문/검수/영수증 해시가 서로 맞는다는 사실은
+그 값의 단위와 타입 의미가 맞다는 보장이 아니었다.
+
+#### 해결
+
+지원 단위의 정확한 Wikidata HTTP/HTTPS entity URI만 변환하고 명시 property와 수량
+타입의 모순은 검토 사유·null로 남긴다. 기존 최소형 메타 생략·실제0과 나머지 원천 필드는
+보존한다. scalar·포장·문맥 도구가 같은 URI 변환표를 사용하고, 학습 전 독립 사실 대조가
+unknown을 숫자로 선언한 명세를 거절하도록 연결했다.
+
+#### 결과
+
+같은 3개 허구 상품군의 2fit/1transform 조건에서 사전 동결한 손상 입력의 수치 오승인과
+실제 fit/report 승인은 각각 **10/10 → 0/10**, 오류율 차이는 -100%p였다. null 사실로
+수정한 명세는 남은 도수15 하나만 관측하고 상수 열을 비활성화했다. 기존 실제11상품군의
+5fit/6transform 전체 보고서·fingerprint와 원천 authority 해시는 불변이었다.
+[동일 입력의 원값·조건·한계](docs/measurements/2026-11-02-source-quantity-fit-integrity.md)에
+남겼으며 자연 발생률·추천 품질·서비스 성능 개선이나 신규 서비스 카탈로그 학습은 아니다.
+
+#### 대체안/회고
+
+접미사 추정은 짧지만 다른 원천의 같은 QID를 승인한다. 전체 레코드 거절은 정상 라벨/주종도
+잃고, 생략된 중복 메타까지 강제하면 기존 입력 호환성을 해친다. 따라서 모순된 수량만
+unknown으로 보존하고 명시된 거짓 숫자 사실은 학습 전에 막았다. 새 원천/단위의 도입은
+URI 변환표·권리·사실 검수를 각각 확장해야 하며 이 검사는 상품 진실성이나 SKU 정체성 인증이 아니다.
+
+#### 코드
+
+실제 공통 단위 변환표와 scalar 정규화 함수 전체, 학습 함수의 fit 전 사실 대조 부분이다.
+[정규화 처리](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/catalog_audit.py) ·
+[실제 학습 경계](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/source_family_experiment.py)
+
+~~~python
+def wikidata_unit_factors(units: dict[str, Decimal]) -> dict[str, Decimal]:
+    """Only the supported Wikidata entity URIs name these conversion factors."""
+    return {
+        f"{scheme}://www.wikidata.org/entity/{qid}": factor
+        for qid, factor in units.items()
+        for scheme in ("http", "https")
+    }
+
+
+def scalar_quantity(entity: dict, prop: str, units: dict, maximum: Decimal):
+    values = set()
+    issues = set()
+    unit_factors = wikidata_unit_factors(units)
+    for statement in statements(entity, prop):
+        if statement.get("rank") == "deprecated":
+            continue
+        if statement.get("qualifiers"):
+            issues.add("context_requires_review")
+            continue
+        snak = statement.get("mainsnak", {})
+        data = snak.get("datavalue")
+        value = data.get("value") if isinstance(data, dict) else None
+        if snak.get("snaktype") != "value" or not isinstance(value, dict):
+            issues.add("unknown_statement")
+            continue
+        # Minimal legacy/authored inputs omit redundant metadata. An explicit conflict
+        # cannot be repaired from its claims bucket or from a quantity-shaped value.
+        if (
+            ("property" in snak and snak["property"] != prop)
+            or ("datatype" in snak and snak["datatype"] != "quantity")
+            or ("type" in data and data["type"] != "quantity")
+        ):
+            issues.add("quantity_statement_requires_review")
+            continue
+        unit = value.get("unit")
+        if not isinstance(unit, str) or unit not in unit_factors:
+            issues.add("unsupported_unit")
+            continue
+        try:
+            if not isinstance(value.get("amount"), str) or len(value["amount"]) > 128:
+                raise InvalidOperation
+            amount = Decimal(value["amount"])
+            bounds = [
+                Decimal(value.get(key, value["amount"])) for key in ("lowerBound", "upperBound")
+            ]
+            if not amount.is_finite() or any(not bound.is_finite() for bound in bounds):
+                raise InvalidOperation
+            if any(bound != amount for bound in bounds):
+                issues.add("range_requires_review")
+                continue
+            converted = amount * unit_factors[unit]
+            if converted < 0 or converted > maximum:
+                raise InvalidOperation
+            if amount != 0 and (converted == 0 or float(converted) == 0):
+                raise InvalidOperation
+            if prop == "P2234" and converted == 0:
+                raise InvalidOperation
+            values.add(converted)
+        except (KeyError, TypeError, ValueError, DecimalException):
+            issues.add("invalid_quantity")
+    if len(values) > 1:
+        issues.add("multiple_values_require_review")
+    value = float(next(iter(values))) if len(values) == 1 and not issues else None
+    return value, sorted(issues)
+~~~
+
+~~~python
+def fit_representation(spec: FamilyPartition, records: list[dict], hashes: dict) -> dict:
+    by_id = {row["source_record_id"]: row for row in records}
+    for qid, facts in spec.expected_facts.items():
+        row = by_id.get(qid)
+        if row is None or row["entity_kind"] != "product_family" or row["label"] is None:
+            raise AuditError("selected_records_require_reviewed_named_product_families")
+        if any(row[field] != value for field, value in facts.model_dump().items()):
+            raise AuditError("manual_facts_conflict_with_reviewed_source")
+~~~
+
 <a id="development"></a>
 
 ## 🚀 로컬 실행

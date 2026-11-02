@@ -90,6 +90,12 @@ source 제조사 관계2개를 별도 authority/검수 그대로 연결했다. �
 나머지5질의의 생략 분모/원순위를 구분한다. 새 원천 획득·서비스 SKU/업무 매핑 승격이 아니며
 기존 별도 DEMO1 fit·API parser 오류 재현과 grain/분모를 합산하지 않는다. 전체 AI03은 미완료다.
 
+[원천 수량→학습 입력 정합성 수정](plans/2026-11-02-source-quantity-fit-integrity.md)은
+동결한 허구 손상 표본에서 단위 접미사/명시 수량 메타 모순이 실제 source-family CLI의 수치
+관측으로 승인되는 경계를 재현했다. 정확한 지원 URI와 명시 metadata 일치를 정규화에서 확인해
+unknown을 보존하고 숫자 사실 선언은 fit 전에 거절한다. 같은 실제11상품군의 원문/영수증/검수·
+5fit/6transform 보고서와 fingerprint는 불변이며 신규 원천·매핑·서비스 fit/품질 성과가 아니다.
+
 DAT01/02의 추가 [포장 식별 도구](PACKAGE-IDENTITY-AUDIT.md)는 accepted source receipt와
 GTIN integrity·수치 단위/unknown·명시 포장/class 혼합·수동 hash/revision 검수를 분리한다.
 새 목적 표본4항목의 체크숫자 통과4/4·같은 item의 용기/GTIN/용량/도수 조합1/4를 확인했다.
