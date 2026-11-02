@@ -18,6 +18,11 @@ from pubburi_recommendation.exploration import (
     recommend_exploration,
 )
 from pubburi_recommendation.request_limits import CatalogRequestLimit
+from pubburi_recommendation.similar_api import (
+    SimilarRecommendationRequest,
+    SimilarRecommendationResponse,
+    recommend_similar,
+)
 
 app = FastAPI(
     title="Pubburi Recommendation",
@@ -86,3 +91,16 @@ def content(request: ContentRecommendationRequest) -> ContentRecommendationRespo
 def exploration(request: ExplorationRequest) -> ExplorationResponse:
     """Select a bounded diverse pool without relaxing B1 relevance or hard constraints."""
     return recommend_exploration(request)
+
+
+@app.post(
+    "/v1/recommendations/similar",
+    response_model=SimilarRecommendationResponse,
+    responses={
+        413: {"description": "Catalog request exceeds 524288 bytes"},
+        408: {"description": "Catalog request body timed out"},
+    },
+)
+def similar(request: SimilarRecommendationRequest) -> SimilarRecommendationResponse:
+    """Rank against known reference facts without returning that reference or its variants."""
+    return recommend_similar(request)

@@ -16,6 +16,7 @@ from urllib.request import ProxyHandler, Request, build_opener
 
 from smoke_content_http import verify_content_http
 from smoke_exploration_http import verify_exploration_http
+from smoke_similar_http import verify_similar_http
 from smoke_source_family import smoke_source_family
 from smoke_volume_context import smoke_volume_context
 
@@ -148,6 +149,7 @@ def verify_http(python: Path, work: Path) -> None:
                     raise RuntimeError("The installed wheel accepted duplicate catalog IDs")
                 verify_content_http(base_url, request_json)
                 verify_exploration_http(base_url, request_json)
+                verify_similar_http(base_url, request_json)
                 # Send exact artifacts from the installed mapping/export CLI.
                 for filename, path in (
                     ("b0-demo-request.json", "/v1/recommendations/baseline"),
@@ -160,7 +162,7 @@ def verify_http(python: Path, work: Path) -> None:
                     if [item["product_id"] for item in result["items"]] != [37]:
                         raise RuntimeError("Installed wheel rejected its reviewed export contract")
                 print(
-                    "Installed wheel passed isolated health, B0/B1/exploration "
+                    "Installed wheel passed isolated health, B0/B1/exploration/similar "
                     "and OpenAPI verification."
                 )
             except BaseException:

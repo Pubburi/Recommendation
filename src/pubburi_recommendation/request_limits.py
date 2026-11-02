@@ -18,6 +18,7 @@ CATALOG_PATHS = {
     "/v1/recommendations/baseline",
     "/v1/recommendations/content",
     "/v1/recommendations/exploration",
+    "/v1/recommendations/similar",
 }
 
 
