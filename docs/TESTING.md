@@ -6,6 +6,12 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
 
 ## 배포 산출물 검증
 
+`tests/test_similar_api.py`는 사전 선언한 허구 상품의 기준 ID/그룹·필수 조건·실제0/unknown과
+기존 B1 원점수/기여를 검증한다. 기준 부재·판매 불가의 미계산 null/무모델 처리, 무정보/무공유
+특성의 빈 fallback, soft 기준과 hard 조건 분리·요청 순열/상태 격리와 원문 경계를 확인한다.
+설치한 새 wheel의 실제 similar HTTP·OpenAPI·입력 거절·production10초 부분 본문408도 포함한다.
+기능/원점수 보존의 허구 조건이며 실제 사용자 관련성/서비스 카탈로그 품질 검증이 아니다.
+
 `tests/test_exploration.py`는 허구 카탈로그로 기존 B1 점수/기여·hard 제약 보존, 같은 그룹 제한,
 MMR 선택값과 관련성 floor, unknown의 보수 처리·상위100 한계·부족/콜드스타트·요청 격리를 검증한다.
 새 탐색 endpoint의 엄격한 정책·body cap/deadline·중복 키/원래 media별 문법 오류·startup 경계를

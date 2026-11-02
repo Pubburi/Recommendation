@@ -4,7 +4,12 @@
 
 최종 README는 독립적인 실제 문제 해결 사례 **정확히 4개**를 유지한다. 채용 검토에서 기술적 판단을 설명할 수 있는 문제의 영향, 원인을 좁힌 증거, 대안, 실제 구현과 결과를 우선한다. 새 사례의 근거가 더 강하면 기존 사례와 비교한 이유를 남기고 즉시 교체한다.
 
-현재 HTTP 계약은 `GET /health`·학습하지 않은 `POST /v1/recommendations/baseline`과 요청 카탈로그의 `POST /v1/recommendations/content`다. B1 HTTP는 허구 입력으로 연결·요청 상태 격리를 검증했고 서비스 카탈로그 학습·품질 평가·Backend B1 연동은 미완료다. 근거가 있는 독립 사례는 **2개**, 추가 확보가 필요한 사례는 **2개**다. 패키징·lockfile·CI를 각각 별개의 문제 해결로 나눠 네 개를 맞추지 않았다. 아래 미완료 항목은 후보 과제이며 README의 구현 성과가 아니다.
+기본 HTTP 계약은 `GET /health`·학습하지 않은 `POST /v1/recommendations/baseline`과 요청 카탈로그의 `POST /v1/recommendations/content`다. B1 HTTP는 허구 입력으로 연결·요청 상태 격리를 검증했고 서비스 카탈로그 학습·품질 평가·Backend B1 연동은 미완료다. 근거가 있는 독립 사례는 **2개**, 추가 확보가 필요한 사례는 **2개**다. 패키징·lockfile·CI를 각각 별개의 문제 해결로 나눠 네 개를 맞추지 않았다. 아래 미완료 항목은 후보 과제이며 README의 구현 성과가 아니다.
+
+별도 `exploration`과 [기준 상품 similar 제공자](SIMILAR-API.md)도 명시 HTTP 계약으로 제공한다.
+R03의 same-group/필수 조건·missing/unavailable/unknown·원점수 보존은 새 제품 설계 증빙이며
+기존 두 실제 원천 상태/추천 HTTP 의미 유실 해결 사례보다 강한 독립 과거 결함 수정으로 선정하지
+않았다. 새 원천/다중 서비스 관련성·실제 웹 결과를 확보하기 전 대표2/4·두 본문/순서를 보존한다.
 
 | ID | 주제 | 상태 | README 반영 |
 |---|---|---|---|
