@@ -6,6 +6,14 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
 
 ## 배포 산출물 검증
 
+`tests/test_context_api.py`는 자체 다중 기준 상품의 명시 사실·모든 기준 그룹/hard 제외와1회 fit,
+기존 B1 최대 양수/floor 점수·winning 기준/기여 보존·정확 tie/limit·unknown/실제0과 부분
+missing/unavailable·미계산 null fallback을 확인한다. 동일 사실의 기준 반복이 점수를 합산하지
+않는지, 입력 순열/동시 요청 격리·strict 상한·raw cap/deadline·JSON 오류 우선순위·startup
+무모델을 검증한다. 새 runtime-only wheel의 `python -I`는 context/OpenAPI·원래 similar 항목과
+실제 HTTP 비교·입력 거절·production10초 부분 본문408까지 확인한다. 허구 계약 검증이며
+공동구매·전체 장바구니 적합성/서비스 품질·Backend/웹 통합 증거가 아니다.
+
 `tests/test_similar_api.py`는 사전 선언한 허구 상품의 기준 ID/그룹·필수 조건·실제0/unknown과
 기존 B1 원점수/기여를 검증한다. 기준 부재·판매 불가의 미계산 null/무모델 처리, 무정보/무공유
 특성의 빈 fallback, soft 기준과 hard 조건 분리·요청 순열/상태 격리와 원문 경계를 확인한다.
