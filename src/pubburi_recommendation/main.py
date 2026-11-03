@@ -1,6 +1,10 @@
-from fastapi import FastAPI
+import json
+from decimal import Decimal
+
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 
 from pubburi_recommendation.baseline import (
     RecommendationRequest,
@@ -28,6 +32,11 @@ from pubburi_recommendation.feedback_api import (
     recommend_feedback,
 )
 from pubburi_recommendation.request_limits import CatalogRequestLimit
+from pubburi_recommendation.search_phrases import (
+    SearchPhraseRequest,
+    SearchPhraseResponse,
+    recommend_search_phrases,
+)
 from pubburi_recommendation.similar_api import (
     SimilarRecommendationRequest,
     SimilarRecommendationResponse,
@@ -62,6 +71,30 @@ async def validation_error(_request, error: RequestValidationError) -> JSONRespo
 def health() -> dict[str, str]:
     """Report process availability without requiring a database or a model."""
     return {"status": "ok", "service": "pubburi-recommendation"}
+
+
+@app.post(
+    "/v1/recommendations/search-phrases",
+    response_model=SearchPhraseResponse,
+    responses={
+        413: {"description": "Request exceeds 524288 bytes"},
+        408: {"description": "Request body timed out"},
+    },
+)
+async def search_phrases(
+    request: SearchPhraseRequest, raw_request: Request
+) -> SearchPhraseResponse:
+    # Only this route needs BE BigDecimal's raw scale, which binary JSON floats lose.
+    # Existing bounded body/media/syntax handling and all six older routes stay intact.
+    try:
+        precise = SearchPhraseRequest.model_validate(
+            json.loads(await raw_request.body(), parse_float=Decimal)
+        )
+    except ValidationError as error:
+        raise RequestValidationError(
+            [dict(item, loc=("body", *item["loc"])) for item in error.errors()]
+        ) from error
+    return recommend_search_phrases(precise)
 
 
 @app.post(

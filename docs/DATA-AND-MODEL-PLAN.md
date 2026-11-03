@@ -236,6 +236,13 @@ UCI 품질 예측은 선택적 별도 실험이며 카탈로그 추천 학습/�
 
 ## 검증과 인계
 
+[R06 명시 검색 문구](SEARCH-PHRASES-API.md)는 Backend형 soft/hard 입력과 별도 검색 opt-in으로
+고정 짧은 문구·정확한 typed 조건/반복 query 쌍을 제공한다. 모든 hard/실제0와 선택 facet AND를
+유지하고 주종별 분기·생략 수, 선택 unknown/empty/범위 충돌의 빈 사유와 Unicode 재검증을
+명시한다. 상품/계정/모델/원천을 조회하지 않아 상품 수는 null이며 기존6POST·B1/보고서는
+그대로다. Backend/React 선택·실제 검색 연결/빈 결과 인수와 전체 R06/AI02는 후속으로 둔다.
+부분 제공자 구현으로 MVP 완료 기능 수를 올리거나 새 데이터/모델·사람 품질 성과로 세지 않는다.
+
 [R04 opt-in 사실 설명](EXPLANATIONS.md)은 기존5개 B1 경로의 원점수/기여와 실제 입력
 값·비교 목표/단위·활성 필터 bound를 typed evidence/고정 한국어 label로 제공한다. profile과
 winning reference_product를 구분하고 unknown/상수/OOV/0점에 선호 근거를 만들지 않는다.
