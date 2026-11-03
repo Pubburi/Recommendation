@@ -101,6 +101,9 @@ def gtin_claims(entity: dict) -> tuple[list[dict], int]:
             if statement.get("rank") not in ("normal", "preferred")
             else "context_requires_review"
             if requires_context_review(statement)
+            else "gtin_statement_requires_review"
+            if ("property" in snak and snak["property"] != "P3962")
+            or ("datatype" in snak and snak["datatype"] != "external-id")
             else "unknown_or_nonstring_statement"
             if snak.get("snaktype") != "value"
             or not isinstance(data, dict)

@@ -96,6 +96,11 @@ source 제조사 관계2개를 별도 authority/검수 그대로 연결했다. �
 기존 실제11상품군 B1/M1·원천 포장 후보1의 전체 보고서는 불변이다. 새 원천/업무 매핑이나
 서비스 SKU fit·품질/전체 AI03 완료가 아니며 수량 손상10조건·업무 DEMO1과 합산하지 않는다.
 
+[GTIN metadata 경계](plans/2026-11-03-gtin-statement-metadata.md)도 명시 P3962/external-id
+모순의 잘못된 curation 승인을 자체2조건에서2/2→0/2로 차단했다. 정상/생략·공유 키 보류와
+기존 실제 source-catalog/B1/M1 전체 결과는 보존했고 새 source/업무 매핑/서비스 fit은 없다.
+다른 source11/DEMO1·문맥11과 합산하거나 전체 DAT02/AI03 완료로 표시하지 않는다.
+
 [원천 수량→학습 입력 정합성 수정](plans/2026-11-02-source-quantity-fit-integrity.md)은
 동결한 허구 손상 표본에서 단위 접미사/명시 수량 메타 모순이 실제 source-family CLI의 수치
 관측으로 승인되는 경계를 재현했다. 정확한 지원 URI와 명시 metadata 일치를 정규화에서 확인해

@@ -97,6 +97,13 @@ unknown과 0의 구분, 후보 부족 시 조건 유지, 필터 뒤 limit, 입�
 
 ## 오프라인 원천 감사
 
+`tests/test_gtin_metadata.py`는 P3962/external-id의 명시 모순을 보류하면서 문자열·체크숫자/
+비교 키와 정상/legacy 생략·deprecated/공유 충돌을 보존하는지 확인한다. 같은 숫자의 정상
+이웃이나 mixed-type scope도 손상을 승인하지 못한다. 실제 accepted offline receipt와
+curation CLI의 exit2/미발행을 확인하고, 새 runtime-only wheel의 `python -I`도 실제
+collector→package audit→curation에서 property/datatype2조건과 별도 collision을 검증한다.
+형식/checksum 통과는 실제 GTIN 할당·SKU/권리·모델 품질 승인이 아니다.
+
 `tests/test_source_relation_integrity.py`는 자체 P31/P176 모순12종의 fixed issue/전체 집합
 unknown과 fit 전 거절·honest empty의 정상 어휘/DF-IDF·수량 보존을 검증한다. 최소형 metadata
 생략·정상/선호·deprecated·손상 이웃/문맥·엄격 identity/상한과 non-overridable 포장 P31 보류를
