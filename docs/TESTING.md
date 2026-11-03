@@ -6,6 +6,17 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
 
 ## 배포 산출물 검증
 
+`tests/test_search_phrases.py`는 R06의 독립 기대 query/단일 주종 분기·limit/생략 수와 별도 opt-in·
+모든 hard/실제0·unknown/known empty/conflict·완전한 BE GET shape·고정 label/OpenAPI를 확인한다.
+원문 Decimal scale·signed0·UTF-16/쉼표/개행 atom·확정 ASCII/중복 거절·Unicode Backend 재검증
+진단을 검증한다. 512KiB/중복 key·malformed 우선·수신 deadline/연결 종료·별도 프로세스의
+무모델 import도 확인한다. 새 runtime-only wheel의 python -I·실제 HTTP는 정확한 typed query와
+soft 비승격·빈 fallback·원문 scale422/413·production10초 부분 본문408을 검증한다.
+상품 검색/계정·React 연결·새 모델·서비스 품질 검증으로 세지 않는다.
+추가 Decimal 경계 회귀는 세 ABV 필드의 ±극단 지수·0/0.0 표기에서 raw 변환 예외가 고정422인지,
+정상0/0e1000·선택 정밀도가 유지되는지, duplicate/malformed 우선과 원문 바깥 오류가 그대로인지
+확인한다. 새 wheel의 실제 HTTP도 같은 극단 지수4조건과 비반사 진단을 검증한다.
+
 `tests/test_content_explanations.py`는 독립 authored 사실로5개 B1 opt-in의 원점수/순서/기여·
 fit1회·기본/false 전체 응답 보존과 profile/실제 winning reference 출처를 검증한다. 양수
 기여의 actual/target/단위·고정 enum, 활성 hard bound·입력가격0과 unknown/상수/OOV/0점
