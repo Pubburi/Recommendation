@@ -77,6 +77,12 @@ uv run --locked python -m pubburi_recommendation.business_export \
 
 ## 실제 관측과 한계
 
+별도 [상품군 browse DEMO](FAMILY-BROWSE-DEMO.md)는 scope/type가 분리된 authority와
+`--family-review`를 사용한다. 실제 원천은 owned_family_browse_demo/http_read 전용 origin·
+전체 명시 매핑과 원래 라벨/known ABV를 요구하고 family-only에서 양쪽 volume=null을 보존한다.
+일반 서비스 origin·container 혼합·미확인 필드 보충은 거절한다. 위 container의 known-volume
+gate와 기존 무매핑 기록은 바뀌지 않으며 상품군을 물리 SKU로 승격하지 않는다.
+
 2026-11-01 별도 전용 DB/업무 API로 만든 **허구 DEMO상품1개**를 실제 읽어 명시 매핑했다.
 API가 반환한 ID로 각 B0/B1 요청에1개 상품을 내보내고 동적 loopback 추천 서버에 산출물을
 보내 HTTP200·같은 ID·적격1개를 확인했다. 업무 API/추천 wire 검증이며 실제 주류/사용자

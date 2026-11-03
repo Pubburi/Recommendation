@@ -27,11 +27,12 @@ from pubburi_recommendation.business_export import (
     utc_time,
 )
 from pubburi_recommendation.catalog_audit import AuditError, read_json
+from pubburi_recommendation.catalog_authority import load_export_catalog
 from pubburi_recommendation.content_api import ContentRecommendationRequest
 from pubburi_recommendation.content_contracts import ContentProfile, ContentResponse, Tag, Volume
 from pubburi_recommendation.package_identity_audit import Hash
 from pubburi_recommendation.scenario_evaluation import eligibility_issues, expected_reasons
-from pubburi_recommendation.source_catalog import Key, Note, load_source_catalog
+from pubburi_recommendation.source_catalog import Key, Note
 from pubburi_recommendation.wikidata_collect import write_receipt
 
 
@@ -208,7 +209,7 @@ def run_reviewed_fit(spec, catalog, exports, mapping, export_report, now):
                 case, products, constraints, expected, baseline.model_dump(), content.model_dump()
             )
         )
-    return {
+    result = {
         "schema_version": 1,
         "experiment_id": spec.experiment_id,
         "evidence_kind": spec.evidence_kind,
@@ -239,6 +240,11 @@ def run_reviewed_fit(spec, catalog, exports, mapping, export_report, now):
             "no_performance_or_real_sale_stock_claim",
         ],
     }
+    if catalog.get("data_kind") == "reviewed_source_family_browse_demo_only":
+        result["data_scope"] = catalog["data_kind"]
+        result["fit_scope"] = "known_mapped_family_browse_demo"
+        result["physical_sku_or_service_catalog_approved"] = False
+    return result
 
 
 def main():
@@ -254,14 +260,19 @@ def main():
         "output-dir",
     ):
         parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument("--family-review", type=Path)
     args = parser.parse_args()
     try:
         if ".pubburi" not in args.output_dir.resolve().parts:
             raise AuditError("reviewed_fit_requires_private_output_directory")
         if args.output_dir.exists():
             raise AuditError("existing_fit_output_must_be_preserved")
-        catalog, _ = load_source_catalog(
-            args.manifest, args.input, args.source_receipt, args.curation
+        catalog, _ = load_export_catalog(
+            args.manifest,
+            args.input,
+            args.source_receipt,
+            args.curation,
+            family_review=args.family_review,
         )
         snapshot, snapshot_hash = read_json(args.business_snapshot)
         mapping_data, mapping_hash = read_json(args.mapping)

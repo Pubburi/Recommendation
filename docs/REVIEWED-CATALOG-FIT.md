@@ -61,6 +61,11 @@ API가 반환한 업무 ID와 fresh snapshot으로 명시 매핑1개·B0/B1 expo
 억지로 적용하지 않았다. 서비스 카탈로그 전체 준비/품질·Backend의 B1 자동 호출이나 학습된
 모델 배포를 완료한 것이 아니다. 명시 fit의 첫 실제 데이터 증가분과 전체 AI03 완료를 구분한다.
 
+2026-11-03에는 별도 [상품군 browse DEMO](FAMILY-BROWSE-DEMO.md) authority/origin으로
+기존 검수5상품군을 명시 업무 연결하고 같은 B1/B0·독립 사실 검사기를 실행했다. 용량 null을
+보존하는 family-only 경계이며 위 container1 결과나 물리 SKU gate를 바꾸지 않는다.
+[새 scope의 실제 관측](measurements/2026-11-03-family-browse-demo.md)과 분모를 구분한다.
+
 [구현](../src/pubburi_recommendation/reviewed_catalog_fit.py) ·
 [직접 작성 회귀](../tests/test_reviewed_catalog_fit.py) ·
 [작업/인계](plans/2026-11-01-reviewed-catalog-fit.md)

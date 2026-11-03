@@ -183,7 +183,7 @@ def test_existing_output_is_rejected_before_source_reads_or_a_repeated_fit(
         command += ["--" + name, "unused"]
     command += ["--output-dir", str(output)]
     monkeypatch.setattr(sys, "argv", command)
-    with patch.object(reviewed_catalog_fit, "load_source_catalog") as read:
+    with patch.object(reviewed_catalog_fit, "load_export_catalog") as read:
         assert reviewed_catalog_fit.main() == 2
         read.assert_not_called()
     assert "existing_fit_output_must_be_preserved" in capsys.readouterr().err
