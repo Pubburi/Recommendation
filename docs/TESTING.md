@@ -6,6 +6,14 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
 
 ## 배포 산출물 검증
 
+`tests/test_content_explanations.py`는 독립 authored 사실로5개 B1 opt-in의 원점수/순서/기여·
+fit1회·기본/false 전체 응답 보존과 profile/실제 winning reference 출처를 검증한다. 양수
+기여의 actual/target/단위·고정 enum, 활성 hard bound·입력가격0과 unknown/상수/OOV/0점
+무근거·정확 fallback, 원자 태그의 쉼표/개행/콜론 보존을 확인한다. partial top3/count·최대
+문자/제어문자/기준ID의4KiB·strict bool/null·discriminated OpenAPI·경량 startup도 검증한다.
+새 runtime-only wheel의 실제5개 B1 HTTP는 true와 원래/false wire·score/reasons/fingerprint,
+수치·literal atom·baseline/OOV 및422를 대조한다. B0 endpoint 계약은 그대로다.
+
 `tests/test_feedback_api.py`는 직접 고정한 사실/후보로 명시 positive·관심 없음과 profile의
 1회 B1 fit·최대 양수/정확 동점·원기여를 검증한다. negative의 unavailable 기준/가용 변형·
 동일 ID/그룹 충돌 우선, 모든 positive 그룹 제외와 hard ID 예산·unknown/실제0·null/[]·

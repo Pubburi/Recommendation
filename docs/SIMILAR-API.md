@@ -1,5 +1,9 @@
 # 기준 상품의 유사 후보 API — R03 추천 제공자
 
+선택적 `include_explanations: true`는 [R04 사실 설명](EXPLANATIONS.md)을 추가한다.
+엄격 boolean/기본false이며 생략/false에는 기존 응답을 보존한다. 원점수·순서·fit/정책을
+바꾸지 않고 profile/실제 winning 기준 ID의 사실을 구분한다.
+
 `POST /v1/recommendations/similar`는 명시한 기준 상품의 검수 사실로 기존 B1
 `FittedContentModel.similar`를 호출한다. 사용자 취향·구매 통계나 장바구니 맥락을 추정하지 않는다.
 기존 B0/content/exploration은 그대로이며 Backend·상품 상세 화면과 전체 R03은 아직 연결하지 않았다.

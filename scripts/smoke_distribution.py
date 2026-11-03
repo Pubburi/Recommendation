@@ -16,6 +16,7 @@ from urllib.request import ProxyHandler, Request, build_opener
 
 from smoke_content_http import verify_content_http
 from smoke_context_http import verify_context_http
+from smoke_explanations_http import verify_explanations_http
 from smoke_exploration_http import verify_exploration_http
 from smoke_feedback_http import verify_feedback_http
 from smoke_similar_http import verify_similar_http
@@ -154,6 +155,7 @@ def verify_http(python: Path, work: Path) -> None:
                 verify_similar_http(base_url, request_json)
                 verify_context_http(base_url, request_json)
                 verify_feedback_http(base_url, request_json)
+                verify_explanations_http(base_url, request_json)
                 # Send exact artifacts from the installed mapping/export CLI.
                 for filename, path in (
                     ("b0-demo-request.json", "/v1/recommendations/baseline"),
@@ -249,6 +251,9 @@ def main(progress: dict[str, str]) -> None:
             "FeedbackRecommendationRequest as F, recommend_feedback as feedback; "
             "assert feedback(F(catalog=[], feedback={'positive_product_ids':[1], "
             "'not_interested_product_ids':[2]})).eligible_count == 0; "
+            "from pubburi_recommendation.content_api import "
+            "ContentRecommendationRequest as R, recommend_content as content; "
+            "assert content(R(catalog=[],include_explanations=True)).eligible_count == 0; "
             "assert 'sklearn' not in sys.modules and 'numpy' not in sys.modules, "
             "'Health/OpenAPI startup imported numerical model libraries'"
         )

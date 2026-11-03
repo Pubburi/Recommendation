@@ -61,6 +61,10 @@ HTTP 프로세스 시작 때 불러오지 않는다. HTTP adapter의 request_cat
 표현 학습이며 아래의 상품군 분리 실험과 다른 평가 grain이다. 기존 ContentResponse를 바꾸지 않고
 HTTP 응답만 usable representation 의미와 nullable fingerprint를 확장한다.
 
+별도 [R04 opt-in 사실 설명](EXPLANATIONS.md)은 include_explanations=True일 때만 원래
+rank/similar 결과에 actual/target/단위와 고정 label을 붙인다. 점수·정렬·fit을 추가하지 않으며
+기본 false의 optional 필드는 직렬화에서 생략해 기존 전체 wire/보고서를 보존한다.
+
 ## 고정 fit/transform 시연
 
 ~~~bash

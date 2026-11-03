@@ -236,6 +236,13 @@ UCI 품질 예측은 선택적 별도 실험이며 카탈로그 추천 학습/�
 
 ## 검증과 인계
 
+[R04 opt-in 사실 설명](EXPLANATIONS.md)은 기존5개 B1 경로의 원점수/기여와 실제 입력
+값·비교 목표/단위·활성 필터 bound를 typed evidence/고정 한국어 label로 제공한다. profile과
+winning reference_product를 구분하고 unknown/상수/OOV/0점에 선호 근거를 만들지 않는다.
+상위3개 기여의 생략은 명시하며 기본6POST wire·fit/순서와 기존 보고서를 보존한다.
+추가 원천·새 모델/품질 성과가 아니며 Backend/React 연결·전체 R04는 후속이다. 5/20 기능
+완료 집계는 그대로 두고 실제 연결/필수 검증 뒤에만 완료 처리한다.
+
 [명시 피드백 API](FEEDBACK-API.md)는 R05의 추천 소유 제공자 증분이다. 맞음/관심 없음 ID를
 각각 최대20개로 받아 기존 B1을1회 fit하고 명시 profile·사용 가능 positive 사실의 최대 양수
 원점수/기여를 선택한다. negative ID/알려진 그룹을 우선 제외하고 모든 알려진 positive 그룹도

@@ -19,6 +19,7 @@ class ContentRecommendationRequest(ContractModel):
     profile: ContentProfile = Field(default_factory=ContentProfile)
     constraints: Constraints = Field(default_factory=Constraints)
     limit: int = Field(default=12, ge=1, le=100)
+    include_explanations: bool = Field(default=False, exclude_if=lambda value: not value)
 
     @model_validator(mode="after")
     def unique_catalog(self) -> Self:
@@ -48,7 +49,13 @@ def recommend_content(request: ContentRecommendationRequest) -> ContentRecommend
 
     # Fit only this explicitly supplied catalog; no shared model/cache/user state is retained.
     model = FittedContentModel.fit(request.catalog)
-    result = model.rank(request.catalog, request.profile, request.constraints, limit=request.limit)
+    result = model.rank(
+        request.catalog,
+        request.profile,
+        request.constraints,
+        limit=request.limit,
+        include_explanations=request.include_explanations,
+    )
     # Executing fit on an uninformative catalog is not a usable learned representation.
     representation_fitted = model.vectorizer is not None or bool(model.scalers)
     values = result.model_dump()

@@ -21,6 +21,7 @@ class ContextRecommendationRequest(ContractModel):
     constraints: Constraints = Field(default_factory=Constraints)
     min_relevance_score: Score = 0.0
     limit: int = Field(default=12, ge=1, le=100)
+    include_explanations: bool = Field(default=False, exclude_if=lambda value: not value)
 
     @model_validator(mode="after")
     def unique_catalog_and_references(self) -> Self:
@@ -123,7 +124,13 @@ def recommend_context(request: ContextRecommendationRequest) -> ContextRecommend
     positive_match = False
     supported_reference = False
     for product, reference in usable:
-        result = model.similar(product, candidates, request.constraints, limit=request.limit)
+        result = model.similar(
+            product,
+            candidates,
+            request.constraints,
+            limit=request.limit,
+            include_explanations=request.include_explanations,
+        )
         eligible_count = result.eligible_count
         reference.supported_profile_tokens = result.supported_profile_tokens
         reference.unknown_profile_tokens = result.unknown_profile_tokens

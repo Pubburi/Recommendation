@@ -134,7 +134,13 @@ def recommend_feedback(request: FeedbackRecommendationRequest) -> FeedbackRecomm
 
     # Fit the explicit catalog once, just as content does; feedback never trains user state.
     model = FittedContentModel.fit(request.catalog)
-    explicit = model.rank(candidates, request.profile, request.constraints, limit=request.limit)
+    explicit = model.rank(
+        candidates,
+        request.profile,
+        request.constraints,
+        limit=request.limit,
+        include_explanations=request.include_explanations,
+    )
     best = {
         item.product_id: (item, FeedbackMatch(product_id=item.product_id, source="profile"))
         for item in explicit.items
@@ -142,7 +148,13 @@ def recommend_feedback(request: FeedbackRecommendationRequest) -> FeedbackRecomm
     }
     informative_count = 0
     for product, reference in usable:
-        result = model.similar(product, candidates, request.constraints, limit=request.limit)
+        result = model.similar(
+            product,
+            candidates,
+            request.constraints,
+            limit=request.limit,
+            include_explanations=request.include_explanations,
+        )
         reference.supported_profile_tokens = result.supported_profile_tokens
         reference.unknown_profile_tokens = result.unknown_profile_tokens
         reference.active_numeric_preferences = result.active_numeric_preferences
