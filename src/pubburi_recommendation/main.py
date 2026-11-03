@@ -1,5 +1,5 @@
 import json
-from decimal import Decimal
+from decimal import Decimal, DecimalException
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -87,9 +87,19 @@ async def search_phrases(
     # Only this route needs BE BigDecimal's raw scale, which binary JSON floats lose.
     # Existing bounded body/media/syntax handling and all six older routes stay intact.
     try:
-        precise = SearchPhraseRequest.model_validate(
-            json.loads(await raw_request.body(), parse_float=Decimal)
-        )
+        exact_body = json.loads(await raw_request.body(), parse_float=Decimal)
+    except DecimalException as error:
+        raise RequestValidationError(
+            [
+                {
+                    "type": "decimal_parsing",
+                    "loc": ("body",),
+                    "msg": "JSON decimal exponent exceeds the supported range",
+                }
+            ]
+        ) from error
+    try:
+        precise = SearchPhraseRequest.model_validate(exact_body)
     except ValidationError as error:
         raise RequestValidationError(
             [dict(item, loc=("body", *item["loc"])) for item in error.errors()]

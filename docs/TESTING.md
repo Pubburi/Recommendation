@@ -13,6 +13,9 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
 무모델 import도 확인한다. 새 runtime-only wheel의 python -I·실제 HTTP는 정확한 typed query와
 soft 비승격·빈 fallback·원문 scale422/413·production10초 부분 본문408을 검증한다.
 상품 검색/계정·React 연결·새 모델·서비스 품질 검증으로 세지 않는다.
+추가 Decimal 경계 회귀는 세 ABV 필드의 ±극단 지수·0/0.0 표기에서 raw 변환 예외가 고정422인지,
+정상0/0e1000·선택 정밀도가 유지되는지, duplicate/malformed 우선과 원문 바깥 오류가 그대로인지
+확인한다. 새 wheel의 실제 HTTP도 같은 극단 지수4조건과 비반사 진단을 검증한다.
 
 `tests/test_content_explanations.py`는 독립 authored 사실로5개 B1 opt-in의 원점수/순서/기여·
 fit1회·기본/false 전체 응답 보존과 profile/실제 winning reference 출처를 검증한다. 양수

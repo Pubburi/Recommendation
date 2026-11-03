@@ -40,6 +40,20 @@ python -I·CLI/실제 HTTP·원문 scale422/413·production10초 부분 본문40
 처음 전체 실행은998검사 뒤 자체 loopback bind의 sandbox 권한 오류로 exit1이었다.
 그 기록을 보존하고 승인된 자체 임시 포트 권한으로 동일 전체 검사를 다시 통과했다.
 
+## PR35 Decimal 재파싱 리뷰 보완
+
+source `66bc27d`의 P2에서 짧은 도수 원문 `0e9999999999999999999`가 기본 float에서는0.0으로
+통과하지만 Decimal 생성의 InvalidOperation이500으로 나가는 것을 확인했다. 수정 전 명세를
+고정하고 실제 임시 loopback HTTP의 ±극단지수·0.0 표기4조건500과 정상0/0.0/0e1000/13.70의
+200을 보존했다. 새 경로의 원문 Decimal 재파싱만 DecimalException을 고정422로 변환한다.
+Pydantic/전역 예외 처리·조건·재시도를 확장하지 않는다. 같은 원문4조건은422, 정상4조건은200을
+유지했고 세 ABV 필드/원문/파싱 우선·정상값의 추가18회귀를 포함한 focused68개가 통과했다.
+원래10명세·기본6POST 전체 응답·모델/보고서/README11해시는 그대로다. 보완 후 전체 locked
+검사는 actual exit0·pytest1016개(추가18개 포함)·Ruff150파일과 B0/B1 각8/8로 통과했다.
+새 sdist/wheel의 runtime-only 실제 HTTP에서도 같은4개 지수 원문의 고정422와 원래
+512KiB/production10초408을 확인했다. 별도 fix 커밋·최신 head 리뷰/CI·원래 native 스레드
+답글/해결은 별도로 확인한다.
+
 Backend의 본인 취향 전달·Unicode 최종 재검증/400·React 문구 선택과 실제 검색조건 연결·빈 결과
 인수는 미완료다. 제공자만으로 R06/AI02나 MVP 완료 기능 수를 올리지 않는다. README CS05/06/07
 세 사례보다 강한 독립 장애/서비스 영향 근거는 없어 기존3사례/순서·전체 본문과 부족1을 보존한다.

@@ -5,6 +5,7 @@ import copy
 import json
 import subprocess
 import sys
+from decimal import InvalidOperation
 
 import pytest
 from fastapi.testclient import TestClient
@@ -270,6 +271,73 @@ def test_signed_zero_is_real_zero_with_backend_compatible_query_not_negative_asc
     response = client.post(PATH, content=body, headers={"Content-Type": "application/json"})
     assert response.status_code == 200
     assert pairs(response.json()["items"][0]) == [("maxAbvPercent", "0.00")]
+
+
+@pytest.mark.parametrize("field", ["minAbvPercent", "maxAbvPercent", "targetAbvPercent"])
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "0e9999999999999999999",
+        "0e-9999999999999999999",
+        "0.0e9999999999999999999",
+        "0.0e-9999999999999999999",
+    ],
+)
+def test_decimal_reparse_extreme_exponents_are_fixed_422_in_every_abv_field(client, field, raw):
+    body = request()
+    group = "softPreferences" if field == "targetAbvPercent" else "hardConstraints"
+    body["preferences"][group][field] = 99
+    encoded = json.dumps(body).replace('"' + field + '": 99', '"' + field + '": ' + raw)
+    response = client.post(PATH, content=encoded, headers={"Content-Type": "application/json"})
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": [
+            {
+                "type": "decimal_parsing",
+                "loc": ["body"],
+                "msg": "JSON decimal exponent exceeds the supported range",
+            }
+        ]
+    }
+    assert raw not in response.text
+
+
+@pytest.mark.parametrize(
+    "raw,expected", [("0", "0"), ("0.0", "0.0"), ("0e1000", "0"), ("13.70", "13.70")]
+)
+def test_decimal_reparse_exception_gate_keeps_valid_zero_and_exact_precision(client, raw, expected):
+    encoded = json.dumps(request(hard={"maxAbvPercent": 99})).replace(
+        '"maxAbvPercent": 99', '"maxAbvPercent": ' + raw
+    )
+    response = client.post(PATH, content=encoded, headers={"Content-Type": "application/json"})
+    assert response.status_code == 200
+    assert pairs(response.json()["items"][0]) == [("maxAbvPercent", expected)]
+
+
+def test_decimal_reparse_does_not_mask_duplicate_or_malformed_json_priority(client):
+    body = (
+        json.dumps(request(hard={"maxAbvPercent": 99}))
+        .replace('"maxAbvPercent": 99', '"maxAbvPercent": 0e9999999999999999999')
+        .encode()
+    )
+    duplicate = body[:-1] + b',"limit":5}'
+    for payload, expected in (
+        (duplicate, "duplicate_json_key"),
+        (duplicate + b"broken", "json_invalid"),
+    ):
+        response = client.post(PATH, content=payload, headers={"Content-Type": "application/json"})
+        assert response.status_code == 422 and response.json()["detail"][0]["type"] == expected
+
+
+def test_decimal_exception_catch_is_limited_to_raw_number_decoding(client, monkeypatch):
+    import pubburi_recommendation.main as main
+
+    def unrelated_failure(request):
+        raise InvalidOperation("unrelated provider defect")
+
+    monkeypatch.setattr(main, "recommend_search_phrases", unrelated_failure)
+    with pytest.raises(InvalidOperation, match="unrelated provider defect"):
+        client.post(PATH, json=request())
 
 
 @pytest.mark.parametrize(

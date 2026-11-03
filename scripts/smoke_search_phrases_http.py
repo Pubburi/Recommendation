@@ -78,15 +78,33 @@ def verify_search_phrases_http(base_url, request_json):
         result = request_json(base_url, PATH, body=unavailable)
         if result["items"] or result["fallback_reason"] != fallback:
             raise RuntimeError("Installed R06 hid a selected unknown/empty facet")
-    raw = json.dumps(body).replace('"maxAbvPercent": 10', '"maxAbvPercent": 13.750')
-    req = Request(base_url + PATH, data=raw.encode(), headers={"Content-Type": "application/json"})
-    try:
-        response = build_opener(ProxyHandler({})).open(req, timeout=1)
-    except HTTPError as error:
-        response = error
-    with response:
-        if response.status != 422:
-            raise RuntimeError("Installed R06 rounded raw BigDecimal scale")
+    for raw_number in (
+        "13.750",
+        "0e9999999999999999999",
+        "0e-9999999999999999999",
+        "0.0e9999999999999999999",
+        "0.0e-9999999999999999999",
+    ):
+        raw = json.dumps(body).replace('"maxAbvPercent": 10', '"maxAbvPercent": ' + raw_number)
+        req = Request(
+            base_url + PATH, data=raw.encode(), headers={"Content-Type": "application/json"}
+        )
+        try:
+            response = build_opener(ProxyHandler({})).open(req, timeout=1)
+        except HTTPError as error:
+            response = error
+        with response:
+            if response.status != 422:
+                raise RuntimeError("Installed R06 accepted invalid raw Decimal scale/exponent")
+            detail = json.load(response)["detail"]
+            if "e" in raw_number and detail != [
+                {
+                    "type": "decimal_parsing",
+                    "loc": ["body"],
+                    "msg": "JSON decimal exponent exceeds the supported range",
+                }
+            ]:
+                raise RuntimeError("Installed R06 did not sanitize raw Decimal parsing errors")
     request_json(base_url, PATH, body={"padding": "x" * 524288}, expected_status=413)
     target = urlsplit(base_url)
     with socket.create_connection((target.hostname, target.port), timeout=15) as connection:
