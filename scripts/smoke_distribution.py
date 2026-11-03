@@ -17,6 +17,7 @@ from urllib.request import ProxyHandler, Request, build_opener
 from smoke_content_http import verify_content_http
 from smoke_context_http import verify_context_http
 from smoke_exploration_http import verify_exploration_http
+from smoke_feedback_http import verify_feedback_http
 from smoke_similar_http import verify_similar_http
 from smoke_source_family import smoke_source_family
 from smoke_volume_context import smoke_volume_context
@@ -152,6 +153,7 @@ def verify_http(python: Path, work: Path) -> None:
                 verify_exploration_http(base_url, request_json)
                 verify_similar_http(base_url, request_json)
                 verify_context_http(base_url, request_json)
+                verify_feedback_http(base_url, request_json)
                 # Send exact artifacts from the installed mapping/export CLI.
                 for filename, path in (
                     ("b0-demo-request.json", "/v1/recommendations/baseline"),
@@ -243,6 +245,10 @@ def main(progress: dict[str, str]) -> None:
             "assert context(C(catalog=[], reference_product_ids=[1])).eligible_count is None; "
             "assert context(C(catalog=[{'product_id':1,'sku_group':'a','available':False}], "
             "reference_product_ids=[1,2])).model_fingerprint is None; "
+            "from pubburi_recommendation.feedback_api import "
+            "FeedbackRecommendationRequest as F, recommend_feedback as feedback; "
+            "assert feedback(F(catalog=[], feedback={'positive_product_ids':[1], "
+            "'not_interested_product_ids':[2]})).eligible_count == 0; "
             "assert 'sklearn' not in sys.modules and 'numpy' not in sys.modules, "
             "'Health/OpenAPI startup imported numerical model libraries'"
         )

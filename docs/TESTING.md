@@ -6,6 +6,15 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
 
 ## 배포 산출물 검증
 
+`tests/test_feedback_api.py`는 직접 고정한 사실/후보로 명시 positive·관심 없음과 profile의
+1회 B1 fit·최대 양수/정확 동점·원기여를 검증한다. negative의 unavailable 기준/가용 변형·
+동일 ID/그룹 충돌 우선, 모든 positive 그룹 제외와 hard ID 예산·unknown/실제0·null/[]·
+평가/미평가 진단·positive 모드 무채움과 기존 profile/B0 fallback을 구분한다. 입력 순열·
+동시 요청 격리·strict ID/상한·원문/중복 key/수신 deadline·startup 무모델도 확인한다.
+새 runtime-only wheel의 `python -I`·실제 feedback HTTP/OpenAPI에서 별도 authored 사실과
+원래 content/similar 원점수·기여 비교·negative 충돌·empty/B0·413/422·production10초 부분
+본문408을 검증한다. 피드백 저장/권한·Backend/웹 연결·서비스 데이터 fit/사용자 품질은 아니다.
+
 `tests/test_context_api.py`는 자체 다중 기준 상품의 명시 사실·모든 기준 그룹/hard 제외와1회 fit,
 기존 B1 최대 양수/floor 점수·winning 기준/기여 보존·정확 tie/limit·unknown/실제0과 부분
 missing/unavailable·미계산 null fallback을 확인한다. 동일 사실의 기준 반복이 점수를 합산하지
