@@ -229,6 +229,13 @@ UCI 품질 예측은 선택적 별도 실험이며 카탈로그 추천 학습/�
 
 ## 검증과 인계
 
+[명시 피드백 API](FEEDBACK-API.md)는 R05의 추천 소유 제공자 증분이다. 맞음/관심 없음 ID를
+각각 최대20개로 받아 기존 B1을1회 fit하고 명시 profile·사용 가능 positive 사실의 최대 양수
+원점수/기여를 선택한다. negative ID/알려진 그룹을 우선 제외하고 모든 알려진 positive 그룹도
+대안 후보에서 제외한다. missing/unavailable/blocked·평가/무정보와 positive 모드/기존 profile-B0
+fallback을 구분하며, 조건 완화·신호 빈도 가중치·부족분0점 채움을 하지 않는다. 저장·본인 계정
+권한·찜/평점 변환·Backend/화면 연결은 후속이므로 전체 R02/R05 완료나 서비스 품질로 세지 않는다.
+
 [명시 다중 상품 맥락 API](CONTEXT-API.md)는 R07의 추천 소유 제공자 증분이다.1–20개 명시
 장바구니/데모 주문 상품의 available 사실을 기존 B1로 비교해 최대 양수/floor 점수와 winning
 기준의 실제 기여를 보존한다. 알려진 모든 기준 그룹·hard 탈락을 제외하고 일부 missing/

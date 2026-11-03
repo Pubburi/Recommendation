@@ -22,6 +22,11 @@ from pubburi_recommendation.exploration import (
     ExplorationResponse,
     recommend_exploration,
 )
+from pubburi_recommendation.feedback_api import (
+    FeedbackRecommendationRequest,
+    FeedbackRecommendationResponse,
+    recommend_feedback,
+)
 from pubburi_recommendation.request_limits import CatalogRequestLimit
 from pubburi_recommendation.similar_api import (
     SimilarRecommendationRequest,
@@ -122,3 +127,16 @@ def similar(request: SimilarRecommendationRequest) -> SimilarRecommendationRespo
 def context(request: ContextRecommendationRequest) -> ContextRecommendationResponse:
     """Match explicit cart/demo-order facts without claiming co-purchase or whole-cart fit."""
     return recommend_context(request)
+
+
+@app.post(
+    "/v1/recommendations/feedback",
+    response_model=FeedbackRecommendationResponse,
+    responses={
+        413: {"description": "Catalog request exceeds 524288 bytes"},
+        408: {"description": "Catalog request body timed out"},
+    },
+)
+def feedback(request: FeedbackRecommendationRequest) -> FeedbackRecommendationResponse:
+    """Apply explicit feedback facts and exclusions without learning or storing user state."""
+    return recommend_feedback(request)

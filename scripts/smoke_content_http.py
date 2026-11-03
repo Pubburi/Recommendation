@@ -11,7 +11,7 @@ PATH = "/v1/recommendations/content"
 
 def verify_duplicate_json_http(base_url: str) -> None:
     target = urlsplit(base_url)
-    for endpoint in ("baseline", "content", "exploration", "similar"):
+    for endpoint in ("baseline", "content", "exploration", "similar", "feedback"):
         group = ',"sku_group":"authored"' if endpoint != "baseline" else ""
         product = '{"product_id":1,"available":true,"abv_percent":40' + group + "}"
         bodies = [
