@@ -19,13 +19,15 @@ from pubburi_recommendation.baseline import (
     RecommendationRequest,
 )
 from pubburi_recommendation.catalog_audit import AuditError, read_json
+from pubburi_recommendation.catalog_authority import load_export_catalog
 from pubburi_recommendation.content_api import ContentRecommendationRequest
 from pubburi_recommendation.content_contracts import ContentProduct
 from pubburi_recommendation.package_identity_audit import Hash
-from pubburi_recommendation.source_catalog import Key, Note, load_source_catalog
+from pubburi_recommendation.source_catalog import Key, Note
 from pubburi_recommendation.wikidata_collect import write_receipt
 
 ALGORITHM = "reviewed-business-demo-export-v1"
+FAMILY_SCOPE = "reviewed_source_family_browse_demo_only"
 MAX_AGE_SECONDS = 300
 MAX_CAPTURE_SECONDS = 60
 Tag = Annotated[str, StringConstraints(min_length=1, max_length=40)]
@@ -90,7 +92,9 @@ class SnapshotRecord(ContractModel):
 
 class BusinessSnapshot(ContractModel):
     schema_version: Literal[1]
-    snapshot_origin: Literal["demo_fixture", "owned_demo_fixture", "existing_local_catalog"]
+    snapshot_origin: Literal[
+        "demo_fixture", "owned_demo_fixture", "existing_local_catalog", "owned_family_browse_demo"
+    ]
     capture_method: Literal["authored", "http_read"]
     capture_started_at_utc: str = Field(min_length=20, max_length=40)
     capture_finished_at_utc: str = Field(min_length=20, max_length=40)
@@ -120,7 +124,9 @@ class MappingRecord(ContractModel):
     product_response_sha256: Hash
     features_response_sha256: Hash
     source_variant_group: Key
-    eligibility_scope: Literal["public_browse_row_exists"]
+    eligibility_scope: Literal[
+        "public_browse_row_exists", "reviewed_source_family_browse_demo_only"
+    ]
     demo_browse_eligible: bool
     price_kind: Literal["demo_snapshot_krw"]
     identity_review_note: Note
@@ -167,6 +173,29 @@ def build_exports(
     ):
         raise AuditError("snapshot_future_or_stale_for_demo_export")
     rows = [] if mapping is None else mapping.records
+    family_browse = catalog.get("data_kind") == FAMILY_SCOPE
+    if family_browse:
+        if catalog.get("algorithm") != "reviewed-source-family-browse-demo-v1" or any(
+            row.get("identity_scope") != FAMILY_SCOPE for row in catalog["records"]
+        ):
+            raise AuditError("family_browse_authority_must_not_mix_with_containers")
+        required_origin = (
+            "demo_fixture"
+            if catalog["evidence_kind"] == "authored_regression_fixture"
+            else "owned_family_browse_demo"
+        )
+        if snapshot.snapshot_origin != required_origin:
+            raise AuditError("family_browse_requires_owned_offline_demo_origin")
+        if not rows or {row.catalog_record_id for row in rows} != {
+            row["catalog_record_id"] for row in catalog["records"]
+        }:
+            raise AuditError("family_browse_requires_complete_explicit_mapping")
+    elif (
+        catalog.get("algorithm") == "reviewed-source-family-browse-demo-v1"
+        or snapshot.snapshot_origin == "owned_family_browse_demo"
+        or any(row.get("identity_scope") == FAMILY_SCOPE for row in catalog["records"])
+    ):
+        raise AuditError("family_browse_authority_must_not_mix_with_containers")
     report = {
         "algorithm": ALGORITHM,
         "source_catalog_sha256": content_hash(catalog),
@@ -202,7 +231,10 @@ def build_exports(
     if reviewed < utc_time(snapshot.capture_finished_at_utc) or reviewed > now:
         raise AuditError("mapping_review_must_follow_capture_and_not_be_future")
     fixture_source = catalog["evidence_kind"] == "authored_regression_fixture"
-    fixture_business = snapshot.snapshot_origin != "existing_local_catalog"
+    fixture_business = snapshot.snapshot_origin not in (
+        "existing_local_catalog",
+        "owned_family_browse_demo",
+    )
     if fixture_source != fixture_business:
         raise AuditError("fixture_and_public_source_business_origins_must_not_mix")
     sources = {row["catalog_record_id"]: row for row in catalog["records"]}
@@ -223,9 +255,27 @@ def build_exports(
         ):
             raise AuditError("mapping_whole_response_content_hash_mismatch")
         facts = source["facts"]
+        if family_browse:
+            if (
+                selected.eligibility_scope != FAMILY_SCOPE
+                or record.product.data.name != facts["label"]
+                or facts["volume_ml"] is not None
+                or any(
+                    value is not None
+                    for value in (
+                        record.features.data.volumeMl,
+                        record.features.data.description,
+                        record.features.data.tasteTags,
+                        record.features.data.aromaTags,
+                    )
+                )
+            ):
+                raise AuditError("family_browse_scope_or_unknown_fields_conflict")
+        elif selected.eligibility_scope != "public_browse_row_exists":
+            raise AuditError("container_mapping_scope_must_not_change")
         if (
             selected.source_variant_group != source["source_variant_group"]
-            or record.features.data.volumeMl is None
+            or (not family_browse and record.features.data.volumeMl is None)
             or record.features.data.volumeMl != facts["volume_ml"]
             or record.product.data.abv != facts["abv_percent"]
         ):
@@ -279,6 +329,9 @@ def build_exports(
             "fixture_contract_validation": fixture_source,
         }
     )
+    if family_browse:
+        report["data_scope"] = FAMILY_SCOPE
+        report["physical_sku_or_service_catalog_approved"] = False
     return report, {"b0-demo-request.json": b0, "b1-demo-request.json": b1}
 
 
@@ -294,12 +347,17 @@ def main() -> int:
     ):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--mapping", type=Path)
+    parser.add_argument("--family-review", type=Path)
     args = parser.parse_args()
     try:
         if ".pubburi" not in args.output_dir.resolve().parts:
             raise AuditError("business_exports_require_private_pubburi_directory")
-        catalog, _ = load_source_catalog(
-            args.manifest, args.input, args.source_receipt, args.curation
+        catalog, _ = load_export_catalog(
+            args.manifest,
+            args.input,
+            args.source_receipt,
+            args.curation,
+            family_review=args.family_review,
         )
         snapshot_data, snapshot_hash = read_json(args.business_snapshot)
         mapping_data, mapping_hash = (

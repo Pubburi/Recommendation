@@ -265,7 +265,7 @@ def test_real_cli_persists_complete_exports_and_hash_failures_do_not_leak_or_pub
     mapping["reviewed_at_utc"] = datetime.now(UTC).isoformat()
     mapping_path = tmp_path / "mapping.json"
     mapping_path.write_text(json.dumps(mapping))
-    monkeypatch.setattr(business_export, "load_source_catalog", lambda *_: (catalog, {}))
+    monkeypatch.setattr(business_export, "load_export_catalog", lambda *_, **__: (catalog, {}))
     output = tmp_path / ".pubburi" / "export"
     command = ["business_export"]
     for name, path in {

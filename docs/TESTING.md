@@ -106,6 +106,13 @@ unknown과 0의 구분, 후보 부족 시 조건 유지, 필터 뒤 limit, 입�
 
 ## 오프라인 원천 감사
 
+`tests/test_family_browse_catalog.py`는 accepted authored receipt·raw/review/manifest 해시와
+라벨 언어/revision/P31/P176·정확 vol%·실제0/unknown을 대조한다. 별도 family-browse scope와
+owned origin/전체 one-to-one 매핑, null 용량/맛/향 유지·일반 서비스/포장 혼합·보충 거절과
+기존 fit/독립 검사기의1fit·학습 전 사실 거절을 확인한다. runtime-only 새 wheel의 실제
+family curation→business export→기존 reviewed fit CLI도 별도 authored3가족/고정 조건으로
+실행하며 일반 서비스 origin은 exit2/미발행인지 확인한다. 물리 SKU·서비스 품질 검증이 아니다.
+
 `tests/test_gtin_metadata.py`는 P3962/external-id의 명시 모순을 보류하면서 문자열·체크숫자/
 비교 키와 정상/legacy 생략·deprecated/공유 충돌을 보존하는지 확인한다. 같은 숫자의 정상
 이웃이나 mixed-type scope도 손상을 승인하지 못한다. 실제 accepted offline receipt와

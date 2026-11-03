@@ -6,6 +6,7 @@ import json
 import subprocess
 from pathlib import Path
 
+from smoke_family_browse import smoke_family_browse
 from smoke_source_catalog import smoke_source_catalog
 from smoke_source_cohort import smoke_source_cohort
 from smoke_source_relations import smoke_family_relations
@@ -346,3 +347,4 @@ def smoke_source_family(python: Path, work: Path, manifest: Path) -> None:
     smoke_family_relations(python, work, manifest, raw, review, spec)
     smoke_source_cohort(python, work, manifest, raw, receipt, review, facts)
     smoke_source_catalog(python, work, manifest, entities["Q1"])
+    smoke_family_browse(python, work, manifest, raw, receipt, review, facts)

@@ -167,6 +167,13 @@ unknown 맛/향을 유지하며 가격·분류/탐색 가용성의 업무 시연
 순위 품질·일반화/최종 평가·실판매/재고·전체 AI03은 미완료다. 신규 원천 발견1회는 해당
 can/bottle/volume/ABV 조건에서 기존1ID만 반환해 신규0이며 전체 원천의 부족 추정은 아니다.
 
+[별도 상품군 browse DEMO](FAMILY-BROWSE-DEMO.md)는 기존 accepted6항목 중 검수known-ABV
+5상품군만 독립 scope/origin·실제 업무 ID에 명시 연결했다. 물리 SKU/GTIN/container 승격이
+아니며 양쪽 volume=null을 보존하는 전용 폐기 DEMO다. 실제 기존 B1 fit/B0 비교·사전 고정
+14개 사실/제약/fallback을 두 번 통과했고 도수5.3–10vol% 범위는 활성, 용량/맛/향은 각각
+5/5 unknown이다. [원값/한계](measurements/2026-11-03-family-browse-demo.md)를 보존하며
+source11·container DEMO1에 합산하거나 서비스 카탈로그 품질/전체 AI03 완료로 세지 않는다.
+
 후속 [실제 상품군 사실 평가](plans/2026-11-01-source-family-fact-evaluation.md)는 다른 발견 조건으로
 8항목(기존1/신규7)을 확보해6개 명시 상품군을4fit/2transform으로 검수/학습했다. 도수 단위와
 포장 qualifier는 unknown을 유지했다. 학습 전 선언한 같은 P31 사실 검색은 양성1질의/후보4의
