@@ -6,6 +6,13 @@ PR·main push·수동 실행의 필수 `recommendation-ci`가 이 검증을 실�
 
 ## 배포 산출물 검증
 
+`tests/test_checked_export.py`는 원authority/완료4파일의 exactbytes·snapshot/mapping/hash와
+fresh/replay·부분/변조/추가/symlink 거절을 검사한다. 독립 동결 사실·기준/제외/반환/이유를
+기존5B1에 적용하고 위조 응답·실행 중 파일변경/만료·기존출력 보존·completed/passed 분리와
+무모델 import를 확인한다. runtime-only 새 wheel의 실제 CLI는 authored3상품군의 checked
+catalog→실제5B1 HTTP·명시 historical replay·변조 입력 거절/미발행을 검증한다. 기존 실제
+DEMO5 재생과 CI authored 조건을 합산하거나 새 데이터·품질/전체기능 완료로 세지 않는다.
+
 `tests/test_search_phrases.py`는 R06의 독립 기대 query/단일 주종 분기·limit/생략 수와 별도 opt-in·
 모든 hard/실제0·unknown/known empty/conflict·완전한 BE GET shape·고정 label/OpenAPI를 확인한다.
 원문 Decimal scale·signed0·UTF-16/쉼표/개행 atom·확정 ASCII/중복 거절·Unicode Backend 재검증

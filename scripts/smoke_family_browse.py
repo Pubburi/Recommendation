@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import shutil
 import subprocess
 from datetime import UTC, datetime
 
@@ -210,6 +211,66 @@ def smoke_family_browse(python, work, manifest, raw, receipt, review, facts):
         or result["ranking_metrics"]["status"] != "not_calculated"
     ):
         raise RuntimeError("Installed family browse changed existing fit/independent fact checks")
+    # Preserve a separate unchanged input copy for the later checked-artifact HTTP
+    # consumer. The wrong-origin test below keeps its original scope and failure.
+    provider_snapshot = work / "authored-provider-business.json"
+    provider_mapping = work / "authored-provider-mapping.json"
+    shutil.copy2(snapshot, provider_snapshot)
+    shutil.copy2(mapping, provider_mapping)
+    provider_common = {
+        **common,
+        "business-snapshot": provider_snapshot,
+        "mapping": provider_mapping,
+    }
+    provider_cases = []
+    for route in ("content", "exploration", "similar", "context", "feedback"):
+        reference = route in ("similar", "context", "feedback")
+        selected = keys[1:] if route == "similar" else keys[1:2] if reference else keys
+        provider_cases.append(
+            {
+                "case_id": route,
+                "provider": route,
+                "profile": {}
+                if reference
+                else {"categories": ["맥주"], "preferred_abv_percent": 5},
+                "reference_keys": [keys[0]]
+                if route == "similar"
+                else [keys[0], keys[2]]
+                if route == "context"
+                else [],
+                "positive_keys": [keys[0]] if route == "feedback" else [],
+                "negative_keys": [keys[2]] if route == "feedback" else [],
+                "expected_eligible_keys": selected,
+                "expected_item_keys": selected,
+                "expected_comparisons": {key: keys[0] if reference else None for key in selected},
+                "expected_fallback": None,
+                "expected_representation_fitted": True,
+                "fact_basis": (
+                    "Authored ABV5/15/25 and exact groups; midpoint context tie keeps smaller ID."
+                ),
+            }
+        )
+    provider_spec = write(
+        "authored-provider-spec.json",
+        {
+            "schema_version": 1,
+            "experiment_id": "authored-checked-provider-http",
+            "evidence_kind": "authored_regression_fixture",
+            "source_catalog_sha256": digest(catalog),
+            "frozen_at_utc": datetime.now(UTC).isoformat(),
+            "expected_model_fingerprint": result["model_fingerprint"],
+            "expected_facts": expected,
+            "cases": provider_cases,
+        },
+    )
+    write(
+        "provider-acceptance-context.json",
+        {
+            "arguments": {key: str(value) for key, value in provider_common.items()},
+            "export-dir": str(exported),
+            "spec": str(provider_spec),
+        },
+    )
     # Same hashes/authorities cannot convert this scope into an ordinary service snapshot.
     snap = json.loads(snapshot.read_text())
     snap.update(snapshot_origin="existing_local_catalog", capture_method="http_read")
