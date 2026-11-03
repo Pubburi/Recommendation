@@ -14,6 +14,7 @@ class SimilarRecommendationRequest(ContractModel):
     reference_product_id: ProductId
     constraints: Constraints = Field(default_factory=Constraints)
     limit: int = Field(default=12, ge=1, le=100)
+    include_explanations: bool = Field(default=False, exclude_if=lambda value: not value)
 
     @model_validator(mode="after")
     def unique_catalog(self) -> Self:
@@ -75,7 +76,13 @@ def recommend_similar(request: SimilarRecommendationRequest) -> SimilarRecommend
     # Request-local known-catalog fit, including the reference. No model/cache/user state.
     model = FittedContentModel.fit(request.catalog)
     candidates = [p for p in request.catalog if p.sku_group != reference.sku_group]
-    result = model.similar(reference, candidates, request.constraints, limit=request.limit)
+    result = model.similar(
+        reference,
+        candidates,
+        request.constraints,
+        limit=request.limit,
+        include_explanations=request.include_explanations,
+    )
     values = result.model_dump()
     representation_fitted = model.vectorizer is not None or bool(model.scalers)
     if not representation_fitted:

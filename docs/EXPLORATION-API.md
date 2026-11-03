@@ -1,5 +1,9 @@
 # 명시적 취향 확장 후보 API — R08 기술 증분
 
+선택적 `include_explanations: true`는 [R04 사실 설명](EXPLANATIONS.md)을 추가한다.
+엄격 boolean/기본false이며 생략/false에는 기존 응답을 보존한다. 원점수·순서·fit/정책을
+바꾸지 않고 profile/실제 winning 기준 ID의 사실을 구분한다.
+
 `POST /v1/recommendations/exploration`은 기존 B1의 관련성 점수를 재사용해 **별도 탐색 영역**에 쓸
 후보를 고른다. 기존 `/baseline`·`/content` 요청/응답·순위·점수·기여는 변경하지 않는다. 전체 R08,
 Backend/웹 연결·피드백 저장/반영·실제 서비스 카탈로그 품질은 아직 완료가 아니다.

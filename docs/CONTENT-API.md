@@ -37,10 +37,15 @@
 | profile | 기본 빈 취향. 선호 categories 최대32개, 맛/향 태그 각각20개, 선호 도수/용량. 모두 soft preference |
 | constraints | 기존 [B0](BASELINE-API.md)의 주종·가격/도수 범위·제외 ID. hard 조건이며 취향보다 우선 |
 | limit | 기본12, 정수1–100 |
+| include_explanations | 기본false·엄격boolean. true일 때만 item의 typed 사실 설명을 추가 |
 
 문자열로 숫자/boolean을 대신하거나 알려지지 않은 필드를 추가하면422다. 하한>상한·비유한 값도
 거절한다. 가격은 필수 조건 검증용이며 콘텐츠 특성이 아니다. soft category는 hard category로
 자동 승격하지 않는다.
+
+선택적 [R04 사실 설명](EXPLANATIONS.md)은 양수 기여의 actual/target/단위·활성 hard bound와
+고정 label을 제공한다. 점수/순서·fit/fallback은 유지하고 생략/false에는 기존 응답을 보존한다.
+profile 비교와 다른 제공자의 기준 상품 사실을 구분한다.
 
 ## 학습 범위와 응답 의미
 

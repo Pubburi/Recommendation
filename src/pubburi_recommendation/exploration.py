@@ -65,7 +65,13 @@ def recommend_exploration(request: ExplorationRequest) -> ExplorationResponse:
     from pubburi_recommendation.content_model import FittedContentModel, product_tokens
 
     model = FittedContentModel.fit(request.catalog)
-    base = model.rank(request.catalog, request.profile, request.constraints, limit=POOL_LIMIT)
+    base = model.rank(
+        request.catalog,
+        request.profile,
+        request.constraints,
+        limit=POOL_LIMIT,
+        include_explanations=request.include_explanations,
+    )
     values = base.model_dump()
     values["representation_fitted"] = model.vectorizer is not None or bool(model.scalers)
     if not values["representation_fitted"]:

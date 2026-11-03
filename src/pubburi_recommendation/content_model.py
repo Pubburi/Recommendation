@@ -17,6 +17,7 @@ from pubburi_recommendation.content_contracts import (
     ContentResponse,
     Contribution,
     GroupId,
+    ReferenceComparison,
     Score,
     Tag,
     Volume,
@@ -152,8 +153,11 @@ class FittedContentModel:
         constraints: Constraints | None = None,
         *,
         limit: int = 12,
+        include_explanations: bool = False,
     ) -> ContentResponse:
         validate_catalog(candidates, allow_empty=True)
+        if type(include_explanations) is not bool:
+            raise ValueError("include_explanations_requires_boolean")
         if type(limit) is not int or not 1 <= limit <= 100:
             raise ValueError("limit_requires_integer_1_to_100")
         if not isinstance(profile, ContentProfile):
@@ -239,7 +243,7 @@ class FittedContentModel:
         if no_matches and component_count:
             for item in results:
                 item.reasons.append("deterministic_baseline")
-        return ContentResponse(
+        response = ContentResponse(
             model_fingerprint=self.fingerprint,
             items=results[:limit],
             eligible_count=len(products),
@@ -254,6 +258,11 @@ class FittedContentModel:
             if no_matches
             else None,
         )
+        if include_explanations:
+            from pubburi_recommendation.content_explanations import annotate_explanations
+
+            annotate_explanations(response, products, profile, constraints)
+        return response
 
     def similar(
         self,
@@ -262,6 +271,7 @@ class FittedContentModel:
         constraints: Constraints | None = None,
         *,
         limit: int = 12,
+        include_explanations: bool = False,
     ) -> ContentResponse:
         if not isinstance(reference, ContentProduct):
             raise ValueError("validated_reference_product_required")
@@ -271,7 +281,7 @@ class FittedContentModel:
         candidates = [
             product for product in candidates if product.product_id != reference.product_id
         ]
-        return self.rank(
+        response = self.rank(
             candidates,
             ContentProfile(
                 categories=[] if reference.category is None else [reference.category],
@@ -282,4 +292,12 @@ class FittedContentModel:
             ),
             constraints,
             limit=limit,
+            include_explanations=include_explanations,
         )
+        if include_explanations:
+            from pubburi_recommendation.content_explanations import enforce_explanation_bound
+
+            for item in response.items:
+                item.explanation.comparison = ReferenceComparison(product_id=reference.product_id)
+                enforce_explanation_bound(item.explanation)
+        return response

@@ -1,5 +1,9 @@
 # 명시 상품 맥락 추천 API — R07 추천 제공자
 
+선택적 `include_explanations: true`는 [R04 사실 설명](EXPLANATIONS.md)을 추가한다.
+엄격 boolean/기본false이며 생략/false에는 기존 응답을 보존한다. 원점수·순서·fit/정책을
+바꾸지 않고 profile/실제 winning 기준 ID의 사실을 구분한다.
+
 `POST /v1/recommendations/context`는 장바구니·데모 주문에서 호출자가 명시한 여러 상품의 사실을
 기존 B1으로 비교한다. 각 후보의 **가장 잘 맞는 기준 상품 하나**의 양수 점수와 실제 기여를
 반환한다. 전체 장바구니와의 적합성·함께 구매한 통계·사용자 선호를 학습한 점수가 아니다.

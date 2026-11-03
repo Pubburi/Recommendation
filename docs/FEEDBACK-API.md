@@ -1,5 +1,9 @@
 # R05 명시 피드백 추천 계약
 
+선택적 `include_explanations: true`는 [R04 사실 설명](EXPLANATIONS.md)을 추가한다.
+엄격 boolean/기본false이며 생략/false에는 기존 응답을 보존한다. 원점수·순서·fit/정책을
+바꾸지 않고 profile/실제 winning 기준 ID의 사실을 구분한다.
+
 `POST /v1/recommendations/feedback`은 명시한 취향과 **맞음/관심 없음 상품 ID**를 현재 카탈로그의
 검수 사실에 적용한다. 기존 B1의 fit/rank/similar를 재사용하며 새로운 사용자 학습 모델이나
 공동구매 통계를 만들지 않는다. R05 추천 제공자 증가분이며 저장·계정 권한·Backend/웹 연결과
