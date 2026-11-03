@@ -12,6 +12,10 @@ fresh/replay·부분/변조/추가/symlink 거절을 검사한다. 독립 동결
 무모델 import를 확인한다. runtime-only 새 wheel의 실제 CLI는 authored3상품군의 checked
 catalog→실제5B1 HTTP·명시 historical replay·변조 입력 거절/미발행을 검증한다. 기존 실제
 DEMO5 재생과 CI authored 조건을 합산하거나 새 데이터·품질/전체기능 완료로 세지 않는다.
+추가 회귀는 feedback의 빈 결과에서도 기준 목록/blocked/unavailable·미평가 null과 평가0/
+지원·count/mode·그룹 제외를 대조하고 HTTP 중 spec 수정/삭제의 미완료/미발행을 확인한다.
+새 wheel은 controlled loopback 중계의 feedback metadata 변조·빈 blocked 결과와 spec 변조/
+삭제를 실제 CLI로 거절한다. 서비스 자연 오류율이 아닌 명시 손상 조건이다.
 
 `tests/test_search_phrases.py`는 R06의 독립 기대 query/단일 주종 분기·limit/생략 수와 별도 opt-in·
 모든 hard/실제0·unknown/known empty/conflict·완전한 BE GET shape·고정 label/OpenAPI를 확인한다.

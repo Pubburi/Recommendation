@@ -46,6 +46,25 @@ CI authored5조건을 품질/데이터 수로 합산하지 않는다. Python3.12
 기록은 2026-11-03 23:38:14 UTC다. 기존7POST 전체 응답과 원래 export/모델/보고서·README
 15파일은 byte/hash 동일했다. 이전 PR의 격리 실행 경고1개는 유지한다.
 
+## PR36 두 P2 소비 검증 보완
+
+source `a4c497e`의 리뷰에서 feedback item 밖의 기준/평가 metadata와 HTTP 중 spec 파일 변경이
+완료 검사에서 빠진 것을 확인했다. 수정 전 후보에서 사실/기대·손상조건을 먼저 고정하고 실제
+소유 loopback provider HTTP를 통제 중계해 metadata7조건과 spec 수정/삭제2조건을 주입했다.
+전부 잘못된 completed/passed=true를 발행한 기록을 보존했다. 원래 정상 provider의 장애나
+자연 오류율·사용자 피드백 성과로 표현하지 않는다.
+
+feedback 검사는 반환 item loop 밖에서 요청/동결 사실에 따른 기준 목록·가용/blocked 상태,
+미평가 null·지원 토큰/활성 수치와 평가/informative 수·ranking_mode·그룹 제외 수를 대조한다.
+완료 전에는 spec을 다시 읽어 최초 hash와 비교하며 삭제/변경이면 미완료로 거절한다.
+같은 metadata7조건은 exit1/passed=false, spec2조건은 exit2·completed=false/보고서 미발행이다.
+원래11조건·core/provider/모델·카탈로그·15보존 파일은 그대로이며 추가 손상 분모와 합산하지 않는다.
+추가20개를 포함한 focused58개와 전체 locked1074개·Ruff156파일·B0/B1 각8/8이 actual exit0으로
+통과했다. 새 wheel의 실제 CLI에서도 빈 blocked 결과의 metadata 손상은 exit1, HTTP 중
+spec 수정/삭제는 exit2·미완료/보고서 미발행이었다. 새 complete/passed 기록은
+2026-11-03 23:57:51 UTC다. 원래11조건을 두 번 재생한 전체 case 요청/응답·판정은 a4 후보와
+같다. 최신 head 리뷰/CI와 원래 두 native 스레드 답글/해결은 별도로 확인한다.
+
 README CS05/06/07의 실제 원천 상태·추천 입력 의미·수량→학습 실패보다 강한 독립 서비스
 원인/영향을 확보한 것은 아니므로 기존3사례/순서·전체 본문과 부족1을 유지한다. Backend
 본인 취향/계정·현재 업무 재확인·B1 소비/React와 전체 R02–R08·AI03 인수는 남는다.

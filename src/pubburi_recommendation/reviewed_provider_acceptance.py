@@ -312,6 +312,101 @@ def evidence_issues(item, product, profile, constraints, fallback, comparison):
     return issues
 
 
+def feedback_metadata_issues(case, parsed, by_id, ids, active_numeric):
+    """Check references/evaluation from frozen input facts, even with no returned items."""
+    negative_ids = {ids[key] for key in case.negative_keys}
+    positive_ids = {ids[key] for key in case.positive_keys}
+    negative_groups = {by_id[pid].sku_group for pid in negative_ids}
+    positive_groups = {by_id[pid].sku_group for pid in positive_ids}
+    expected_negatives = [
+        (pid, by_id[pid].sku_group, "available" if by_id[pid].available else "unavailable")
+        for pid in sorted(negative_ids)
+    ]
+    expected_positives = []
+    diagnostics = {}
+    informative_count = evaluated_count = 0
+    for pid in sorted(positive_ids):
+        product = by_id[pid]
+        state = (
+            "blocked"
+            if pid in negative_ids or product.sku_group in negative_groups
+            else ("available" if product.available else "unavailable")
+        )
+        expected_positives.append((pid, product.sku_group, state))
+        if state != "available":
+            diagnostics[pid] = (None, None, None)
+            continue
+        # Fit includes every catalog reference, so its own atomic text is in the
+        # vocabulary. No scorer, weighting or observed response decides these counts.
+        supported = (
+            int(product.category is not None)
+            + len(product.taste_tags or [])
+            + len(product.aroma_tags or [])
+        )
+        numeric = [
+            field
+            for field in ("abv_percent", "volume_ml")
+            if field in active_numeric and getattr(product, field) is not None
+        ]
+        diagnostics[pid] = (supported, 0, numeric)
+        evaluated_count += 1
+        informative_count += bool(supported or numeric)
+    issues = []
+    if [
+        (r.product_id, r.sku_group, r.state) for r in parsed.not_interested_references
+    ] != expected_negatives:
+        issues.append("feedback_negative_reference_facts_conflict")
+    if [
+        (r.product_id, r.sku_group, r.state) for r in parsed.positive_references
+    ] != expected_positives:
+        issues.append("feedback_positive_reference_facts_conflict")
+    for reference in parsed.positive_references:
+        expected = diagnostics.get(reference.product_id)
+        if expected is None:
+            continue  # Its unbound ID/list is already a reference-facts violation.
+        if (
+            reference.supported_profile_tokens,
+            reference.unknown_profile_tokens,
+            reference.active_numeric_preferences,
+        ) != expected:
+            issues.append("feedback_reference_evaluation_conflict")
+        if expected[0] is None:
+            if reference.fallback_reason is not None:
+                issues.append("feedback_unevaluated_reference_fallback_conflict")
+        else:
+            if not case.expected_eligible_keys:
+                allowed_fallbacks = {"no_eligible_products"}
+            elif not (expected[0] or expected[2]):
+                allowed_fallbacks = {"no_supported_preferences"}
+            elif any(
+                ids[winner] == reference.product_id
+                for winner in case.expected_comparisons.values()
+                if winner is not None
+            ):
+                allowed_fallbacks = {None}
+            else:
+                allowed_fallbacks = {None, "no_matching_features"}
+            if reference.fallback_reason not in allowed_fallbacks:
+                issues.append("feedback_evaluated_reference_fallback_conflict")
+    nonnegative = [
+        p
+        for p in by_id.values()
+        if p.product_id not in negative_ids and p.sku_group not in negative_groups
+    ]
+    remaining = [p for p in nonnegative if p.sku_group not in positive_groups]
+    if (
+        parsed.evaluated_positive_count != evaluated_count
+        or parsed.informative_positive_count != informative_count
+        or parsed.ranking_mode != ("positive_feedback" if informative_count else "profile_fallback")
+    ):
+        issues.append("feedback_counts_or_mode_conflict")
+    if parsed.excluded_not_interested_count != len(by_id) - len(
+        nonnegative
+    ) or parsed.excluded_positive_group_count != len(nonnegative) - len(remaining):
+        issues.append("feedback_group_exclusion_counts_conflict")
+    return issues
+
+
 def inspect_response(case, body, constraints, response, checked, spec):
     try:
         parsed = RESPONSES[case.provider].model_validate(response)
@@ -361,6 +456,8 @@ def inspect_response(case, body, constraints, response, checked, spec):
         )
         > 1
     }
+    if case.provider == "feedback":
+        issues.extend(feedback_metadata_issues(case, parsed, by_id, ids, active_numeric))
     for item in parsed.items:
         key = key_by_id.get(item.product_id)
         if key not in case.expected_comparisons:
@@ -528,6 +625,9 @@ def main():
         ):
             if final.metadata[key] != checked.metadata[key]:
                 raise AuditError("provider_inputs_changed_during_http_acceptance")
+        _, final_spec_hash = read_json(args.spec)
+        if final_spec_hash != spec_hash:
+            raise AuditError("provider_spec_changed_during_http_acceptance")
         report = {
             "algorithm": "reviewed-provider-http-acceptance-v1",
             "experiment_id": spec.experiment_id,

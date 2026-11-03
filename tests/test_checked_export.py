@@ -1,5 +1,6 @@
 """Completed export consumption with authored authorities, no real data/network."""
 
+import copy
 import json
 import subprocess
 import sys
@@ -313,7 +314,9 @@ def test_cli_existing_output_is_rejected_before_source_reads(bundle, tmp_path, m
     assert "requires_new_private_output" in capsys.readouterr().err
 
 
-@pytest.mark.parametrize("mode", ["pass", "bad_response", "changed_file", "expired_end"])
+@pytest.mark.parametrize(
+    "mode", ["pass", "bad_response", "changed_file", "expired_end", "changed_spec", "deleted_spec"]
+)
 def test_cli_completion_separates_response_failure_and_changed_or_expired_inputs(
     bundle, tmp_path, monkeypatch, mode
 ):
@@ -361,12 +364,16 @@ def test_cli_completion_separates_response_failure_and_changed_or_expired_inputs
             if mode == "changed_file" and len(calls) == 5:
                 path = folder / "b1-demo-request.json"
                 path.write_bytes(path.read_bytes() + b" ")
+            if mode == "changed_spec" and len(calls) == 1:
+                spec.write_bytes(spec.read_bytes() + b" ")
+            if mode == "deleted_spec" and len(calls) == 1:
+                spec.unlink()
             return result
 
         monkeypatch.setattr(module, "post_json", local_post)
         code = module.main()
     receipt = json.loads((output / "receipt.json").read_text())
-    if mode in ("changed_file", "expired_end"):
+    if mode in ("changed_file", "expired_end", "changed_spec", "deleted_spec"):
         assert code == 2 and receipt["completed"] is False
         assert not (output / "acceptance-report.json").exists()
     else:
@@ -374,6 +381,152 @@ def test_cli_completion_separates_response_failure_and_changed_or_expired_inputs
         report = json.loads((output / "acceptance-report.json").read_text())
         assert receipt["completed"] is True and report["passed"] == (mode == "pass")
         assert report["passed_contract_cases"] == (5 if mode == "pass" else 4)
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "positive_list_empty",
+        "negative_list_empty",
+        "evaluated_count_zero",
+        "informative_count_zero",
+        "ranking_mode_fallback",
+        "positive_state_unavailable",
+        "supported_none",
+        "unknown_one",
+        "active_numeric_empty",
+        "negative_state_missing",
+        "excluded_negative_zero",
+        "excluded_positive_zero",
+        "blocked_to_available",
+        "blocked_zeros",
+        "blocked_fallback",
+        "all_negative_list_empty",
+    ],
+)
+def test_feedback_response_level_reference_metadata_is_checked_even_without_items(bundle, fault):
+    checked = load(bundle, now=bundle["now"])
+    data = specification(bundle, checked)
+    first, second = "authored-family-q1", "authored-family-q2"
+    case = data["cases"][-1]
+    if fault in ("negative_list_empty", "negative_state_missing", "excluded_negative_zero"):
+        case.update(
+            negative_keys=[second],
+            expected_eligible_keys=[],
+            expected_item_keys=[],
+            expected_comparisons={},
+            expected_fallback="no_eligible_products",
+        )
+    elif fault.startswith("blocked_"):
+        case.update(
+            negative_keys=[first, second],
+            expected_eligible_keys=[],
+            expected_item_keys=[],
+            expected_comparisons={},
+            expected_fallback="no_eligible_products",
+        )
+    elif fault == "all_negative_list_empty":
+        case.update(
+            positive_keys=[],
+            negative_keys=[first, second],
+            expected_eligible_keys=[],
+            expected_item_keys=[],
+            expected_comparisons={},
+            expected_fallback="no_eligible_products",
+        )
+    spec = ProviderSpec.model_validate(data)
+    case, body, constraints = prepare_cases(spec, checked, datetime.now(UTC))[-1]
+    with TestClient(app) as client:
+        result = client.post("/v1/recommendations/feedback", json=body).json()
+    assert inspect_response(case, body, constraints, result, checked, spec) == []
+    if fault in ("negative_list_empty", "all_negative_list_empty"):
+        result["not_interested_references"] = []
+    elif fault == "positive_list_empty":
+        result["positive_references"] = []
+    elif fault == "evaluated_count_zero":
+        result["evaluated_positive_count"] = 0
+    elif fault == "informative_count_zero":
+        result["informative_positive_count"] = 0
+    elif fault == "ranking_mode_fallback":
+        result["ranking_mode"] = "profile_fallback"
+    elif fault == "positive_state_unavailable":
+        result["positive_references"][0]["state"] = "unavailable"
+    elif fault == "supported_none":
+        result["positive_references"][0]["supported_profile_tokens"] = None
+    elif fault == "unknown_one":
+        result["positive_references"][0]["unknown_profile_tokens"] = 1
+    elif fault == "active_numeric_empty":
+        result["positive_references"][0]["active_numeric_preferences"] = []
+    elif fault == "negative_state_missing":
+        result["not_interested_references"][0]["state"] = "missing"
+    elif fault == "excluded_negative_zero":
+        result["excluded_not_interested_count"] = 0
+    elif fault == "excluded_positive_zero":
+        result["excluded_positive_group_count"] = 0
+    elif fault == "blocked_to_available":
+        result["positive_references"][0]["state"] = "available"
+    elif fault == "blocked_zeros":
+        result["positive_references"][0].update(
+            supported_profile_tokens=0, unknown_profile_tokens=0, active_numeric_preferences=[]
+        )
+    else:
+        result["positive_references"][0]["fallback_reason"] = "no_eligible_products"
+    assert inspect_response(case, body, constraints, result, checked, spec)
+
+
+@pytest.mark.parametrize("fault", ["state", "zero_diagnostics"])
+def test_unavailable_positive_stays_unevaluated_in_checked_catalog_response(bundle, fault):
+    # Change only this authored fixture's explicit DEMO eligibility and re-export it
+    # through the original authority/mapping; do not bypass the checked loader.
+    folder, _, _, _, _, snapshot_path, mapping_path = bundle["args"]
+    mapping = copy.deepcopy(bundle["mapping"])
+    mapping["records"][0]["demo_browse_eligible"] = False
+    write(mapping_path, mapping)
+    _, mapping_hash = read_json(mapping_path)
+    _, snapshot_hash = read_json(snapshot_path)
+    report, requests = build_exports(
+        bundle["catalog"],
+        bundle["snapshot"],
+        snapshot_hash,
+        ReviewedMapping.model_validate(mapping),
+        bundle["now"],
+    )
+    report["mapping_sha256"] = mapping_hash
+    for name, value in {"export-report.json": report, **requests}.items():
+        write(folder / name, value)
+    write(
+        folder / "receipt.json",
+        {
+            "algorithm": ALGORITHM,
+            "completed": True,
+            "exported_products": 2,
+            "snapshot_sha256": snapshot_hash,
+            "mapping_sha256": mapping_hash,
+        },
+    )
+    checked = load(bundle, now=bundle["now"])
+    data = specification(bundle, checked)
+    data["expected_facts"]["authored-family-q1"]["available"] = False
+    case = data["cases"][-1]
+    case.update(
+        expected_comparisons={"authored-family-q2": None},
+        expected_fallback="no_supported_preferences",
+    )
+    # Other routes' expectations aren't part of this narrowly authored case.
+    data["cases"] = [case]
+    spec = ProviderSpec.model_validate(data)
+    case, body, constraints = prepare_cases(spec, checked, datetime.now(UTC))[0]
+    with TestClient(app) as client:
+        result = client.post("/v1/recommendations/feedback", json=body).json()
+    assert inspect_response(case, body, constraints, result, checked, spec) == []
+    assert result["evaluated_positive_count"] == result["informative_positive_count"] == 0
+    if fault == "state":
+        result["positive_references"][0]["state"] = "available"
+    else:
+        result["positive_references"][0].update(
+            supported_profile_tokens=0, unknown_profile_tokens=0, active_numeric_preferences=[]
+        )
+    assert inspect_response(case, body, constraints, result, checked, spec)
 
 
 def test_checked_loader_and_cli_imports_do_not_restore_or_import_a_model():

@@ -250,6 +250,22 @@ def smoke_family_browse(python, work, manifest, raw, receipt, review, facts):
                 ),
             }
         )
+    provider_cases.append(
+        {
+            "case_id": "feedback-blocked-empty",
+            "provider": "feedback",
+            "positive_keys": [keys[0]],
+            "negative_keys": keys,
+            "expected_eligible_keys": [],
+            "expected_item_keys": [],
+            "expected_comparisons": {},
+            "expected_fallback": "no_eligible_products",
+            "expected_representation_fitted": True,
+            "fact_basis": (
+                "All known groups excluded; overlapping positive stays blocked and unevaluated."
+            ),
+        }
+    )
     provider_spec = write(
         "authored-provider-spec.json",
         {

@@ -60,6 +60,9 @@ HTTP 전에 사실·key·시각·독립 eligibility와 요청512KiB를 확인한
 명시 후보/순서·eligible/fallback·fit 지문, 실제 기준/profile 출처, 원기여의 허용 사실/양수·합,
 활성 hard 이유·actual/target/unit·top3 생략/4KiB를 검사한다. 생산 scorer/formatter로 기대값을
 만들지 않는다. 원래 context 최대 매치나 탐색 MMR을 사용자 선호/다양성 품질로 해석하지 않는다.
+feedback은 반환 item이 없어도 기준 목록·실제 그룹/available·negative 우선 blocked 상태를
+응답 단위에서 대조한다. 미평가 기준의 null과 available 기준의 지원 토큰·활성 수치/평가 수,
+informative 수·ranking_mode·중복 없는 그룹 제외 수를 동결 요청/카탈로그 사실로 확인한다.
 
 ## 실행·완료와 실패
 
@@ -83,7 +86,9 @@ redirect·환경 proxy·재시도는 없다. caller가 실제 소유를 확인�
 CPU fit 시간 보장은 구분한다.
 
 새 private output만 쓰며 기존 output은 입력 읽기 전에 보존한다. HTTP 뒤에도 입력을 다시
-검증해 파일 변경·fresh 모드의 만료를 거절한다. 이는 원자적 파일/업무 snapshot 보장이 아니다.
+검증해 파일 변경·fresh 모드의 만료를 거절한다. 동결 spec도 다시 읽어 최초 raw hash와 비교하며
+변경·삭제되면 이전 spec hash로 완료/통과 보고서를 발행하지 않는다. 이는 원자적 파일/업무
+snapshot 보장이 아니다.
 완성 receipt는 completed=true와 passed를 별도로 기록한다. exit0은 해당 계약 통과,
 exit1은 완료된 결과의 계약 위반, exit2는 입력/전송/실행 오류다. 중간 실패는 완료로 표시하지 않는다.
 
