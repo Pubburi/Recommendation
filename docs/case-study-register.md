@@ -122,6 +122,11 @@ REC-CS06으로 교체했다. 아래 선정 당시의 근거는 이력으로 보�
 
 ## 측정·교체 규칙
 
+- 2026-11-03의 [GTIN metadata 경계](plans/2026-11-03-gtin-statement-metadata.md)는
+  checksum과 외부 식별자 statement 의미를 분리해 실제 자체 curation 오승인을 차단했다.
+  기존 source metadata/정체성 보존 사례와 인접하며 독립 서비스/품질 영향의 더 강한 근거는
+  아직 없다. README 전체·기존 세 사례/순서·3/4와 부족1을 보존하고 네 번째로 중복 집계하지 않는다.
+
 - 2026-11-03의 [원천 관계 정합성 수정](plans/2026-11-03-source-relation-integrity.md)은
   categorical identity→단독 TF-IDF 문서/DF-IDF와 malformed P31 포장 curation 승인을
   실제 동결 CLI로 재현·차단했다. 기존 CS07의 명시 source metadata→학습 입력 의미 보존과

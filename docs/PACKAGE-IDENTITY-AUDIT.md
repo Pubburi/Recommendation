@@ -22,6 +22,13 @@ maxlag5·최대10ID·본문/전송 오류·revision/정확 ID·실패 receipt �
 
 ## 검증과 보류
 
+GTIN의 명시 snak property/datatype은 P3962/external-id와 일치해야 한다. [P3962 공식 정의](https://www.wikidata.org/wiki/Property:P3962)의
+외부 식별자와 [Wikibase JSON](https://doc.wikimedia.org/Wikibase/master/php/docs_topics_json.html)의
+문자열 datavalue는 다른 층이다. metadata 생략은 기존대로 허용하지만 명시 모순은
+`gtin_statement_requires_review`·usable=false로 보류한다. 원래 GTIN/체크숫자·비교 키는
+유지하며 구조적으로 유효한 활성 공유 식별자 근거를 버리지 않는다. scoped curation으로도
+이 보류를 덮을 수 없다. [실제 CLI 전후](measurements/2026-11-03-gtin-statement-metadata.md)를 따른다.
+
 명시 P31 relation metadata·item/numeric identity에 모순이나 불명확한 활성 문맥이 있으면
 분류 전체는 unknown이다. `instance_of_relations_require_review`를 보류하고 필드 조합을
 완성으로 표시하지 않는다. 잘못된 brand를 버린 뒤 정상 can만 남겨 grain을 숨길 수 없으며
