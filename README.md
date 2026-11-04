@@ -108,10 +108,9 @@ HTTP 상태만 확인하면 구현은 단순하지만 데이터의 완료 조건
 
 #### 코드
 
-payload 검증과 `collect`의 전체 저장/실패 흐름을 발췌했다. [실제 수집기](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/wikidata_collect.py) · [실제 관측·실행과 한계](docs/WIKIDATA-COLLECTION.md)
+API 오류를 원문 저장 전에 거절하는 핵심 분기다. [실제 수집기](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/wikidata_collect.py) · [실제 관측·실행과 한계](docs/WIKIDATA-COLLECTION.md)
 
 ~~~python
-def check_payload(payload: dict, ids: list[str]) -> list[dict]:
     if "error" in payload:
         error = payload["error"]
         code = error.get("code") if isinstance(error, dict) else None
@@ -120,82 +119,6 @@ def check_payload(payload: dict, ids: list[str]) -> list[dict]:
             if isinstance(code, str)
             else "unrecognized_api_error"
         )
-    if payload.get("warnings"):
-        raise AuditError("source_api_warning_requires_review")
-    if payload.get("redirects"):
-        raise AuditError("entity_redirect_requires_review")
-    if type(payload.get("success")) is not int or payload["success"] != 1:
-        raise AuditError("explicit_api_success_required")
-    entities = payload.get("entities")
-    if not isinstance(entities, dict) or set(entities) != set(ids):
-        raise AuditError("returned_item_ids_must_match_request")
-    if any(isinstance(entity, dict) and "redirect" in entity for entity in entities.values()):
-        raise AuditError("entity_redirect_requires_review")
-    # Checks exact item IDs, positive revisions, label shape and supported quantity/claim shape.
-    return normalize_entities(payload)
-~~~
-
-~~~python
-def collect(
-    manifest: SourceManifest, ids: list[str], output: Path, snapshot: Path | None = None
-) -> dict:
-    if (
-        manifest.source_id != "wikidata-structured"
-        or manifest.license_label != "CC0-1.0"
-        or not manifest.local_structured_normalization
-    ):
-        raise AuditError("reviewed_wikidata_structured_source_required")
-    url = entity_url(ids)
-    if ".pubburi" not in output.resolve().parts:
-        raise AuditError("outputs_must_be_inside_private_pubburi_directory")
-    # Reserve once before reading the input or making a request; never overwrite an old snapshot.
-    output.mkdir(parents=True, exist_ok=False)
-    receipt = {
-        "schema_version": 1,
-        "mode": "live_get" if snapshot is None else "offline_replay",
-        "request_url": url,
-        "requested_ids": sorted(ids),
-        "observed_at_utc": datetime.datetime.now(datetime.UTC).isoformat(),
-        "accepted": False,
-        "http_status": None,
-        "response_bytes": None,
-        "response_sha256": None,
-        "error_code": None,
-        "structured_data_license": "CC0-1.0",
-        "license_evidence": "https://www.wikidata.org/wiki/Wikidata:Licensing",
-        "manifest_sha256": hashlib.sha256(manifest.model_dump_json().encode()).hexdigest(),
-        "images_fetched": False,
-        "identity_review": "not_performed",
-        "training_ready": False,
-    }
-    write_receipt(output, receipt)
-    try:
-        if snapshot is None:
-            content, receipt["http_status"] = fetch(url)
-        else:
-            with snapshot.open("rb") as source:
-                content = source.read(MAX_INPUT_BYTES + 1)
-        receipt["response_bytes"] = len(content)
-        payload, receipt["response_sha256"] = parse_json_bytes(content)
-        records = check_payload(payload, ids)
-        (output / "entities.json").write_bytes(content)
-        (output / "normalized-records.json").write_text(
-            json.dumps(records, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-        )
-        receipt.update(
-            accepted=True,
-            entities=len(records),
-            revisions={record["source_record_id"]: record["source_revision"] for record in records},
-        )
-        write_receipt(output, receipt)
-        return receipt
-    except (OSError, ValueError, TypeError, KeyError) as error:
-        receipt["accepted"] = False
-        receipt["error_code"] = (
-            str(error) if isinstance(error, AuditError) else type(error).__name__
-        )
-        write_receipt(output, receipt)
-        raise
 ~~~
 
 ### JSON 해석부터 필수 조건과 상품 ID를 보존한 추천
@@ -222,21 +145,9 @@ JSON decoder가 같은 이름의 마지막 값만 남긴 뒤 Pydantic에 전달�
 
 #### 코드
 
-원문을 다시 내보내지 않는 중복 검사와 수신 게이트 뒤의 고정422 처리다. [실제 입력 경계](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/request_limits.py) · [B0 계약](docs/BASELINE-API.md) · [B1 계약](docs/CONTENT-API.md)
+전체 JSON 파싱이 성공했을 때만 앞서 기록한 중복 판정을 반환하는 핵심 분기다. [실제 입력 경계](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/request_limits.py) · [B0 계약](docs/BASELINE-API.md) · [B1 계약](docs/CONTENT-API.md)
 
 ~~~python
-def duplicate_json_keys(body: bytes) -> bool:
-    duplicate = False
-
-    def unique_object(pairs):
-        nonlocal duplicate
-        values = {}
-        for key, value in pairs:
-            if key in values:
-                duplicate = True
-            values[key] = value
-        return values
-
     try:
         # Object hooks see decoded names, so escaped equivalent keys cannot evade this check.
         # Discard this bounded preflight tree; FastAPI still owns schema/numeric validation.
@@ -246,25 +157,6 @@ def duplicate_json_keys(body: bytes) -> bool:
         # A duplicate found before a later parse error must not mask that error.
         return False
     return duplicate
-~~~
-
-미들웨어는 크기·수신 기한을 확인해 본문을 모은 다음 아래 분기를 실행한다.
-
-~~~python
-if json_media_type(scope) and duplicate_json_keys(buffered):
-    await JSONResponse(
-        status_code=422,
-        content={
-            "detail": [
-                {
-                    "type": "duplicate_json_key",
-                    "loc": ["body"],
-                    "msg": "Catalog JSON object keys must be unique",
-                }
-            ]
-        },
-    )(scope, receive, send)
-    return
 ~~~
 
 ### 원천 수량의 의미를 지켜 잘못된 학습 관측 차단
@@ -308,38 +200,11 @@ URI 변환표·권리·사실 검수를 각각 확장해야 하며 이 검사는
 
 #### 코드
 
-실제 공통 단위 변환표와 scalar 정규화 함수 전체, 학습 함수의 fit 전 사실 대조 부분이다.
+명시 수량 타입의 모순과 지원하지 않는 단위를 보류하는 핵심 분기다.
 [정규화 처리](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/catalog_audit.py) ·
 [실제 학습 경계](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/source_family_experiment.py)
 
 ~~~python
-def wikidata_unit_factors(units: dict[str, Decimal]) -> dict[str, Decimal]:
-    """Only the supported Wikidata entity URIs name these conversion factors."""
-    return {
-        f"{scheme}://www.wikidata.org/entity/{qid}": factor
-        for qid, factor in units.items()
-        for scheme in ("http", "https")
-    }
-
-
-def scalar_quantity(entity: dict, prop: str, units: dict, maximum: Decimal):
-    values = set()
-    issues = set()
-    unit_factors = wikidata_unit_factors(units)
-    for statement in statements(entity, prop):
-        if statement.get("rank") == "deprecated":
-            continue
-        if statement.get("qualifiers"):
-            issues.add("context_requires_review")
-            continue
-        snak = statement.get("mainsnak", {})
-        data = snak.get("datavalue")
-        value = data.get("value") if isinstance(data, dict) else None
-        if snak.get("snaktype") != "value" or not isinstance(value, dict):
-            issues.add("unknown_statement")
-            continue
-        # Minimal legacy/authored inputs omit redundant metadata. An explicit conflict
-        # cannot be repaired from its claims bucket or from a quantity-shaped value.
         if (
             ("property" in snak and snak["property"] != prop)
             or ("datatype" in snak and snak["datatype"] != "quantity")
@@ -351,43 +216,6 @@ def scalar_quantity(entity: dict, prop: str, units: dict, maximum: Decimal):
         if not isinstance(unit, str) or unit not in unit_factors:
             issues.add("unsupported_unit")
             continue
-        try:
-            if not isinstance(value.get("amount"), str) or len(value["amount"]) > 128:
-                raise InvalidOperation
-            amount = Decimal(value["amount"])
-            bounds = [
-                Decimal(value.get(key, value["amount"])) for key in ("lowerBound", "upperBound")
-            ]
-            if not amount.is_finite() or any(not bound.is_finite() for bound in bounds):
-                raise InvalidOperation
-            if any(bound != amount for bound in bounds):
-                issues.add("range_requires_review")
-                continue
-            converted = amount * unit_factors[unit]
-            if converted < 0 or converted > maximum:
-                raise InvalidOperation
-            if amount != 0 and (converted == 0 or float(converted) == 0):
-                raise InvalidOperation
-            if prop == "P2234" and converted == 0:
-                raise InvalidOperation
-            values.add(converted)
-        except (KeyError, TypeError, ValueError, DecimalException):
-            issues.add("invalid_quantity")
-    if len(values) > 1:
-        issues.add("multiple_values_require_review")
-    value = float(next(iter(values))) if len(values) == 1 and not issues else None
-    return value, sorted(issues)
-~~~
-
-~~~python
-def fit_representation(spec: FamilyPartition, records: list[dict], hashes: dict) -> dict:
-    by_id = {row["source_record_id"]: row for row in records}
-    for qid, facts in spec.expected_facts.items():
-        row = by_id.get(qid)
-        if row is None or row["entity_kind"] != "product_family" or row["label"] is None:
-            raise AuditError("selected_records_require_reviewed_named_product_families")
-        if any(row[field] != value for field, value in facts.model_dump().items()):
-            raise AuditError("manual_facts_conflict_with_reviewed_source")
 ~~~
 
 <a id="development"></a>
