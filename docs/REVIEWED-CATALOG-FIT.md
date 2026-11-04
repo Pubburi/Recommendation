@@ -68,4 +68,4 @@ API가 반환한 업무 ID와 fresh snapshot으로 명시 매핑1개·B0/B1 expo
 
 [구현](../src/pubburi_recommendation/reviewed_catalog_fit.py) ·
 [직접 작성 회귀](../tests/test_reviewed_catalog_fit.py) ·
-[작업/인계](plans/2026-11-01-reviewed-catalog-fit.md)
+[작업/인계](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/docs/plans/2026-11-01-reviewed-catalog-fit.md)

@@ -90,4 +90,4 @@ uv run --locked python -m pubburi_recommendation.source_catalog \
 
 [구현](../src/pubburi_recommendation/source_catalog.py) ·
 [회귀](../tests/test_source_catalog.py) ·
-[작업/검증](plans/2026-11-01-reviewed-source-catalog.md)
+[작업/검증](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/docs/plans/2026-11-01-reviewed-source-catalog.md)

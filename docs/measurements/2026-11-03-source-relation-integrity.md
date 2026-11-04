@@ -60,4 +60,4 @@ B1 fingerprint는 `0b1dea7937e89b8bf3cbe5180ec2ea8a6a9fbe467725a5e9340021bde0853
 M1 후보는 `4a8decc5307e26068ba8305ce997f3caa1d2d03a170d65910980a8d66a7118ee`로 그대로다.
 같은 원천의 검수·권리·unknown과 기존 M1 미채택도 유지한다. 수량/단위 수정의 이전 손상10조건,
 실제 업무 DEMO1상품·문맥11은 다른 실험/분모다. 신규 원천 수집·업무 mapping/서비스 fit0이며
-모델 품질/전체 AI03 완료를 주장하지 않는다. [계획/검증](../plans/2026-11-03-source-relation-integrity.md)을 따른다.
+모델 품질/전체 AI03 완료를 주장하지 않는다. [계획/검증](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/docs/plans/2026-11-03-source-relation-integrity.md)을 따른다.

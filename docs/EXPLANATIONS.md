@@ -70,4 +70,4 @@ formatter는 모든 양수 기여의 사실/합과 hard 코드를 대조한 뒤 
 
 권리·가격·상품군/물리 SKU·family-browse DEMO의 권위는 이 옵션으로 바뀌지 않는다.
 사용자 선호 품질·성능·전체 R02/R04·Backend/웹 완료 근거로 확대하지 않는다.
-[검증](TESTING.md) · [동결/실행](plans/2026-11-03-factual-explanations.md)
+[검증](TESTING.md) · [동결/실행](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/docs/plans/2026-11-03-factual-explanations.md)

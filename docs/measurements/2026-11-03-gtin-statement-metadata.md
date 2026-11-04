@@ -38,4 +38,4 @@ curation은 `curation_cannot_override_unresolved_source_hold`·exit2로 새 디�
 각각 `dcdea43cca59628cd6c3041db2f00393bf1e1ca0c3f5be781f529ae6adad73e2` /
 `d60979b7c20732231aacb7054788cf140ea25b9bfb88744f9ff09d336a24760b`였다.
 신규 상품 snapshot 수집·업무 mapping/서비스 fit0이며 source11/DEMO1/문맥11과 합산하지 않는다.
-이것은 전체 카탈로그 품질·권리 승인이나 AI03 완료가 아니다. [작업/검증 기록](../plans/2026-11-03-gtin-statement-metadata.md)을 따른다.
+이것은 전체 카탈로그 품질·권리 승인이나 AI03 완료가 아니다. [작업/검증 기록](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/docs/plans/2026-11-03-gtin-statement-metadata.md)을 따른다.

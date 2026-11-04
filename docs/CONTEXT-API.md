@@ -91,7 +91,7 @@ missing/unavailable 기준의 지원 토큰·활성 수치는0/빈 목록이 아
 기존 malformed/인코딩/media별 오류 우선순위를 적용한다. 수신 기한은 CPU fit/20회 이하 기준
 비교를 취소하거나 완료 시간을 보장하지 않는다. 요청 간 모델/기준·사용자 상태를 저장하지 않는다.
 시작/OpenAPI/health/B0와 usable 기준이 없는 context는 NumPy/sklearn·DB·모델 다운로드·외부
-키를 요구하지 않는다. 경계/배포 검증은 [작업 기록](plans/2026-11-02-context-reference-provider.md)을 따른다.
+키를 요구하지 않는다. 경계/배포 검증은 [작업 기록](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/docs/plans/2026-11-02-context-reference-provider.md)을 따른다.
 
 호출자는 허용 사실·업무 ID/검수 그룹·현재 장바구니/주문 권한을 보장한다. Backend는 반환 뒤
 현재 상품/판매/가격·제외 조건과 링크를 재확인해야 한다. 이 제공자는 새로운 서비스 카탈로그

@@ -76,4 +76,4 @@ beer bottles이며 완성 포장/SKU 승인을 뜻하지 않는다. 기존 snaps
 허용 원천의 개별 포장 정체성·추가 필수 필드/GTIN·명시 업무 매핑을 검수한 뒤 기존
 [source curation](SOURCE-CATALOG.md)과 [업무 export](BUSINESS-EXPORT.md) 계약을 적용한다.
 이 관측만으로 엄격한 기존 gate를 완화하거나 ABV/제조사/pack count/가격을 추정하지 않는다.
-[계획과 재현 근거](plans/2026-11-02-volume-context.md)에 동결·실제 결과·한계를 기록한다.
+[계획과 재현 근거](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/docs/plans/2026-11-02-volume-context.md)에 동결·실제 결과·한계를 기록한다.

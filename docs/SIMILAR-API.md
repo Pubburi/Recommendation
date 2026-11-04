@@ -79,5 +79,5 @@ items·설명/기여를 사용한다. `supported_profile_tokens`, `unknown_profi
 
 시작/스키마/health와 기준 부재·판매 불가 처리는 NumPy/sklearn·DB/모델 다운로드/외부 키를
 요구하지 않는다. 런타임-only 새 wheel의 실제 HTTP와 OpenAPI·부분 본문408까지 검증한다.
-허구 사실의 독립 고정 조건·원점수 보존·실제 실행/한계는 [작업 기록](plans/2026-11-02-similar-product-provider.md)에 둔다.
+허구 사실의 독립 고정 조건·원점수 보존·실제 실행/한계는 [작업 기록](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/docs/plans/2026-11-02-similar-product-provider.md)에 둔다.
 새 실서비스 원천/업무 매핑·카탈로그 fit/관련성 품질·최종 R03 Backend/화면 연결 완료는 아니다.

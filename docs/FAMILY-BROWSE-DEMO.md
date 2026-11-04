@@ -59,15 +59,29 @@ fit 전에 원천 catalog hash·명시 업무 사실·독립 후보/조건/fallb
 남긴다. 다중 수치 범위가 활성화돼도 사용자 선호 학습/관련성·holdout 일반화·서비스 품질이나
 전체 AI03 완료가 아니다. 기존 container DEMO1·source11 상품군 실험과 합산하지 않는다.
 
-2026-11-03 실제 검수5상품군을 전용 업무 DEMO에 명시 연결하고14개 고정 사실 검사를
-두 번 통과했다. 자세한 [관측/원값·분모](measurements/2026-11-03-family-browse-demo.md)를
-따르며 원래6항목 중5개를 재사용한 결과이지 신규 원천/판매 SKU5개 확보가 아니다.
+## 실행된 데이터 범위
 
-2026-11-04에는 별도 기존 accepted4후보에서 미적용 상품군1개를 새 검수·정제로 선택하고,
-두 업무 DB의 실제 시연 API 행에 각각 명시 매핑해 기존 B1/B0의 같은12조건을 통과했다.
-[신규 적용 관측](measurements/2026-11-04-reviewed-family-application.md)의 ABV5.2는 known
-상수, 용량/맛/향은 unknown이다. 신규 live6후보의 원문 수집은 api_maxlag로 중단했으므로
-수집 성공0과 기존 원천의 새 적용1을 구분한다. 현재 container-only Backend 소비자의
-family 거절을 바꾸거나 전체 R02/AI03·서비스 카탈로그/품질 완료로 세지 않는다.
+기존 accepted6항목 중 known-ABV5상품군을 별도 업무 DEMO에 명시 연결한 실행과14개 고정
+사실 검사의 재현은 [원값/분모](measurements/2026-11-03-family-browse-demo.md)에 보존한다.
+신규 원천/판매 SKU5개를 확보한 결과가 아니다.
 
-[회귀/배포 검증](TESTING.md) · [실제 실행 계획](plans/2026-11-03-family-browse-demo.md)
+2026-11-04에는 다른 accepted4후보 중 미적용 상품군1개를 새 hash-bound 검수·정제로 선택했다.
+정상 P31/P176·라벨/언어/revision과 정확 vol%5.2를 결속했고 P2234 부재의 용량·맛/향은
+null로 보존했다. raw GTIN을 포장/할당 증명으로 승격하거나 다른3항목의 기존 보류를 풀지 않았다.
+두 소유 업무 DB의 실제 공개 Product7/features8·반환 ID에 각각 명시 매핑해, freshness 안에
+기존 business_export/reviewed_catalog_fit CLI를 실행했다. 맥주·2000원·가용성·이미지 placeholder는
+업무 DEMO 권위다. fit 전에 고정한12개 사실/제약/fallback을 각 DB에서12/12 통과했으며,
+fit 요약·어휘/IDF·모델 지문·case 전체 결과가 같았다. 각1상품군/1그룹·주종1어휘/IDF1,
+ABV 관측1은 known 상수라 비활성, 용량 관측0/누락1·맛/향null각1이다. 같은 상품군과12조건의
+반복이지2상품·24개 독립 정답이 아니다. 독립 관련성 정답이 없어 순위 지표는 미산출이다.
+
+별도 새 목적의 와인/시드르·명시 제조자/ABV 발견 GET1회는6후보를 반환했지만, 원문 Action
+GET1회는 api_maxlag/accepted=false로 중단했다. 재시도·한도 완화·endpoint 우회0이며
+신규 live 수집 성공0과 기존 원천의 새 적용1을 구분한다. 옛0ID·제조사429·aT 보류를 바꾸지 않았다.
+
+현재 Backend의 첫 B1 소비자는 container-only로 이 family scope를 계속 거절한다. 다음
+R02 선행은 별도 browse opt-in·family/DEMO 표시·unknown 용량·현재 업무 재검증의 공동 계약과
+Backend/React 소비다. 일반 container/판매·장바구니 SKU로 자동 승격하거나 전체 R02/AI03·
+서비스 카탈로그/품질 완료로 세지 않는다. 원문/응답·실제 ID·명세·모델·로그는 ignored에 두고,
+회차별 별도 계획/측정 일지는 만들지 않는다. 재현 명령은 위 정제와
+[business export](BUSINESS-EXPORT.md)·[reviewed fit](REVIEWED-CATALOG-FIT.md)의 명령을 따른다.
