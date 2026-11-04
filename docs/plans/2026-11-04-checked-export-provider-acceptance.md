@@ -69,3 +69,25 @@ README CS05/06/07의 실제 원천 상태·추천 입력 의미·수량→학습
 원인/영향을 확보한 것은 아니므로 기존3사례/순서·전체 본문과 부족1을 유지한다. Backend
 본인 취향/계정·현재 업무 재확인·B1 소비/React와 전체 R02–R08·AI03 인수는 남는다.
 완료6/20을 올리지 않으며 최신 head 리뷰/CI·native0·병합/main CI·브랜치 정리는 root가 확인한다.
+
+## PR36 탐색 선택 metadata 후속 보완
+
+source `4b82ade`의 후속 리뷰에서 탐색 양수 items와 별도 selections/선택 수의 대조 누락을
+확인했다. 수정 전에 같은 원래11개 명세와 새 손상 조건11개를 고정했다. 실제 소유 loopback
+HTTP의 통제 변조에서 탐색 목록/ID/순서/그룹·개수/빈 phantom7조건, similar/context 제외 수와
+feedback matches 순서3조건은 잘못 exit0/passed=true였다. context matches 역순1조건은
+기존에도 exit1로 거절한 대조군으로 보존했다. 자연 provider 장애나 품질 오류율이 아니다.
+
+생산 scorer/MMR을 호출하지 않고 선택 ID/순서/checked 그룹·선택 수와 pool 논리 경계,
+기준 그룹 제외 수·미평가 null, matches와 items의 순서를 응답 단위에서 확인한다.
+context의 선언 winning ID 대조도 item loop 밖으로 옮겨 빈 결과를 생략하지 않는다.
+같은11개 통제 변조는 모두 exit1/passed=false다. 기존 모델/provider·고정 정답은 보존한다.
+
+5개 제공자의 응답 단위 계약표를 대조하고 context 기준/공통 profile의 지원·unknown 개수와
+활성 수치 진단도 동결 atomic 사실로 검사했다. 새 회귀67개를 포함한 focused125개와 전체
+locked1141개·Ruff156파일·B0/B1 각8/8은 actual exit0이었다. 새 sdist/wheel runtime-only
+python -I의 실제 CLI는 authored7조건(fresh/replay), 양수·빈 탐색 선택 손상과 기준 제외 수,
+이전 feedback/spec 손상을 확인했다. 최종 complete/passed 시각은 2026-11-04 00:17:16 UTC다.
+원래11조건의 두 재생 전체 case·이전9손상 거절·기존7POST 전체 wire와 15보존 파일은 그대로다.
+source `4b82ade`의1074검사/CI·리뷰와 수정 전 손상 증거는 별도로 보존했다. 이전 두 resolved
+리뷰에는 중복 답글을 추가하지 않으며 새 head 리뷰/CI를 이전 승인으로 대신하지 않는다.

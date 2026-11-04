@@ -64,6 +64,22 @@ feedback은 반환 item이 없어도 기준 목록·실제 그룹/available·neg
 응답 단위에서 대조한다. 미평가 기준의 null과 available 기준의 지원 토큰·활성 수치/평가 수,
 informative 수·ranking_mode·중복 없는 그룹 제외 수를 동결 요청/카탈로그 사실로 확인한다.
 
+응답 단위 목록 검사는 item loop 밖에서 실행한다. 빈 결과도 목록/상태/개수 검사를 생략하지 않는다.
+
+| 제공자 | 독립 ID·그룹·순서/개수 대조 |
+|---|---|
+| content | 동결 item ID/순서·eligible/fallback·fit. 별도 선택/기준 목록 없음 |
+| exploration | selections의 ID/순서가 items와 같고 각 그룹이 checked catalog와 일치. 선택 수·고유 그룹 수·limit·pool 개수 경계와 선택/빈 fallback 상태 대조 |
+| similar | 실제 기준 ID/그룹/available 상태와 그 그룹의 전체 제외 수. 사용 불가이면 제외 수 null |
+| context | 정렬된 기준 ID/그룹/상태·평가 수/진단, 알려진 모든 기준 그룹의 중복 없는 제외 수. 사용 가능 기준이 없으면 제외 수 null·미평가 진단 null. matches가 반환 순서와 선언한 winning ID에 정확히 일치 |
+| feedback | 기존 positive/negative 기준·상태/평가/제외 수 대조와 함께 matches의 ID/순서가 items에 정확히 일치. 빈 결과의 phantom match도 거절 |
+
+탐색 MMR 점수/유사도나 최대 매치 점수를 다시 계산하지 않는다. pool 검사는 반환 개수의
+논리적 경계이며 독립적인 랭킹 품질 정답을 새로 만드는 검사가 아니다.
+공통 profile 진단은 입력의 명시 atomic 종류/값이 checked catalog 사실에 존재하는지와 활성
+수치 범위로 지원/unknown 개수·활성 필드를 대조한다. similar의 사용 불가 기준은 평가 없이
+0/0/[]를 유지한다. 반환 item의 유무가 이 진단 검사를 생략하는 조건이 되지 않는다.
+
 ## 실행·완료와 실패
 
 ~~~bash

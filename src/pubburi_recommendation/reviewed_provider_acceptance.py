@@ -312,6 +312,43 @@ def evidence_issues(item, product, profile, constraints, fallback, comparison):
     return issues
 
 
+def reference_diagnostics(product, active_numeric):
+    # Every usable reference is in the fit catalog: its own atomic facts are
+    # supported. This counts facts only, without a vocabulary/scoring helper.
+    supported = (
+        int(product.category is not None)
+        + len(product.taste_tags or [])
+        + len(product.aroma_tags or [])
+    )
+    numeric = [
+        field
+        for field in ("abv_percent", "volume_ml")
+        if field in active_numeric and getattr(product, field) is not None
+    ]
+    return supported, 0, numeric
+
+
+def profile_diagnostics(profile, products, active_numeric):
+    # Compare typed atomic facts; do not tokenize, normalize or ask the fitted model.
+    facts = set()
+    for product in products:
+        facts.update(("category", value) for value in [product.category] if value is not None)
+        facts.update(("taste", value) for value in product.taste_tags or [])
+        facts.update(("aroma", value) for value in product.aroma_tags or [])
+    requested = (
+        [("category", value) for value in profile.categories]
+        + [("taste", value) for value in profile.taste_tags]
+        + [("aroma", value) for value in profile.aroma_tags]
+    )
+    supported = sum(fact in facts for fact in requested)
+    numeric = [
+        field
+        for field in ("abv_percent", "volume_ml")
+        if field in active_numeric and getattr(profile, "preferred_" + field) is not None
+    ]
+    return supported, len(requested) - supported, numeric
+
+
 def feedback_metadata_issues(case, parsed, by_id, ids, active_numeric):
     """Check references/evaluation from frozen input facts, even with no returned items."""
     negative_ids = {ids[key] for key in case.negative_keys}
@@ -336,21 +373,9 @@ def feedback_metadata_issues(case, parsed, by_id, ids, active_numeric):
         if state != "available":
             diagnostics[pid] = (None, None, None)
             continue
-        # Fit includes every catalog reference, so its own atomic text is in the
-        # vocabulary. No scorer, weighting or observed response decides these counts.
-        supported = (
-            int(product.category is not None)
-            + len(product.taste_tags or [])
-            + len(product.aroma_tags or [])
-        )
-        numeric = [
-            field
-            for field in ("abv_percent", "volume_ml")
-            if field in active_numeric and getattr(product, field) is not None
-        ]
-        diagnostics[pid] = (supported, 0, numeric)
+        diagnostics[pid] = reference_diagnostics(product, active_numeric)
         evaluated_count += 1
-        informative_count += bool(supported or numeric)
+        informative_count += bool(diagnostics[pid][0] or diagnostics[pid][2])
     issues = []
     if [
         (r.product_id, r.sku_group, r.state) for r in parsed.not_interested_references
@@ -407,6 +432,40 @@ def feedback_metadata_issues(case, parsed, by_id, ids, active_numeric):
     return issues
 
 
+def exploration_metadata_issues(case, parsed, by_id):
+    # Inspect only observable identities/counts, not the production MMR scorer.
+    item_ids = [item.product_id for item in parsed.items]
+    expected = [(pid, by_id[pid].sku_group) for pid in item_ids if pid in by_id]
+    groups = {group for _, group in expected}
+    issues = []
+    if [(s.product_id, s.sku_group) for s in parsed.selections] != expected:
+        issues.append("exploration_selection_facts_or_order_conflict")
+    if (
+        parsed.selected_count != len(item_ids)
+        or parsed.selected_group_count != len(groups)
+        or len(groups) != len(item_ids)
+        or len(item_ids) > case.limit
+    ):
+        issues.append("exploration_selection_counts_conflict")
+    if (
+        parsed.candidate_pool_size != min(parsed.eligible_count, 100)
+        or parsed.pool_truncated != (parsed.eligible_count > 100)
+        or not len(item_ids) <= parsed.relevance_pool_size <= parsed.candidate_pool_size
+        or (parsed.fallback_reason is not None and parsed.relevance_pool_size != 0)
+    ):
+        issues.append("exploration_pool_counts_conflict")
+    expected_reason = (
+        "baseline_fallback"
+        if parsed.fallback_reason is not None
+        else "selected"
+        if item_ids
+        else "below_relevance_floor"
+    )
+    if parsed.exploration_reason != expected_reason:
+        issues.append("exploration_selection_state_conflict")
+    return issues
+
+
 def inspect_response(case, body, constraints, response, checked, spec):
     try:
         parsed = RESPONSES[case.provider].model_validate(response)
@@ -427,6 +486,8 @@ def inspect_response(case, body, constraints, response, checked, spec):
     ):
         issues.append("declared_fit_or_fingerprint_conflict")
     key_by_id = {value: key for key, value in ids.items()}
+    if case.provider == "exploration":
+        issues.extend(exploration_metadata_issues(case, parsed, by_id))
     if case.provider == "similar":
         reference = by_id[ids[case.reference_keys[0]]]
         if (parsed.reference_product_id, parsed.reference_sku_group, parsed.reference_state) != (
@@ -435,6 +496,13 @@ def inspect_response(case, body, constraints, response, checked, spec):
             "available" if reference.available else "unavailable",
         ):
             issues.append("similar_reference_facts_conflict")
+        excluded = (
+            sum(p.sku_group == reference.sku_group for p in by_id.values())
+            if reference.available
+            else None
+        )
+        if parsed.excluded_reference_group_count != excluded:
+            issues.append("similar_reference_group_count_conflict")
     if case.provider == "context":
         expected_references = sorted(
             (by_id[ids[key]] for key in case.reference_keys), key=lambda p: p.product_id
@@ -444,6 +512,30 @@ def inspect_response(case, body, constraints, response, checked, spec):
             for p in expected_references
         ] or parsed.evaluated_reference_count != sum(p.available for p in expected_references):
             issues.append("context_reference_facts_conflict")
+        groups = {p.sku_group for p in expected_references}
+        excluded = (
+            sum(p.sku_group in groups for p in by_id.values())
+            if any(p.available for p in expected_references)
+            else None
+        )
+        if parsed.excluded_reference_group_count != excluded:
+            issues.append("context_reference_group_count_conflict")
+        if [(m.product_id, m.reference_product_id) for m in parsed.matches] != [
+            (ids[k], ids[case.expected_comparisons[k]]) for k in case.expected_item_keys
+        ]:
+            issues.append("context_winning_reference_conflict")
+        for reference in parsed.references:
+            if reference.state != "available" and (
+                reference.supported_profile_tokens is not None
+                or reference.unknown_profile_tokens is not None
+                or reference.active_numeric_preferences is not None
+                or reference.fallback_reason is not None
+            ):
+                issues.append("context_unevaluated_reference_conflict")
+    if case.provider in ("context", "feedback") and [
+        match.product_id for match in parsed.matches
+    ] != [item.product_id for item in parsed.items]:
+        issues.append("matches_items_or_order_conflict")
     active_numeric = {
         field
         for field in ("abv_percent", "volume_ml")
@@ -458,6 +550,36 @@ def inspect_response(case, body, constraints, response, checked, spec):
     }
     if case.provider == "feedback":
         issues.extend(feedback_metadata_issues(case, parsed, by_id, ids, active_numeric))
+    if case.provider != "context":
+        if case.provider == "similar":
+            reference = by_id[ids[case.reference_keys[0]]]
+            expected_diagnostics = (
+                reference_diagnostics(reference, active_numeric)
+                if reference.available
+                else (0, 0, [])
+            )
+        else:
+            expected_diagnostics = profile_diagnostics(case.profile, by_id.values(), active_numeric)
+        if (
+            parsed.supported_profile_tokens,
+            parsed.unknown_profile_tokens,
+            parsed.active_numeric_preferences,
+        ) != expected_diagnostics:
+            issues.append("profile_evaluation_counts_conflict")
+    if case.provider == "context":
+        for reference in parsed.references:
+            product = by_id.get(reference.product_id)
+            if (
+                product is not None
+                and product.available
+                and (
+                    reference.supported_profile_tokens,
+                    reference.unknown_profile_tokens,
+                    reference.active_numeric_preferences,
+                )
+                != reference_diagnostics(product, active_numeric)
+            ):
+                issues.append("context_reference_evaluation_conflict")
     for item in parsed.items:
         key = key_by_id.get(item.product_id)
         if key not in case.expected_comparisons:
@@ -476,16 +598,6 @@ def inspect_response(case, body, constraints, response, checked, spec):
                 preferred_volume_ml=product.volume_ml,
             )
             comparison = {"kind": "reference_product", "product_id": product.product_id}
-        if (
-            case.provider == "similar"
-            and parsed.reference_product_id != ids[case.reference_keys[0]]
-        ):
-            issues.append("similar_reference_conflict")
-        if case.provider == "context":
-            if [(m.product_id, m.reference_product_id) for m in parsed.matches] != [
-                (ids[k], ids[case.expected_comparisons[k]]) for k in case.expected_item_keys
-            ]:
-                issues.append("context_winning_reference_conflict")
         if case.provider == "feedback":
             match = next((m for m in parsed.matches if m.product_id == item.product_id), None)
             expected_source = (
@@ -516,8 +628,6 @@ def inspect_response(case, body, constraints, response, checked, spec):
             for part in item.contributions
         ):
             issues.append("unsupported_numeric_scale")
-    if case.provider in ("context", "feedback") and len(parsed.matches) != len(parsed.items):
-        issues.append("matches_count_conflict")
     return sorted(set(issues))
 
 

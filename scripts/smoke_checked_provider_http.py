@@ -33,7 +33,7 @@ def smoke_checked_provider_http(python, work, base_url):
     report = json.loads((output / "acceptance-report.json").read_text())
     if (
         not report["passed"]
-        or report["passed_contract_cases"] != 6
+        or report["passed_contract_cases"] != 7
         or (
             report["checked_export"]["mode"] != "fresh_demo_snapshot"
             or report["checked_export"]["service_catalog_approved"]
@@ -49,7 +49,13 @@ def smoke_checked_provider_http(python, work, base_url):
         raise RuntimeError("Installed provider replay pretended to be fresh")
     # A controlled owned-loopback intermediary forwards the real installed service.
     # Its explicit faults exercise the CLI, including the no-items feedback case.
-    for mode in ("metadata", "spec_changed", "spec_deleted"):
+    for mode in (
+        "metadata",
+        "exploration_selection",
+        "reference_counts",
+        "spec_changed",
+        "spec_deleted",
+    ):
         copied_spec = work / ("provider-fault-" + mode + ".json")
         copied_spec.write_bytes(Path(context["spec"]).read_bytes())
         state = {"calls": 0}
@@ -69,6 +75,26 @@ def smoke_checked_provider_http(python, work, base_url):
                 if mode == "metadata" and self.path.endswith("/feedback"):
                     value["positive_references"] = []
                     value["not_interested_references"] = []
+                if mode == "exploration_selection" and self.path.endswith("/exploration"):
+                    if value["items"]:
+                        value.update(selections=[], selected_count=0, selected_group_count=0)
+                    else:
+                        value.update(
+                            selections=[
+                                dict(
+                                    product_id=501,
+                                    sku_group="invented-group",
+                                    selection_score=0,
+                                    redundancy_penalty_input=0,
+                                    max_observed_text_similarity=None,
+                                    basis="highest_relevance_anchor",
+                                )
+                            ],
+                            selected_count=1,
+                            selected_group_count=1,
+                        )
+                if mode == "reference_counts" and self.path.endswith(("/similar", "/context")):
+                    value["excluded_reference_group_count"] = 0
                 if state["calls"] == 1 and mode == "spec_changed":
                     copied_spec.write_bytes(copied_spec.read_bytes() + b" ")
                 if state["calls"] == 1 and mode == "spec_deleted":
@@ -97,19 +123,22 @@ def smoke_checked_provider_http(python, work, base_url):
                 proxy.shutdown()
                 thread.join(timeout=5)
         receipt = json.loads((fault_output / "receipt.json").read_text())
-        if mode == "metadata":
+        if mode in ("metadata", "exploration_selection", "reference_counts"):
             failed = json.loads((fault_output / "acceptance-report.json").read_text())
-            blocked = next(
-                case for case in failed["cases"] if case["case_id"] == "feedback-blocked-empty"
-            )
+            rejected_ids = {
+                "metadata": {"feedback", "feedback-blocked-empty"},
+                "exploration_selection": {"exploration", "exploration-cold-empty"},
+                "reference_counts": {"similar", "context"},
+            }[mode]
             if (
                 fault.returncode != 1
                 or receipt["completed"] is not True
                 or failed["passed"]
-                or blocked["passed"]
+                or {case["case_id"] for case in failed["cases"] if not case["passed"]}
+                != rejected_ids
             ):
                 raise RuntimeError(
-                    "Installed CLI approved feedback reference faults with empty results"
+                    "Installed CLI approved response-level selection/reference faults"
                 )
         elif (
             fault.returncode != 2

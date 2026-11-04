@@ -266,6 +266,18 @@ def smoke_family_browse(python, work, manifest, raw, receipt, review, facts):
             ),
         }
     )
+    provider_cases.append(
+        {
+            "case_id": "exploration-cold-empty",
+            "provider": "exploration",
+            "expected_eligible_keys": keys,
+            "expected_item_keys": [],
+            "expected_comparisons": {},
+            "expected_fallback": "no_supported_preferences",
+            "expected_representation_fitted": True,
+            "fact_basis": "No explicit preferences: empty exploration, no MMR selections.",
+        }
+    )
     provider_spec = write(
         "authored-provider-spec.json",
         {

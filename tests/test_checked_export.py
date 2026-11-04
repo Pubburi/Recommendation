@@ -474,8 +474,7 @@ def test_feedback_response_level_reference_metadata_is_checked_even_without_item
     assert inspect_response(case, body, constraints, result, checked, spec)
 
 
-@pytest.mark.parametrize("fault", ["state", "zero_diagnostics"])
-def test_unavailable_positive_stays_unevaluated_in_checked_catalog_response(bundle, fault):
+def make_first_unavailable(bundle):
     # Change only this authored fixture's explicit DEMO eligibility and re-export it
     # through the original authority/mapping; do not bypass the checked loader.
     folder, _, _, _, _, snapshot_path, mapping_path = bundle["args"]
@@ -504,6 +503,11 @@ def test_unavailable_positive_stays_unevaluated_in_checked_catalog_response(bund
             "mapping_sha256": mapping_hash,
         },
     )
+
+
+@pytest.mark.parametrize("fault", ["state", "zero_diagnostics"])
+def test_unavailable_positive_stays_unevaluated_in_checked_catalog_response(bundle, fault):
+    make_first_unavailable(bundle)
     checked = load(bundle, now=bundle["now"])
     data = specification(bundle, checked)
     data["expected_facts"]["authored-family-q1"]["available"] = False
@@ -544,3 +548,268 @@ def test_checked_loader_and_cli_imports_do_not_restore_or_import_a_model():
         capture_output=True,
         text=True,
     )
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "empty_selections",
+        "selection_order",
+        "selection_id",
+        "selection_group",
+        "selected_count",
+        "selected_group_count",
+        "duplicate_group",
+        "pool_count",
+        "pool_truncated",
+        "relevance_count",
+        "selection_state",
+        "empty_phantom",
+        "empty_count",
+        "empty_relevance",
+        "empty_state",
+    ],
+)
+def test_exploration_selection_identity_order_groups_and_counts_are_independent(bundle, fault):
+    checked = load(bundle, now=bundle["now"])
+    data = specification(bundle, checked)
+    raw_case = data["cases"][1]
+    if fault.startswith("empty_") and fault != "empty_selections":
+        raw_case.update(
+            profile={},
+            expected_item_keys=[],
+            expected_comparisons={},
+            expected_fallback="no_supported_preferences",
+        )
+    data["cases"] = [raw_case]
+    spec = ProviderSpec.model_validate(data)
+    case, body, constraints = prepare_cases(spec, checked, datetime.now(UTC))[0]
+    with TestClient(app) as client:
+        result = client.post("/v1/recommendations/exploration", json=body).json()
+    assert inspect_response(case, body, constraints, result, checked, spec) == []
+    if fault == "empty_selections":
+        result.update(selections=[], selected_count=0, selected_group_count=0)
+    elif fault == "selection_order":
+        result["selections"].reverse()
+    elif fault == "selection_id":
+        result["selections"][0]["product_id"] = 999
+    elif fault == "selection_group":
+        result["selections"][0]["sku_group"] = "unbound-group"
+    elif fault == "selected_count":
+        result["selected_count"] = 0
+    elif fault == "selected_group_count":
+        result["selected_group_count"] = 0
+    elif fault == "duplicate_group":
+        result["selections"][1]["sku_group"] = result["selections"][0]["sku_group"]
+    elif fault == "pool_count":
+        result["candidate_pool_size"] = 0
+    elif fault == "pool_truncated":
+        result["pool_truncated"] = True
+    elif fault == "relevance_count":
+        result["relevance_pool_size"] = 0
+    elif fault == "selection_state":
+        result["exploration_reason"] = "baseline_fallback"
+    elif fault == "empty_phantom":
+        result.update(
+            selections=[
+                dict(
+                    product_id=37,
+                    sku_group="authored-group-q1",
+                    selection_score=0,
+                    redundancy_penalty_input=0,
+                    max_observed_text_similarity=None,
+                    basis="highest_relevance_anchor",
+                )
+            ],
+            selected_count=1,
+            selected_group_count=1,
+        )
+    elif fault == "empty_count":
+        result["selected_count"] = 1
+    elif fault == "empty_relevance":
+        result["relevance_pool_size"] = 1
+    else:
+        result["exploration_reason"] = "selected"
+    assert inspect_response(case, body, constraints, result, checked, spec)
+
+
+@pytest.mark.parametrize("provider", ["similar", "context"])
+@pytest.mark.parametrize("empty", [False, True])
+def test_reference_group_exclusion_count_is_checked_without_returned_items(bundle, provider, empty):
+    checked = load(bundle, now=bundle["now"])
+    data = specification(bundle, checked)
+    raw_case = next(c for c in data["cases"] if c["provider"] == provider)
+    if empty:
+        raw_case.update(
+            constraints={"max_price_krw": 0},
+            expected_eligible_keys=[],
+            expected_item_keys=[],
+            expected_comparisons={},
+            expected_fallback="no_eligible_products",
+        )
+    data["cases"] = [raw_case]
+    spec = ProviderSpec.model_validate(data)
+    case, body, constraints = prepare_cases(spec, checked, datetime.now(UTC))[0]
+    with TestClient(app) as client:
+        result = client.post("/v1/recommendations/" + provider, json=body).json()
+    assert inspect_response(case, body, constraints, result, checked, spec) == []
+    result["excluded_reference_group_count"] = 0
+    assert inspect_response(case, body, constraints, result, checked, spec)
+
+
+@pytest.mark.parametrize("provider", ["context", "feedback"])
+@pytest.mark.parametrize("fault", ["phantom_on_empty", "duplicate", "unbound_id", "order"])
+def test_matches_exactly_follow_items_even_when_the_result_is_empty(bundle, provider, fault):
+    checked = load(bundle, now=bundle["now"])
+    data = specification(bundle, checked)
+    raw_case = next(c for c in data["cases"] if c["provider"] == provider)
+    if fault == "phantom_on_empty":
+        raw_case.update(
+            constraints={"max_price_krw": 0},
+            expected_eligible_keys=[],
+            expected_item_keys=[],
+            expected_comparisons={},
+            expected_fallback="no_eligible_products",
+        )
+    elif provider == "feedback" and fault == "order":
+        raw_case.update(
+            positive_keys=[],
+            profile={"categories": ["맥주"]},
+            expected_eligible_keys=["authored-family-q1", "authored-family-q2"],
+            expected_item_keys=["authored-family-q1", "authored-family-q2"],
+            expected_comparisons={"authored-family-q1": None, "authored-family-q2": None},
+        )
+    data["cases"] = [raw_case]
+    spec = ProviderSpec.model_validate(data)
+    case, body, constraints = prepare_cases(spec, checked, datetime.now(UTC))[0]
+    with TestClient(app) as client:
+        result = client.post("/v1/recommendations/" + provider, json=body).json()
+    assert inspect_response(case, body, constraints, result, checked, spec) == []
+    if fault == "phantom_on_empty":
+        result["matches"] = [
+            {"product_id": 38, "reference_product_id": 37}
+            if provider == "context"
+            else {"product_id": 38, "source": "positive_feedback", "positive_product_id": 37}
+        ]
+    elif fault == "duplicate":
+        result["matches"].append(copy.deepcopy(result["matches"][0]))
+    elif fault == "unbound_id":
+        result["matches"][0]["product_id"] = 999
+    elif provider == "feedback":
+        result["matches"].reverse()
+    else:
+        # The two-product fixture has a single non-reference candidate. The actual
+        # reviewed five-family replay separately exercises reversed multi-item lists.
+        result["matches"][0]["reference_product_id"] = 38
+    assert inspect_response(case, body, constraints, result, checked, spec)
+
+
+@pytest.mark.parametrize("provider", ["similar", "context"])
+@pytest.mark.parametrize(
+    "fault", ["state", "group_count_zero", "evaluation_count", "phantom_match"]
+)
+def test_unavailable_reference_metadata_stays_unevaluated_with_no_items(bundle, provider, fault):
+    make_first_unavailable(bundle)
+    checked = load(bundle, now=bundle["now"])
+    data = specification(bundle, checked)
+    data["expected_facts"]["authored-family-q1"]["available"] = False
+    raw_case = next(c for c in data["cases"] if c["provider"] == provider)
+    raw_case.update(
+        expected_eligible_keys=None,
+        expected_item_keys=[],
+        expected_comparisons={},
+        expected_representation_fitted=False,
+        expected_fallback="reference_unavailable"
+        if provider == "similar"
+        else "no_usable_references",
+    )
+    data["cases"] = [raw_case]
+    spec = ProviderSpec.model_validate(data)
+    case, body, constraints = prepare_cases(spec, checked, datetime.now(UTC))[0]
+    with TestClient(app) as client:
+        result = client.post("/v1/recommendations/" + provider, json=body).json()
+    assert result["items"] == []
+    assert inspect_response(case, body, constraints, result, checked, spec) == []
+    if fault == "group_count_zero":
+        result["excluded_reference_group_count"] = 0
+    elif provider == "similar":
+        if fault == "state":
+            result["reference_state"] = "available"
+        elif fault == "evaluation_count":
+            result["supported_profile_tokens"] = 1
+        else:
+            result["reference_sku_group"] = "invented-group"
+    elif fault == "state":
+        result["references"][0]["state"] = "available"
+    elif fault == "evaluation_count":
+        result["references"][0].update(
+            supported_profile_tokens=0, unknown_profile_tokens=0, active_numeric_preferences=[]
+        )
+    else:
+        result["matches"] = [{"product_id": 38, "reference_product_id": 37}]
+    assert inspect_response(case, body, constraints, result, checked, spec)
+
+
+@pytest.mark.parametrize("empty", [False, True])
+@pytest.mark.parametrize(
+    "fault", ["supported_none", "unknown_one", "active_empty", "evaluated_zero"]
+)
+def test_context_evaluated_reference_counts_follow_facts_even_with_empty_items(
+    bundle, empty, fault
+):
+    checked = load(bundle, now=bundle["now"])
+    data = specification(bundle, checked)
+    raw_case = data["cases"][3]
+    if empty:
+        raw_case.update(
+            constraints={"max_price_krw": 0},
+            expected_eligible_keys=[],
+            expected_item_keys=[],
+            expected_comparisons={},
+            expected_fallback="no_eligible_products",
+        )
+    data["cases"] = [raw_case]
+    spec = ProviderSpec.model_validate(data)
+    case, body, constraints = prepare_cases(spec, checked, datetime.now(UTC))[0]
+    with TestClient(app) as client:
+        result = client.post("/v1/recommendations/context", json=body).json()
+    assert inspect_response(case, body, constraints, result, checked, spec) == []
+    if fault == "supported_none":
+        result["references"][0]["supported_profile_tokens"] = None
+    elif fault == "unknown_one":
+        result["references"][0]["unknown_profile_tokens"] = 1
+    elif fault == "active_empty":
+        result["references"][0]["active_numeric_preferences"] = []
+    else:
+        result["evaluated_reference_count"] = 0
+    assert inspect_response(case, body, constraints, result, checked, spec)
+
+
+@pytest.mark.parametrize("provider", ["content", "exploration", "similar", "feedback"])
+@pytest.mark.parametrize("empty", [False, True])
+@pytest.mark.parametrize("fault", ["supported", "unknown", "active"])
+def test_profile_evaluation_counts_do_not_depend_on_returned_items(bundle, provider, empty, fault):
+    checked = load(bundle, now=bundle["now"])
+    data = specification(bundle, checked)
+    raw_case = next(c for c in data["cases"] if c["provider"] == provider)
+    if empty:
+        raw_case.update(
+            constraints={"max_price_krw": 0},
+            expected_eligible_keys=[],
+            expected_item_keys=[],
+            expected_comparisons={},
+            expected_fallback="no_eligible_products",
+        )
+    data["cases"] = [raw_case]
+    spec = ProviderSpec.model_validate(data)
+    case, body, constraints = prepare_cases(spec, checked, datetime.now(UTC))[0]
+    with TestClient(app) as client:
+        result = client.post("/v1/recommendations/" + provider, json=body).json()
+    assert inspect_response(case, body, constraints, result, checked, spec) == []
+    if fault == "supported":
+        result["supported_profile_tokens"] += 1
+    elif fault == "unknown":
+        result["unknown_profile_tokens"] += 1
+    else:
+        result["active_numeric_preferences"] = ["volume_ml"]
+    assert inspect_response(case, body, constraints, result, checked, spec)
