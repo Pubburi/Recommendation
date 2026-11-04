@@ -66,6 +66,7 @@ class FeedbackRecommendationResponse(ContentRecommendationResponse):
 
 
 def recommend_feedback(request: FeedbackRecommendationRequest) -> FeedbackRecommendationResponse:
+    request = request.resolved()
     by_id = {product.product_id: product for product in request.catalog}
     negative_ids = set(request.feedback.not_interested_product_ids)
     negative_groups = {by_id[pid].sku_group for pid in negative_ids if pid in by_id}

@@ -237,6 +237,15 @@ Recall/NDCG는 미산출이며 사용자 선호 학습·실서비스 카탈로�
 
 ## B1 요청 카탈로그 HTTP 계약
 
+`tests/test_preference_input.py`는 기존 세 B1 경로의 opt-in BE 저장 취향을 독립 authored 명시
+profile/constraints와 전체 응답·1fit으로 대조한다. snapshot null/[]·실제0/원자 태그·soft 비승격,
+네 방향 hard 교집합/충돌·exclusion/negative 그룹/positive 출처와 cold/OOV/빈 fallback을 확인한다.
+불완전 shape/동시 profile·Unicode literal 손실/중복과 raw 소수 scale/극단 지수는 fit 전422다.
+기존 수치 허용·OpenAPI·무모델 startup/빈 요청·512KiB와 중복/malformed 우선도 확인한다.
+새 runtime-only wheel의 실제 세 HTTP는 기존 명시 요청과 전체 byte 동등성·SKIPPED·거절과
+production10초 부분 본문408을 검증한다. 현재 저장 취향/권한·카탈로그 권리 승인이나 Backend/
+React 전체 연결·사용자 품질 완료로 집계하지 않는다.
+
 `tests/test_request_json.py`는 두 추천 API의 동일 객체 중복 key·동일 값·escape 동등명·
 JSON/+json/Content-Type 생략·UTF8/16/32·수신 chunk 경계를 확인한다. 다른 객체의 같은 이름/
 문자열 내용은 허용하고, 원문/개인 key를 반사하지 않는 고정422·size 우선413·기존 불완전/

@@ -236,12 +236,19 @@ UCI 품질 예측은 선택적 별도 실험이며 카탈로그 추천 학습/�
 
 ## 검증과 인계
 
+[Backend 저장 취향 입력](BACKEND-PREFERENCE-INPUT.md)은 기존 content/exploration/feedback에
+선택적 완전한 BE-shaped preferences를 연결한다. soft/hard·unknown/[]/실제0을 보존하고
+추가 hard는 교집합, 명시 profile 동시 입력/충돌·literal 손실은 fit 전 거절한다. 기존 B1 엔진과
+1fit·cold/negative fallback을 재사용한다. Backend 본인 권한·현재 취향/업무 재확인·실제 전달과
+React, 허용 현재 서비스 catalog/mapping·서비스 fit/평가는 여전히 후속이다. 이 입력 증분만으로
+전체 R/AI02나 MVP 완료 수를 올리지 않는다.
+
 [Checked export의5B1 HTTP 소비](CHECKED-EXPORT-ACCEPTANCE.md)는 기존 authority·완료4파일과
 실제 요청 바이트를 다시 대조하고 동결된 매핑 사실/기준/제외·이유/fallback을 독립 검사한다.
 현재 fresh 모드와 명시 historical replay를 구분하고 기존 source-backed 상품군 DEMO5의
 11조건을 같은 checked catalog로 두 번 실제 HTTP 재현했다. 모델 복원/새 원천·업무 캡처·
 서비스 카탈로그 승격/품질 증가가 아니며 원래 DEMO1/source11/DEMO5 보고서는 유지한다.
-Backend/React·전체 R02–R08/AI03 인수나 완료6/20 집계는 이 도구만으로 올리지 않는다.
+Backend/React·전체 R02–R08/AI03 인수나 전체 MVP 완료 수는 이 도구만으로 올리지 않는다.
 
 [R06 명시 검색 문구](SEARCH-PHRASES-API.md)는 Backend형 soft/hard 입력과 별도 검색 opt-in으로
 고정 짧은 문구·정확한 typed 조건/반복 query 쌍을 제공한다. 모든 hard/실제0와 선택 facet AND를

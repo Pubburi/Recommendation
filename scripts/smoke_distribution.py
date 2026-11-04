@@ -20,6 +20,7 @@ from smoke_context_http import verify_context_http
 from smoke_explanations_http import verify_explanations_http
 from smoke_exploration_http import verify_exploration_http
 from smoke_feedback_http import verify_feedback_http
+from smoke_preference_input_http import verify_preference_input_http
 from smoke_search_phrases_http import verify_search_phrases_http
 from smoke_similar_http import verify_similar_http
 from smoke_source_family import smoke_source_family
@@ -160,6 +161,7 @@ def verify_http(python: Path, work: Path) -> None:
                 verify_explanations_http(base_url, request_json)
                 verify_search_phrases_http(base_url, request_json)
                 smoke_checked_provider_http(python, work, base_url)
+                verify_preference_input_http(base_url, request_json)
                 # Send exact artifacts from the installed mapping/export CLI.
                 for filename, path in (
                     ("b0-demo-request.json", "/v1/recommendations/baseline"),

@@ -35,6 +35,7 @@
 | taste_tags / aroma_tags | 각각 null 또는 최대20개·trim/lowercase 후1–40자·정규화 중복 거절. null은 미확인, []는 검수 후 선언 태그 없음 |
 | volume_ml | null 또는 정수1–1,000,000mL |
 | profile | 기본 빈 취향. 선호 categories 최대32개, 맛/향 태그 각각20개, 선호 도수/용량. 모두 soft preference |
+| preferences | 선택적 [Backend 저장 취향](BACKEND-PREFERENCE-INPUT.md). 완전한 R06 BE-shaped DTO를 soft/profile·hard 교집합으로 연결. 명시 profile과 동시 입력/null 거절 |
 | constraints | 기존 [B0](BASELINE-API.md)의 주종·가격/도수 범위·제외 ID. hard 조건이며 취향보다 우선 |
 | limit | 기본12, 정수1–100 |
 | include_explanations | 기본false·엄격boolean. true일 때만 item의 typed 사실 설명을 추가 |
