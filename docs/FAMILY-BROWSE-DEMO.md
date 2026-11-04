@@ -63,4 +63,11 @@ fit 전에 원천 catalog hash·명시 업무 사실·독립 후보/조건/fallb
 두 번 통과했다. 자세한 [관측/원값·분모](measurements/2026-11-03-family-browse-demo.md)를
 따르며 원래6항목 중5개를 재사용한 결과이지 신규 원천/판매 SKU5개 확보가 아니다.
 
+2026-11-04에는 별도 기존 accepted4후보에서 미적용 상품군1개를 새 검수·정제로 선택하고,
+두 업무 DB의 실제 시연 API 행에 각각 명시 매핑해 기존 B1/B0의 같은12조건을 통과했다.
+[신규 적용 관측](measurements/2026-11-04-reviewed-family-application.md)의 ABV5.2는 known
+상수, 용량/맛/향은 unknown이다. 신규 live6후보의 원문 수집은 api_maxlag로 중단했으므로
+수집 성공0과 기존 원천의 새 적용1을 구분한다. 현재 container-only Backend 소비자의
+family 거절을 바꾸거나 전체 R02/AI03·서비스 카탈로그/품질 완료로 세지 않는다.
+
 [회귀/배포 검증](TESTING.md) · [실제 실행 계획](plans/2026-11-03-family-browse-demo.md)
