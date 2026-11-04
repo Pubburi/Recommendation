@@ -236,6 +236,12 @@ UCI 품질 예측은 선택적 별도 실험이며 카탈로그 추천 학습/�
 
 ## 검증과 인계
 
+[Backend 소비 bundle](BACKEND-CATALOG-BUNDLE.md)은 기존 checked authority/export를 단일
+catalog·명시 ID/group·원 업무 응답과 whole SHA로 연결한다. fresh-only와 원 capture+5분 예산,
+service_catalog_approved=false·현재 DB 재확인 책임을 유지한다. 원천/모델 정본을 Java에
+복제하거나 legacy80을 승인하지 않으며 Backend caller/React·허용 현재 서비스 카탈로그 전체
+매핑/fit/평가의 완료와 구분한다.
+
 [Backend 저장 취향 입력](BACKEND-PREFERENCE-INPUT.md)은 기존 content/exploration/feedback에
 선택적 완전한 BE-shaped preferences를 연결한다. soft/hard·unknown/[]/실제0을 보존하고
 추가 hard는 교집합, 명시 profile 동시 입력/충돌·literal 손실은 fit 전 거절한다. 기존 B1 엔진과
