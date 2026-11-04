@@ -237,6 +237,13 @@ Recall/NDCG는 미산출이며 사용자 선호 학습·실서비스 카탈로�
 
 ## B1 요청 카탈로그 HTTP 계약
 
+`tests/test_backend_catalog_bundle.py`는 existing checked export에서 exact catalog·ID/group·원
+Product7/features8·null/0와 DEMO scope를 보존하는지 독립 검증한다. v1 shape/참조/값/그룹·
+부적절한 승격/historical/예산·원입력 변조·기존 출력·실패/만료의 incomplete·미발행과 무모델
+import를 확인한다. 새 runtime-only wheel의 실제 bundle CLI는 같은 authored catalog를
+기존 B0/B1 HTTP로 보내 고정 조건/이유를 확인하고 변조된 완료 export는 거절한다.
+Backend의 실제 DB/caller·서비스 source 권리/물리 SKU/학습 품질 완료와 구분한다.
+
 `tests/test_preference_input.py`는 기존 세 B1 경로의 opt-in BE 저장 취향을 독립 authored 명시
 profile/constraints와 전체 응답·1fit으로 대조한다. snapshot null/[]·실제0/원자 태그·soft 비승격,
 네 방향 hard 교집합/충돌·exclusion/negative 그룹/positive 출처와 cold/OOV/빈 fallback을 확인한다.
