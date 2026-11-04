@@ -14,6 +14,7 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import ProxyHandler, Request, build_opener
 
+from smoke_checked_provider_http import smoke_checked_provider_http
 from smoke_content_http import verify_content_http
 from smoke_context_http import verify_context_http
 from smoke_explanations_http import verify_explanations_http
@@ -158,6 +159,7 @@ def verify_http(python: Path, work: Path) -> None:
                 verify_feedback_http(base_url, request_json)
                 verify_explanations_http(base_url, request_json)
                 verify_search_phrases_http(base_url, request_json)
+                smoke_checked_provider_http(python, work, base_url)
                 # Send exact artifacts from the installed mapping/export CLI.
                 for filename, path in (
                     ("b0-demo-request.json", "/v1/recommendations/baseline"),
