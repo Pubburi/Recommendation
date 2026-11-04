@@ -56,11 +56,17 @@ API/core/model/export/원보고서·README hash는 그대로다.
 받아 원 mapping/export와 fresh bundle3행 발행을 확인했다. 기존80행을 후보에 추가하거나
 이름으로 ID를 찾지 않았다. 실제 bundle의 whole SHA·엄격 구조와 고정3상품 사실은 일치했다.
 
-첫 Backend private caller는 guest401/로그인 뒤200 UNAVAILABLE, provider 전송0을 반환해
-root가 중단·프로세스를 정리했다. producer의 성공과 실제 소비 실패를 분리하고 원 snapshot/
-mapping/export/bundle·실패 원본을 보존했다. 당시에는 공동 인수·고정9조건 fit이 미완료였으며
-입력 시각/가격/상태·필드 정규화를 바꾸거나 만료된 원본을 재사용하지 않았다. 소비자 거절
-경계는 Backend와 원계약/실응답을 정적으로 대조한다. 이 기록을 통합 성공으로 해석하지 않는다.
+첫 Backend private caller는 guest401/로그인 뒤200 UNAVAILABLE을 반환했다. 최초 기록의
+provider 전송0 추정은 카운터 관측 위치 때문이었고, 추가 진단에서 실제 POST 진입→3초 호출
+기한의 UNAVAILABLE→늦은 provider200 순서를 확인해 정정했다. 기존 cold-budget 정책의
+정상 동작이며 loader/권한/제품 결함이나 제품 수정 성과가 아니다. 원 추정·요청/응답 순서와
+snapshot/mapping/export/bundle은 구분해 보존한다.
+
+같은 소스의 별도 유효 profile(maxPrice1/maxABV0)과 hard price0 빈 결과는 원 B1 전체 응답과
+일치했다. 이후 허용 집합 밖 주종의 PUT200을 가정한 harness는 실제400으로 실패했다. 이는
+제품 결함이 아닌 시험 입력 오류이며 원본을 보존하고 허용된 사케 OOV·본인 NOT_STARTED
+준비 조건으로 명세를 정정했다. 이 시점에는 공동 최종 인수·고정9조건 fit이 미완료였으며
+원 snapshot의 시각을 바꾸거나 만료된 원본을 재사용하지 않았다.
 
 ## 남은 작업·README 판단
 
