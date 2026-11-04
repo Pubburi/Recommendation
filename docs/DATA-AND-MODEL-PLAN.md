@@ -113,7 +113,7 @@ ODbL/DBCL·이미지 별도 조건과 API 사용 전 usage form 안내를 확인
 | DAT01 | AI 정본 / 조정자·BE 검수 | P0 · 2026-11-08 | C03와 공동 | CC0 소량 표본·[기존80시드/80자산 감사](LEGACY-SEED-AUDIT.md) 및 [고정 GET/receipt](WIKIDATA-COLLECTION.md) 구현. 이전maxlag 보존 후 정상복구로 새 고유entity7개 확보·그중6개 상품군/브랜드 검수. 판매SKU/fit승격0, 시드/이미지 근거·aT 획득·허용 서비스 카탈로그는 미완료 |
 | DAT02 | AI 수집·정제 / BE 업무 스키마 연동 | P1 · 2026-11-26 | DAT01·F03 | APIerror/ID/revision·불변snapshot/재생→단위/unknown·기존 시드 격리 도구와 [기본 라벨 보존](measurements/2026-11-01-default-labels.md) 구현. 동일6항목·revision 결측3/6→0/6, 새 raw 해시에 이전검수 보류. 검수 판매SKU·legacy fit승격0, 실제 카탈로그/전체 완료는 아님 |
 | DAT03 | AI 평가 명세 / BE·FE 입력·계정 연동 | P1 · 2026-11-29 | DAT01·C03, BE04/R01 공동 계약 | [고정 사실 명세·독립 검사기](EVALUATION.md) 증가분 구현. B0의 제약/순서와 모델 관련성을 구분하고 해시·전체 케이스·오류 주입 검증. 실제 SKU·관련성 명세와 시연 계정/찜/피드백 저장·권한·삭제·화면 연동은 미완료 |
-| DAT04 | AI / BE·FE 검증 지원 | P1 · 2026-12-31 (MVP 핵심) | DAT02·DAT03 평가 명세, AI03과 공동 구현 | [실제 업무DEMO1 fit](REVIEWED-CATALOG-FIT.md)·고정9사실과 이전 상품군3/2를 보존. [새 실명 상품군6개4fit/2transform·고정 스타일 사실 검색](SOURCE-FAMILY-EXPERIMENT.md)을 실행했다. 양성1질의/후보4·양성0질의1의 분모/OOV·수치unknown을 구분한다. 사용자 선호·서비스 SKU 품질/최종 평가·Backend B1 연동은 미완료 |
+| DAT04 | AI / BE·FE 검증 지원 | P1 · 2026-12-31 (MVP 핵심) | DAT02·DAT03 평가 명세, AI03과 공동 구현 | [실제 업무DEMO1 fit](REVIEWED-CATALOG-FIT.md)·고정9사실과 이전 상품군3/2를 보존. [새 실명 상품군6개4fit/2transform·고정 스타일 사실 검색](SOURCE-FAMILY-EXPERIMENT.md)을 실행했다. 양성1질의/후보4·양성0질의1의 분모/OOV·수치unknown을 구분한다. 검수 DEMO의 Backend B1/React 연결과 일반 서비스 카탈로그·사용자 품질/최종 인수 미완료를 구분 |
 
 ### 실제 실행 범위와 남은 데이터
 
@@ -121,15 +121,16 @@ ODbL/DBCL·이미지 별도 조건과 API 사용 전 usage form 안내를 확인
 |---|---|
 | 원천 상품군11 | [cohort](SOURCE-FAMILY-COHORT.md)의5fit/6transform·2제조사 분리. source family이며 서비스 SKU가 아님. [원값](measurements/2026-11-02-cross-producer-cohort.md) |
 | 원천 container DEMO1 | 명시 업무 매핑·기존 B1/B0·9사실 조건. 분류1어휘/IDF1·상수 수치 비활성. [실행](measurements/2026-11-01-reviewed-catalog-fit.md) |
-| 별도 family browse | 기존5상품군의14사실 재현과 다른 accepted 후보1상품군의 두 DB 동일12조건. volume/taste/aroma unknown과 family/DEMO scope 보존. [계약/집계](FAMILY-BROWSE-DEMO.md) |
+| 별도 family browse | 기존5상품군의14사실, 다른 accepted1상품군의 두 DB 동일12조건, 새 CC0 수집3 중 검수1상품군의 소유 PG 매핑/fit·12조건. 브랜드1/조건부 제조사1은 보류. volume/taste/aroma unknown과 family/DEMO scope 보존. [계약/집계](FAMILY-BROWSE-DEMO.md) |
 | authored 업무 DEMO3 | 양 DB의 명시 snapshot→fresh bundle→Backend 기존 B1 연결. 실원천/판매가 관측이 아닌 기능 인수 입력. [소비 계약](BACKEND-CATALOG-BUNDLE.md) |
 | 수량/관계/GTIN 정합성 | 명시 metadata·지원 URI·동결 사실을 fit/curation 전에 검증. [수량](measurements/2026-11-02-source-quantity-fit-integrity.md)·[관계](measurements/2026-11-03-source-relation-integrity.md)·[GTIN](measurements/2026-11-03-gtin-statement-metadata.md) |
 
 위 단위와 용량 문맥11은 grain/권위가 다르므로 합산하지 않는다. 원문·검수·원래 B1/M1
 전체 결과는 ignored에 보존하며 DEMO/fixture를 서비스 카탈로그·사용자 품질이나 DAT/AI 전체
 완료로 올리지 않는다. 다음 필수 작업은 충분한 허용 현재 카탈로그와 명시 업무 매핑·실제 fit/
-독립 평가, 현재 취향·업무 재확인과 Backend/React 연결이다. container-only 소비자에 family를
-섞지 않으며 별도 browse opt-in은 공동 계약이 선행한다. 구체적인 기능/완료 상태는 현재 승인
+독립 평가와 일반 서비스 채택이다. 현재 취향·업무 재확인과 Backend/React 추천·이유는 검수
+DEMO에 연결했고, 기본 container 소비에 family를 섞지 않는 명시 browse opt-in을 유지한다.
+구체적인 기능/완료 상태는 현재 승인
 기획과 해당 계약에서 관리하고 실행마다 같은 계획/성과 문단을 덧붙이지 않는다.
 
 ## 추천 모델을 개발하는 순서

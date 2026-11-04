@@ -3,7 +3,8 @@
 기존 `POST /v1/recommendations/content`, `/exploration`, `/feedback`은 선택적 `preferences`로
 Backend GET 취향의 완전한 shape를 받는다. 기존 R06의 `SearchPreferenceSnapshot` DTO를
 그대로 재사용한다. 새 endpoint·모델·계정/DB 조회는 없으며 생략 시 기존 입력/응답을 유지한다.
-Backend의 본인 권한·현재 취향/가격/가용성 재확인과 웹 연결은 후속이다.
+`content`는 검수 DEMO에서 Backend의 본인 권한·현재 취향/업무 재확인과 React 홈의 명시
+추천·R04 이유 요청에 연결했다. `exploration`/`feedback` 소비와 일반 서비스 인수는 후속이다.
 
 ~~~json
 {
@@ -61,6 +62,7 @@ R06의 원문·오류 우선순위는 그대로다. 파싱 후 engine은 기존 
 
 이 입력 연결은 현재 권리 검수·명시 catalog/business mapping을 대신하지 않는다. 임의 동의 flag나
 저장 취향이 source11·업무 DEMO1·별도 browse DEMO5/legacy80을 서비스 SKU/품질로 승격하지 않는다.
-Backend 현재 취향 전달/재확인·React와 전체 R02/R05/R08/AI02 인수는 미완료다.
+`content`의 검수 DEMO 연결과 별개로 `exploration`/`feedback`의 업무/웹 소비·서비스 카탈로그
+채택과 전체 R02/R05/R08/AI02 인수는 미완료다.
 
 [동결/실행 계획](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/docs/plans/2026-11-04-backend-preference-input.md) · [검증](TESTING.md)
