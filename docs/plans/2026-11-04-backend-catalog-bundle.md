@@ -70,6 +70,18 @@ snapshot/mapping/export/bundle은 구분해 보존한다.
 
 ## 남은 작업·README 판단
 
+최종 legacy와 TLS PostgreSQL/JPA는 각각 새 실제 공개 GET snapshot·명시 mapping으로 fresh
+bundle을 발행해 Backend→고정 wheel의 실제 B1 호출12조건을 통과했다. 응답 mock 없이
+provider의 전체 parsed result·현재 Product7/ABV0·hard 빈 후보/OOV 기본순·본인/타계정·
+selector400·가격 변경409/복원·logout401을 대조했고, 기존80행과 계정 식별/cookie/epoch/hash는
+provider에 보내지 않았다. 각 snapshot·mapping/bundle hash는 별도 보존한다.
+
+같은 고정9조건의 기존 fit CLI도 두 DB에서 각각 passed=true였다. 각3상품/3그룹·2어휘,
+ABV0–20/용량330–750의 관측 각3개와 두 활성 수치 범위를 확인했다. 안정적인 fit metadata·
+fit 요약/모델 지문과9개 case 전체 결과·명시 catalog 값은 두 모드에서 같았다. 실행/캡처 시각과
+각 업무 snapshot/mapping hash가 같다는 뜻은 아니다. 동일 authored3개를 두 DB에서 재현한
+결과를6상품·18개 품질 정답으로 합산하지 않는다. 독립 관련성 라벨이 없어 순위 지표는 미산출이다.
+
 이 bundle은 service_catalog_approved=false의 입력 소비 증분이며 일반 legacy80/서비스 SKU·
 새 source·권리·사용자 만족도·순위/성능 개선·전체 R02/R04/AI03 완료를 주장하지 않는다.
 Backend의 실제 caller와 현재 계정/취향·후보 재확인/fallback·React, 허용 현재 카탈로그의 전체
