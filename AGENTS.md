@@ -64,7 +64,9 @@ The coordinator owns shared runtime/DB/API decisions, Notion, final merge and cl
 
 - Update an existing canonical contract/current plan when behavior or acceptance changes. Do not create
   per-run plans, test lists, experiment diaries or repeated status/README-comparison paragraphs.
-  Implementation/fix/check details belong in Git/PR/CI; keep only one ignored work record and final handoff.
+  Review/check evidence belongs in open PR/CI; keep only one ignored work record and final handoff.
+- Never add/edit comments, bodies, assignees or labels on closed/merged PRs. Keep detailed work/discussion
+  in existing GitHub Project/Discussion and only TODO/done in Notion; create no unnecessary records.
 - Keep a separate measurement only for independent actual before/after values, interpretation and limits
   that are needed beyond the PR; merge overlaps. Retain source/license and model-adoption decisions.
   Remove rejected one-off experiments from runtime/dedicated tests, preserving their measurement and exact
