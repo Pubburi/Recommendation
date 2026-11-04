@@ -5,8 +5,6 @@ import hashlib
 import json
 import subprocess
 
-from smoke_source_comparison import smoke_source_comparison
-
 
 def smoke_source_cohort(python, work, manifest, raw, receipt, review, facts):
     def write(name, value):
@@ -146,4 +144,3 @@ def smoke_source_cohort(python, work, manifest, raw, receipt, review, facts):
         or result["ranking_metrics"]["positive_label_queries"] != 1
     ):
         raise RuntimeError("Installed cohort violated separate authorities or producer holdout")
-    smoke_source_comparison(python, work, arguments)

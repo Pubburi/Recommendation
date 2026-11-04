@@ -107,4 +107,4 @@ ASCII의 공백/대문자 등 명확한 비정규형은422다. **Python strip/lo
 시작/OpenAPI/이 경로에서 import/fit하지 않는다. DB/계정 저장·외부 수집·새 모델·신규 데이터·
 랭킹/사람 품질·전체 R06/MVP 완료를 주장하지 않는다.
 
-[검증](TESTING.md) · [동결/실행](plans/2026-11-04-explicit-search-phrases.md)
+[검증](TESTING.md) · [동결/실행](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/docs/plans/2026-11-04-explicit-search-phrases.md)

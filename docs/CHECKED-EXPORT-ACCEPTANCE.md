@@ -112,4 +112,4 @@ exit1은 완료된 결과의 계약 위반, exit2는 입력/전송/실행 오류
 자료로 같은 실제 CLI/HTTP를 실행하며 기존 JUnit/배포 요약만 업로드한다. 실제 source·모델/
 업무 snapshot을 CI artifact에 넣지 않는다. 사용자 품질/성능·whole R/AI03·MVP 완료 지표가 아니다.
 
-[실행/표본·정정 기록](plans/2026-11-04-checked-export-provider-acceptance.md) · [검증](TESTING.md)
+[실행/표본·정정 기록](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/docs/plans/2026-11-04-checked-export-provider-acceptance.md) · [검증](TESTING.md)

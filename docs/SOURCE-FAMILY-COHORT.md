@@ -60,6 +60,6 @@ source-backed 업무 DEMO1 fit과 분리한다.
 따른다. 최종 holdout·서비스 SKU/추천 품질·다른 주종/기업 관계 일반화는 미완료이며 SVD를
 fit/채택하지 않았다.
 
-이 baseline은 그대로 유지하며 이후 [별도 고정 SVD 비교](SOURCE-REPRESENTATION-COMPARISON.md)에서
+이 baseline은 그대로 유지하며 이후 [별도 고정 SVD 비교](measurements/2026-11-03-source-representation-comparison.md)에서
 같은 원천/분할·전체 보고서를 재검증한 뒤 후보를 실제 fit했다. 원래 baseline의 SVD 미학습 상태와
 별도 후보의 실행/운영 미채택을 구분하고 source 가족을 서비스 SKU로 승격하지 않는다.

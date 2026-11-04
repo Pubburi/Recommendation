@@ -24,8 +24,8 @@ AWS 연결 지시 전까지 로컬에서 작업한다. 챗봇·모바일 구현�
 
 ## 현재 일정과 우선순위
 
-아래 일정은 기존 계획의 1월 MVP 핵심 작업 기한을 앞당긴 현재 기준이다. 다른 기존 12월 이내
-목표일·선행 조건·완료 기준은 유지하며, 상세 변경은 [MVP 기한 변경 계획](plans/2026-11-03-mvp-deadline.md)에 기록한다.
+아래 일정이 현재 기준이다. 기존 기능의 선행 조건·완료 기준은 유지하며,
+과거 일정 변경/구현 일지는 Git/PR에서 확인한다.
 
 | 기한 (Asia/Seoul) | 필수 범위·연결 조건 |
 |---|---|
@@ -115,78 +115,22 @@ ODbL/DBCL·이미지 별도 조건과 API 사용 전 usage form 안내를 확인
 | DAT03 | AI 평가 명세 / BE·FE 입력·계정 연동 | P1 · 2026-11-29 | DAT01·C03, BE04/R01 공동 계약 | [고정 사실 명세·독립 검사기](EVALUATION.md) 증가분 구현. B0의 제약/순서와 모델 관련성을 구분하고 해시·전체 케이스·오류 주입 검증. 실제 SKU·관련성 명세와 시연 계정/찜/피드백 저장·권한·삭제·화면 연동은 미완료 |
 | DAT04 | AI / BE·FE 검증 지원 | P1 · 2026-12-31 (MVP 핵심) | DAT02·DAT03 평가 명세, AI03과 공동 구현 | [실제 업무DEMO1 fit](REVIEWED-CATALOG-FIT.md)·고정9사실과 이전 상품군3/2를 보존. [새 실명 상품군6개4fit/2transform·고정 스타일 사실 검색](SOURCE-FAMILY-EXPERIMENT.md)을 실행했다. 양성1질의/후보4·양성0질의1의 분모/OOV·수치unknown을 구분한다. 사용자 선호·서비스 SKU 품질/최종 평가·Backend B1 연동은 미완료 |
 
-[미관측 제조사 cohort](SOURCE-FAMILY-COHORT.md)는 기존 허용 snapshot2개의 상품군11개/
-source 제조사 관계2개를 별도 authority/검수 그대로 연결했다. 한 제조사5fit·다른6transform에서
-5×7/rank5와 text 지원1/6·zero vector5/6을 관측했다. positive1질의/후보5의 사실 지표와
-나머지5질의의 생략 분모/원순위를 구분한다. 새 원천 획득·서비스 SKU/업무 매핑 승격이 아니며
-기존 별도 DEMO1 fit·API parser 오류 재현과 grain/분모를 합산하지 않는다. 전체 AI03은 미완료다.
+### 실제 실행 범위와 남은 데이터
 
-[관계 정합성 수정](plans/2026-11-03-source-relation-integrity.md)은 단독 원천→상품군 fit의
-명시 P31/P176 metadata/item identity 모순이 문서·DF-IDF에 들어가는 결함을 수정했다.
-동결 자체 손상12조건의 거짓 관계 fit12/12→0/12와 별도 포장 curation2/2→0/2를 확인했고
-기존 실제11상품군 B1/M1·원천 포장 후보1의 전체 보고서는 불변이다. 새 원천/업무 매핑이나
-서비스 SKU fit·품질/전체 AI03 완료가 아니며 수량 손상10조건·업무 DEMO1과 합산하지 않는다.
+| 검증 단위 | 현재 근거와 한계 |
+|---|---|
+| 원천 상품군11 | [cohort](SOURCE-FAMILY-COHORT.md)의5fit/6transform·2제조사 분리. source family이며 서비스 SKU가 아님. [원값](measurements/2026-11-02-cross-producer-cohort.md) |
+| 원천 container DEMO1 | 명시 업무 매핑·기존 B1/B0·9사실 조건. 분류1어휘/IDF1·상수 수치 비활성. [실행](measurements/2026-11-01-reviewed-catalog-fit.md) |
+| 별도 family browse | 기존5상품군의14사실 재현과 다른 accepted 후보1상품군의 두 DB 동일12조건. volume/taste/aroma unknown과 family/DEMO scope 보존. [계약/집계](FAMILY-BROWSE-DEMO.md) |
+| authored 업무 DEMO3 | 양 DB의 명시 snapshot→fresh bundle→Backend 기존 B1 연결. 실원천/판매가 관측이 아닌 기능 인수 입력. [소비 계약](BACKEND-CATALOG-BUNDLE.md) |
+| 수량/관계/GTIN 정합성 | 명시 metadata·지원 URI·동결 사실을 fit/curation 전에 검증. [수량](measurements/2026-11-02-source-quantity-fit-integrity.md)·[관계](measurements/2026-11-03-source-relation-integrity.md)·[GTIN](measurements/2026-11-03-gtin-statement-metadata.md) |
 
-[GTIN metadata 경계](plans/2026-11-03-gtin-statement-metadata.md)도 명시 P3962/external-id
-모순의 잘못된 curation 승인을 자체2조건에서2/2→0/2로 차단했다. 정상/생략·공유 키 보류와
-기존 실제 source-catalog/B1/M1 전체 결과는 보존했고 새 source/업무 매핑/서비스 fit은 없다.
-다른 source11/DEMO1·문맥11과 합산하거나 전체 DAT02/AI03 완료로 표시하지 않는다.
-
-[원천 수량→학습 입력 정합성 수정](plans/2026-11-02-source-quantity-fit-integrity.md)은
-동결한 허구 손상 표본에서 단위 접미사/명시 수량 메타 모순이 실제 source-family CLI의 수치
-관측으로 승인되는 경계를 재현했다. 정확한 지원 URI와 명시 metadata 일치를 정규화에서 확인해
-unknown을 보존하고 숫자 사실 선언은 fit 전에 거절한다. 같은 실제11상품군의 원문/영수증/검수·
-5fit/6transform 보고서와 fingerprint는 불변이며 신규 원천·매핑·서비스 fit/품질 성과가 아니다.
-
-DAT01/02의 추가 [포장 식별 도구](PACKAGE-IDENTITY-AUDIT.md)는 accepted source receipt와
-GTIN integrity·수치 단위/unknown·명시 포장/class 혼합·수동 hash/revision 검수를 분리한다.
-새 목적 표본4항목의 체크숫자 통과4/4·같은 item의 용기/GTIN/용량/도수 조합1/4를 확인했다.
-그1개도 브랜드/container 혼합으로 보류했고 수동 결론은4/4 hold다. Backend 매핑·서비스 SKU·
-fit승격은0으로 유지하며, 일부 필드 확보를 DAT01/02 전체 완료로 처리하지 않는다. 제조사/묶음수
-등 실제 누락은 unknown으로 보존하고 독립 처리/검수를 계속한다. 실제 수집/상품군 fit과 별개로
-검수 서비스 카탈로그 확보·명시 업무 ID 연동·서비스 B1 fit/관련성 평가는 남아 있다.
-
-추가 [원천 카탈로그 curation](SOURCE-CATALOG.md)은 독립 first-party 상품 사실을 검수 URL/
-메모로만 사용해, 같은 CC0 원문4항목 중 포장 후보1개를 한정된 용기 scope로 명시 선택했다.
-원래 mixed P31/4개 수동 hold는 보존하며 sourcecatalog1개·수동 변형 그룹1개와 구분한다.
-필드 정본은 CC0 raw/revision·property/단위이고 외부 본문·이미지·맛/가격은 수집하지 않았다.
-서비스 SKU/실제 Backend 매핑·B0/B1 wire export·서비스 fit승격은0이다. DAT01/02/03 전체와
-실제 업무 snapshot/명시 매핑·독립 관련성 명세/서비스 B1 평가는 후속 조건으로 남는다.
-
-[업무 시연 export gate](BUSINESS-EXPORT.md)는 기존7/8필드 API snapshot과 source/전체응답
-hash·명시 ID/그룹·일치 수량·UTC 검수/freshness·origin 경계를 구현했다. 전용 업무 API의
-허구 DEMO상품1개로 명시 mapping→각 B0/B1 export1·실제 추천 HTTP를 검증했다. 이것은
-fixture 계약 증거다. 실제 CC0 후보1개와 기존 업무80개는 무매핑/export0이며 실제 서비스
-SKU/실매핑·실카탈로그 fit/관련성·DAT02 전체 완료는 아니다.
-
-그다음 [검수 카탈로그 fit](REVIEWED-CATALOG-FIT.md)은 실제 source 후보1개를 별도 전용
-업무 DEMO에 명시 연결하고 기존 B1을 실제 fit·B0와9개 고정 사실/제약 시나리오로 비교했다.
-원천 도수/용량 관측 각1개는 상수라 거리 비활성이고 TF-IDF는 업무 주종1어휘/IDF1이다.
-unknown 맛/향을 유지하며 가격·분류/탐색 가용성의 업무 시연 성격을 구분한다. 이전 무매핑0
-기록은 역사 상태로 보존하고 이번 실제 원천 기반 업무 매핑/known-catalog fit1과 구분한다.
-순위 품질·일반화/최종 평가·실판매/재고·전체 AI03은 미완료다. 신규 원천 발견1회는 해당
-can/bottle/volume/ABV 조건에서 기존1ID만 반환해 신규0이며 전체 원천의 부족 추정은 아니다.
-
-[별도 상품군 browse DEMO](FAMILY-BROWSE-DEMO.md)는 기존 accepted6항목 중 검수known-ABV
-5상품군만 독립 scope/origin·실제 업무 ID에 명시 연결했다. 물리 SKU/GTIN/container 승격이
-아니며 양쪽 volume=null을 보존하는 전용 폐기 DEMO다. 실제 기존 B1 fit/B0 비교·사전 고정
-14개 사실/제약/fallback을 두 번 통과했고 도수5.3–10vol% 범위는 활성, 용량/맛/향은 각각
-5/5 unknown이다. [원값/한계](measurements/2026-11-03-family-browse-demo.md)를 보존하며
-source11·container DEMO1에 합산하거나 서비스 카탈로그 품질/전체 AI03 완료로 세지 않는다.
-
-이후 [기존 허용 상품군의 새 적용](plans/2026-11-04-reviewed-family-application.md)은 별도
-accepted4후보의 미적용 family1개를 새 검수/정제하고 두 소유 업무 DB에 각각 명시 매핑했다.
-같은12개 독립 사실·제약/fallback을 기존 B1/B0로 각12/12 재현했으며 도수5.2는 known 상수,
-용량/맛/향은 unknown이다. 새 목적의6후보 원문 수집은 api_maxlag로 중단해 신규 live 성공0과
-기존 원천 새 적용1을 구분한다. 현재 container-only Backend는 family를 계속 거절하며,
-별도 browse scope의 공동 소비 계약·현재 업무 재검증·Backend/React 연결과 충분한 허용
-카탈로그/독립 평가는 남는다. 물리 SKU/판매·서비스 권위나 전체 R02/AI03 완료로 승격하지 않는다.
-
-후속 [실제 상품군 사실 평가](plans/2026-11-01-source-family-fact-evaluation.md)는 다른 발견 조건으로
-8항목(기존1/신규7)을 확보해6개 명시 상품군을4fit/2transform으로 검수/학습했다. 도수 단위와
-포장 qualifier는 unknown을 유지했다. 학습 전 선언한 같은 P31 사실 검색은 양성1질의/후보4의
-소규모 관측이며 입력 특성을 공유하는 사실 정답이다. 사용자 선호나 서비스 순위 품질로 바꾸지
-않고, 양성0질의1의 OOV/동점과 지표 생략·macro 분모를 남긴다. 이번 신규 서비스 매핑은0이다.
+위 단위와 용량 문맥11은 grain/권위가 다르므로 합산하지 않는다. 원문·검수·원래 B1/M1
+전체 결과는 ignored에 보존하며 DEMO/fixture를 서비스 카탈로그·사용자 품질이나 DAT/AI 전체
+완료로 올리지 않는다. 다음 필수 작업은 충분한 허용 현재 카탈로그와 명시 업무 매핑·실제 fit/
+독립 평가, 현재 취향·업무 재확인과 Backend/React 연결이다. container-only 소비자에 family를
+섞지 않으며 별도 browse opt-in은 공동 계약이 선행한다. 구체적인 기능/완료 상태는 현재 승인
+기획과 해당 계약에서 관리하고 실행마다 같은 계획/성과 문단을 덧붙이지 않는다.
 
 ## 추천 모델을 개발하는 순서
 
@@ -205,7 +149,7 @@ TF-IDF의 학습은 카탈로그의 어휘/빈도 특성을 맞추는 것이며 
 유효한 실험 없이 문서상의 선택만으로 학습 완료 처리하지 않는다. 표본이 부족하면 허용 카탈로그를
 확대하거나 표현을 단순화해 실행하고 실제 권리/데이터 차단을 기록한다.
 
-[고정 M1 표현 비교](SOURCE-REPRESENTATION-COMPARISON.md)는 기존 승인11상품군의5fit×7/
+[고정 M1 표현 비교](measurements/2026-11-03-source-representation-comparison.md)는 기존 승인11상품군의5fit×7/
 rank5·6transform과 baseline 전체를 유지한 채 TF-IDF +2차원 TruncatedSVD를 실제 실행했다.
 학습 에너지51.10%·재구성 상대 오차0.6993·설명분산26.72%와 변환 영벡터5/6 불변, 양성1질의/
 전체6의 같은 사실 지표를 분리했다. 정보 손실·OOV 지원 불변/독립 품질 근거 부족으로 이번 후보는
@@ -242,85 +186,19 @@ rank5·6transform과 baseline 전체를 유지한 채 TF-IDF +2차원 TruncatedS
 관련성 라벨이 없으면 그 지표는 미산출 사유와 대체 검증을 기록하며 AI03 전체를 사용자 부재로 대기시키지 않는다.
 UCI 품질 예측은 선택적 별도 실험이며 카탈로그 추천 학습/평가 완료를 대신하지 않는다.
 
-## 검증과 인계
+## 검증과 기록
 
-[Backend 소비 bundle](BACKEND-CATALOG-BUNDLE.md)은 기존 checked authority/export를 단일
-catalog·명시 ID/group·원 업무 응답과 whole SHA로 연결한다. fresh-only와 원 capture+5분 예산,
-service_catalog_approved=false·현재 DB 재확인 책임을 유지한다. 원천/모델 정본을 Java에
-복제하거나 legacy80을 승인하지 않으며 Backend caller/React·허용 현재 서비스 카탈로그 전체
-매핑/fit/평가의 완료와 구분한다.
+[TESTING](TESTING.md)의 기존 전체 검사와 최신 head 필수 CI·완료 Codex 리뷰·미해결0을
+확인한 뒤 병합한다. Backend는 현재 본인/권한·취향·상품 상태/가격·제외를 재검증하며,
+[저장 취향 입력](BACKEND-PREFERENCE-INPUT.md)·[checked 인수](CHECKED-EXPORT-ACCEPTANCE.md)·
+[fresh bundle](BACKEND-CATALOG-BUNDLE.md)의 승인/실행/품질 경계를 유지한다.
 
-[Backend 저장 취향 입력](BACKEND-PREFERENCE-INPUT.md)은 기존 content/exploration/feedback에
-선택적 완전한 BE-shaped preferences를 연결한다. soft/hard·unknown/[]/실제0을 보존하고
-추가 hard는 교집합, 명시 profile 동시 입력/충돌·literal 손실은 fit 전 거절한다. 기존 B1 엔진과
-1fit·cold/negative fallback을 재사용한다. Backend 본인 권한·현재 취향/업무 재확인·실제 전달과
-React, 허용 현재 서비스 catalog/mapping·서비스 fit/평가는 여전히 후속이다. 이 입력 증분만으로
-전체 R/AI02나 MVP 완료 수를 올리지 않는다.
-
-[Checked export의5B1 HTTP 소비](CHECKED-EXPORT-ACCEPTANCE.md)는 기존 authority·완료4파일과
-실제 요청 바이트를 다시 대조하고 동결된 매핑 사실/기준/제외·이유/fallback을 독립 검사한다.
-현재 fresh 모드와 명시 historical replay를 구분하고 기존 source-backed 상품군 DEMO5의
-11조건을 같은 checked catalog로 두 번 실제 HTTP 재현했다. 모델 복원/새 원천·업무 캡처·
-서비스 카탈로그 승격/품질 증가가 아니며 원래 DEMO1/source11/DEMO5 보고서는 유지한다.
-Backend/React·전체 R02–R08/AI03 인수나 전체 MVP 완료 수는 이 도구만으로 올리지 않는다.
-
-[R06 명시 검색 문구](SEARCH-PHRASES-API.md)는 Backend형 soft/hard 입력과 별도 검색 opt-in으로
-고정 짧은 문구·정확한 typed 조건/반복 query 쌍을 제공한다. 모든 hard/실제0와 선택 facet AND를
-유지하고 주종별 분기·생략 수, 선택 unknown/empty/범위 충돌의 빈 사유와 Unicode 재검증을
-명시한다. 상품/계정/모델/원천을 조회하지 않아 상품 수는 null이며 기존6POST·B1/보고서는
-그대로다. Backend/React 선택·실제 검색 연결/빈 결과 인수와 전체 R06/AI02는 후속으로 둔다.
-부분 제공자 구현으로 MVP 완료 기능 수를 올리거나 새 데이터/모델·사람 품질 성과로 세지 않는다.
-
-[R04 opt-in 사실 설명](EXPLANATIONS.md)은 기존5개 B1 경로의 원점수/기여와 실제 입력
-값·비교 목표/단위·활성 필터 bound를 typed evidence/고정 한국어 label로 제공한다. profile과
-winning reference_product를 구분하고 unknown/상수/OOV/0점에 선호 근거를 만들지 않는다.
-상위3개 기여의 생략은 명시하며 기본6POST wire·fit/순서와 기존 보고서를 보존한다.
-추가 원천·새 모델/품질 성과가 아니며 Backend/React 연결·전체 R04는 후속이다. 5/20 기능
-완료 집계는 그대로 두고 실제 연결/필수 검증 뒤에만 완료 처리한다.
-
-[명시 피드백 API](FEEDBACK-API.md)는 R05의 추천 소유 제공자 증분이다. 맞음/관심 없음 ID를
-각각 최대20개로 받아 기존 B1을1회 fit하고 명시 profile·사용 가능 positive 사실의 최대 양수
-원점수/기여를 선택한다. negative ID/알려진 그룹을 우선 제외하고 모든 알려진 positive 그룹도
-대안 후보에서 제외한다. missing/unavailable/blocked·평가/무정보와 positive 모드/기존 profile-B0
-fallback을 구분하며, 조건 완화·신호 빈도 가중치·부족분0점 채움을 하지 않는다. 저장·본인 계정
-권한·찜/평점 변환·Backend/화면 연결은 후속이므로 전체 R02/R05 완료나 서비스 품질로 세지 않는다.
-
-[명시 다중 상품 맥락 API](CONTEXT-API.md)는 R07의 추천 소유 제공자 증분이다.1–20개 명시
-장바구니/데모 주문 상품의 available 사실을 기존 B1로 비교해 최대 양수/floor 점수와 winning
-기준의 실제 기여를 보존한다. 알려진 모든 기준 그룹·hard 탈락을 제외하고 일부 missing/
-unavailable·무정보/무공유·미계산 null을 구분한다. 전체 장바구니 적합성/함께 구매한 통계가
-아니며 R07 Backend의 장바구니·주문·권한과 웹 연결/서비스 카탈로그 품질은 미완료다.
-
-[기준 상품 유사 후보 API](SIMILAR-API.md)는 R03의 추천 소유 제공자 증분이다. catalog 안의
-명시 reference_product_id와 기존 B1 similar를 사용하며 같은 검수 상품군/본인·hard 탈락·0점
-채움을 배제한다. 기준 부재/판매 불가·무정보/무공유 근거의 빈 fallback을 구분한다. 사용자 취향이나
-공동구매 통계로 표시하지 않으며 전체 R03 Backend/상품 상세 연결·서비스 카탈로그 품질은 미완료다.
-
-[별도 취향 탐색 API](EXPLORATION-API.md)는 R08의 추천 소유 기술 증분이다. 기존 B1의 양수/최소
-관련성 상위100에서 명시 상품군 중복·알려진 텍스트 중복을 제한하고 score/기여·필수 조건을 보존한다.
-unknown은 새 스타일 근거가 아니며 후보 부족을 완화/중복으로 보충하지 않는다. 허구 입력의 실제
-fit/정책/HTTP 검증이고 신규 서비스 카탈로그 fit·사람 품질·R05/Backend/웹 연동·전체 R08 완료가 아니다.
-
-[포장 문맥별 용량 관측](VOLUME-CONTEXT.md)은 검수 상품군의 P2234/P518 statement를 별도 grain으로
-보존한다.6상품군의11명시 수량/문맥을 분리했으나 가족 scalar volume은6/6 unknown이며 동일 family
-group을 유지한다. 문맥 정의 수집4개는 신규 주류 SKU가 아니다. 이번 신규 업무 매핑/fit0이고,
-기존 source curation/export의 정체성·필수 필드·명시 업무 연결 조건을 완화하지 않는다.
-
-현재 제공 HTTP 기능은 GET /health, POST /v1/recommendations/baseline의 B0 결정적 기본순과
-[POST /v1/recommendations/content](CONTENT-API.md)의 요청 카탈로그 B1 표현/순위다. B1 HTTP는
-허구 입력의 연결·상태 격리 검증이며 서비스 데이터 fit/관련성 평가는 아니다. [B0 계약](BASELINE-API.md)은 필수/제외 조건을 먼저 적용하며 학습·개인화 점수를
-제공하지 않는다. [B1 오프라인 모듈](CONTENT-MODEL.md)은 허구 입력에서 TF-IDF vocabulary/IDF와
-관측 수치 변환을 실제 fit하고 명시 취향/선택 상품 점수·기여·대체 동작을 계산한다. 상품군 학습/변환
-분리·누수 방지 코드는 회귀 검증이다. 별도 [검수 업무 카탈로그](REVIEWED-CATALOG-FIT.md)는
-실제 원천이 명시 연결된1상품을 known-catalog fit했으나 전체 카탈로그/다중 그룹·독립 관련성/
-최종 평가·Backend B1 자동 연동은 미완료다. 현재 다양성 부족을 fixture의 품질 성과로 대신하지 않는다.
-실제 작업의 계획·구현·검증·병합을 구분하고 결과와 미완료를 docs/plans 및 PR에 기록한다.
-
-Python 3.12·FastAPI·uv·lockfile과 GET /health를 보존하며 시작할 때 DB·AWS 인증·외부 AI API·
-모델/데이터 자동 다운로드를 요구하지 않는다. 검증은 ./scripts/check.sh를 사용한다.
-원천 권리·누락·표본·데이터 분리·모델/카탈로그 버전·원값·반복 조건·실패·한계를 남긴다.
-외부 공개 실험과 자체 카탈로그의 성과를 섞지 않으며 README 사례는 실제 구현·검증 뒤
-기존보다 더 강한 사례를 확보했을 때만 교체한다.
+새 사실/계약/채택 결정은 기존 정본을 고친다. 회차별 계획·검사/실험 일지·상태 보고서를 만들지
+않고 커밋/PR/CI로 구현·회귀 이력을 남긴다. 별도 측정 문서는 독립적인 실제 전후 원값·해석/
+한계를 보존해야 할 때만 유지하며, 기존 문서에 통합할 수 있으면 통합한다. 미채택 일회성 실험은
+측정/선택 이유와 당시 고정 코드 링크를 남기고 runtime/전용 검사에 영구 유지하지 않는다.
+ignored에는 재개에 필요한 작업 기록1개와 최종 인계만 남기며 원문/모델/실제 응답은 공개하지 않는다.
+README는 현재3개 사례·부족1을 유지하고 더 강한 실제 근거가 있을 때만 교체한다.
 
 ## 계획 이동과 근거
 

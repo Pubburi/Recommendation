@@ -16,10 +16,10 @@ from pubburi_recommendation.catalog_audit import (
     audit,
     read_json,
 )
+from pubburi_recommendation.collection_snapshot import verify_collection_snapshot
 from pubburi_recommendation.source_family_experiment import (
     FamilyExperiment,
     fit_representation,
-    verify_receipt,
     write_report,
 )
 from pubburi_recommendation.wikidata_collect import collect
@@ -255,9 +255,7 @@ def test_failed_or_changed_acquisition_receipt_never_approves_fit(field, value):
     receipt = receipt_fixture()
     receipt[field] = value
     with pytest.raises(AuditError, match="accepted_matching_source_receipt_required"):
-        verify_receipt(
-            receipt, raw_fixture(), FamilyExperiment.model_validate(spec_fixture()), HASH
-        )
+        verify_collection_snapshot(receipt, raw_fixture(), HASH, HASH)
 
 
 def test_boolean_revision_and_api_error_cannot_be_reinterpreted_as_valid_collection():
@@ -267,13 +265,11 @@ def test_boolean_revision_and_api_error_cannot_be_reinterpreted_as_valid_collect
         entity["lastrevid"] = 1
     receipt["revisions"] = {qid: True for qid in raw["entities"]}
     with pytest.raises(AuditError, match="accepted_matching_source_receipt_required"):
-        verify_receipt(receipt, raw, FamilyExperiment.model_validate(spec_fixture()), HASH)
+        verify_collection_snapshot(receipt, raw, HASH, HASH)
     raw = raw_fixture()
     raw["error"] = {"code": "maxlag"}
     with pytest.raises(AuditError, match="api_maxlag"):
-        verify_receipt(
-            receipt_fixture(), raw, FamilyExperiment.model_validate(spec_fixture()), HASH
-        )
+        verify_collection_snapshot(receipt_fixture(), raw, HASH, HASH)
 
 
 def test_zero_constant_and_empty_text_are_distinct_from_unobserved_features():

@@ -63,4 +63,4 @@ R06의 원문·오류 우선순위는 그대로다. 파싱 후 engine은 기존 
 저장 취향이 source11·업무 DEMO1·별도 browse DEMO5/legacy80을 서비스 SKU/품질로 승격하지 않는다.
 Backend 현재 취향 전달/재확인·React와 전체 R02/R05/R08/AI02 인수는 미완료다.
 
-[동결/실행 계획](plans/2026-11-04-backend-preference-input.md) · [검증](TESTING.md)
+[동결/실행 계획](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/docs/plans/2026-11-04-backend-preference-input.md) · [검증](TESTING.md)

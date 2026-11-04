@@ -84,4 +84,4 @@ valid_until_utc를 확인한 뒤 운영자가 파일과 SHA를 함께 pin한다.
 추가되지 않는다. Backend의 현재 계정 권한/취향·fallback·React 연결과 현재 서비스 카탈로그/
 명시 권리·필드/실제 fit·독립 평가의 전체 인수는 별도 필수 작업이다.
 
-[실행 계획](plans/2026-11-04-backend-catalog-bundle.md) · [검증](TESTING.md)
+[실행 계획](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/docs/plans/2026-11-04-backend-catalog-bundle.md) · [검증](TESTING.md)

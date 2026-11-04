@@ -104,12 +104,6 @@ class FamilyExperiment(FamilyPartition):
     receipt_sha256: Hash
 
 
-def verify_receipt(
-    receipt: dict, payload: dict, spec: FamilyExperiment, manifest_model_hash: str
-) -> None:
-    verify_collection_snapshot(receipt, payload, spec.input_sha256, manifest_model_hash)
-
-
 def tokens(facts: FamilyFacts) -> list[str]:
     return [f"instance_of:{qid}" for qid in facts.instance_of_ids] + [
         f"producer:{qid}" for qid in facts.producer_ids
@@ -328,7 +322,7 @@ def main() -> int:
         _, records, _ = audit(payload, input_hash, review)
         # Collector receipts bind the validated manifest model, not the file's whitespace/bytes.
         manifest_model_hash = hashlib.sha256(manifest.model_dump_json().encode()).hexdigest()
-        verify_receipt(receipt, payload, spec, manifest_model_hash)
+        verify_collection_snapshot(receipt, payload, spec.input_sha256, manifest_model_hash)
         report = fit_representation(
             spec,
             records,

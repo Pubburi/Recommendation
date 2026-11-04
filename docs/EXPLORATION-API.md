@@ -79,4 +79,4 @@ selections의 basis는 highest_relevance_anchor, observed_text 또는 unknown_co
 
 현재 검증은 직접 작성한 허구 상품의 기능/제약·같은 그룹·unknown·실제 fit/HTTP와 설치 패키지
 경계다. 기존 실제1업무 DEMO·11상품군·11문맥 관측의 분모를 합치거나 새 서비스 fit/품질 성과로
-쓰지 않는다. [사전 명세·실행 결과](plans/2026-11-02-exploration-reranking.md)를 따른다.
+쓰지 않는다. [사전 명세·실행 결과](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/docs/plans/2026-11-02-exploration-reranking.md)를 따른다.

@@ -39,16 +39,9 @@ class RetrievedFamily(ContractModel):
     score: float = Field(ge=0, le=1, allow_inf_nan=False)
 
 
-class SignedRetrievedFamily(RetrievedFamily):
-    score: float = Field(ge=-1, le=1, allow_inf_nan=False)
-
-
-def inspect_retrieval(
-    case: FamilyRetrievalCase, ranked: list[dict], *, signed_cosine: bool = False
-) -> dict:
+def inspect_retrieval(case: FamilyRetrievalCase, ranked: list[dict]) -> dict:
     """Inspect complete results and apply manually frozen labels, never derive gold from scores."""
-    result_type = SignedRetrievedFamily if signed_cosine else RetrievedFamily
-    rows = [result_type.model_validate(row) for row in ranked]
+    rows = [RetrievedFamily.model_validate(row) for row in ranked]
     ids = [row.source_record_id for row in rows]
     if len(ids) != len(set(ids)) or set(ids) != set(case.candidate_ids):
         raise AuditError("retrieval_results_must_cover_exact_declared_candidates")

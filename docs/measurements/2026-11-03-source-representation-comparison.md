@@ -64,5 +64,10 @@ IDF·전체 개별 순위는 Git/CI artifact에 넣지 않는다.
 메모리/속도·사람의 만족도는 미측정이다. 실제 카탈로그/다중 서비스 SKU의 확보·고정 독립 사실
 평가와 전체 AI03/DAT02–04는 계속 필요하며, 미래 사용자/로그를 선행 조건으로 두지 않는다.
 
-구현/설정/실행은 [비교 계약](../SOURCE-REPRESENTATION-COMPARISON.md), 검증과 PR 인계는
-[작업 기록](../plans/2026-11-03-source-representation-comparison.md)을 따른다.
+현재 runtime에서는 미채택 실험 CLI와 그 전용 검사/smoke를 제거했다. 이 보고서는 당시의
+실제 설정·관측과 미채택 이유를 보존한다. 재현에는 당시 고정 커밋의
+[비교 코드](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/src/pubburi_recommendation/source_representation_comparison.py),
+[전용 검사](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/tests/test_source_representation_comparison.py),
+[설치 wheel 검사](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/scripts/smoke_source_comparison.py)와
+같은 커밋의 uv.lock·원래 ignored 원천/권위/동결 명세가 필요하다. 현재 배포에서 사용할 수 있는
+명령으로 해석하지 않는다. 핵심 B1·cohort의 train-only/누수·독립 사실 검사는 계속 유지한다.

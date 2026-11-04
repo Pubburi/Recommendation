@@ -98,4 +98,4 @@ API가 반환한 ID로 각 B0/B1 요청에1개 상품을 내보내고 동적 loo
 
 [구현](../src/pubburi_recommendation/business_export.py) ·
 [회귀](../tests/test_business_export.py) ·
-[작업/검증](plans/2026-11-01-reviewed-business-export.md)
+[작업/검증](https://github.com/Pubburi/Recommendation/blob/39647aab11e2bb212a23162ad1c57596860b32a7/docs/plans/2026-11-01-reviewed-business-export.md)
