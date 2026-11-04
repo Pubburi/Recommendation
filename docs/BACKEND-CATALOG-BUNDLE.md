@@ -41,9 +41,23 @@ boolean이다. algorithm은 `checked-reviewed-demo-export-v1`, mode는 `fresh_de
 artifact_sha256에는 원 receipt/report/B0/B1 네 파일 이름과 SHA가 모두 있다. 다른 mode나
 승격된 boolean·추가 필드는 v1 계약에 맞지 않는다.
 
+scope/evidence_kind/snapshot_origin은 다음 기존 export 조합만 허용한다. family의 각
+eligibility_scope도 family data_scope와 같아야 한다.
+
+| data_scope | evidence_kind | snapshot_origin |
+|---|---|---|
+| reviewed_mapped_business_demo_only | authored_regression_fixture | demo_fixture 또는 owned_demo_fixture |
+| reviewed_mapped_business_demo_only | reviewed_public_source | existing_local_catalog |
+| reviewed_source_family_browse_demo_only | authored_regression_fixture | demo_fixture |
+| reviewed_source_family_browse_demo_only | reviewed_public_source | owned_family_browse_demo |
+
 catalog의 ID/그룹·주종/가격/도수/용량은 해당 원응답·명시 그룹과 일치해야 한다. 기존 원천의
 미확인 taste_tags/aroma_tags=null과 family-only volume=null을 유지한다. 업무 태그·소개·이미지·
 주문 수를 새 학습 사실로 승격하지 않는다. 같은 그룹의 복수 변형 자체를 금지하지 않는다.
+family는 원 features의 volumeMl/description/tasteTags/aromaTags도 전부 null이어야 하며
+빈 문자열/배열로 바꾸지 않는다. container는 known volume을 요구하되 원업무 설명/태그는
+모델 입력에 추가하지 않고 그대로 보존한다. 독립 DTO는 이 교차 일관성을 검사하며, 원천 grain/
+revision/ABV 권위를 hash만으로 재승인하지 않는다. 원권위 검증은 기존 checked loader의 책임이다.
 
 ## 시계와 소비 책임
 

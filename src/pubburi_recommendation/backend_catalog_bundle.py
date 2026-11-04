@@ -71,6 +71,13 @@ class CheckedMetadata(DemoFlags):
             raise ValueError("bundle_requires_all_four_checked_artifact_hashes")
         if utc_time(self.original_export_at_utc) > utc_time(self.checked_at_utc):
             raise ValueError("bundle_export_must_not_follow_check")
+        family = self.data_scope == FAMILY_SCOPE
+        if self.evidence_kind == "authored_regression_fixture":
+            origins = ("demo_fixture",) if family else ("demo_fixture", "owned_demo_fixture")
+        else:
+            origins = ("owned_family_browse_demo",) if family else ("existing_local_catalog",)
+        if self.snapshot_origin not in origins:
+            raise ValueError("bundle_scope_evidence_and_origin_conflict")
         return self
 
 
@@ -104,6 +111,19 @@ class BackendCatalogBundle(DemoFlags):
         family = self.checked_export.data_scope == FAMILY_SCOPE
         for product, row in zip(self.catalog, self.records, strict=True):
             source, features = row.product.data, row.features.data
+            if (
+                family
+                and any(
+                    value is not None
+                    for value in (
+                        features.volumeMl,
+                        features.description,
+                        features.tasteTags,
+                        features.aromaTags,
+                    )
+                )
+            ) or (not family and features.volumeMl is None):
+                raise ValueError("bundle_scope_quantity_or_unknown_fields_conflict")
             if (
                 source.id != row.backend_product_id
                 or features.productId != row.backend_product_id

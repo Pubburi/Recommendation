@@ -47,6 +47,42 @@ def smoke_backend_bundle_http(python, work, base_url, request_json):
         or datetime.fromisoformat(bundle["valid_until_utc"]) <= datetime.now(UTC)
     ):
         raise RuntimeError("Installed bundle changed completion, pin, freshness or DEMO scope")
+    validation = subprocess.run(
+        [
+            str(python),
+            "-I",
+            "-c",
+            """
+import copy, json, sys
+from pydantic import ValidationError
+from pubburi_recommendation.backend_catalog_bundle import BackendCatalogBundle
+value = json.loads(sys.stdin.read())
+BackendCatalogBundle.model_validate(value)
+for fault in ("origin", "family_volume", "family_empty_tags"):
+    changed = copy.deepcopy(value)
+    if fault == "origin":
+        changed["checked_export"]["snapshot_origin"] = "existing_local_catalog"
+    elif fault == "family_volume":
+        changed["catalog"][0]["volume_ml"] = 500
+        changed["records"][0]["features"]["data"]["volumeMl"] = 500
+    else:
+        changed["records"][0]["features"]["data"]["tasteTags"] = []
+    try:
+        BackendCatalogBundle.model_validate(changed)
+    except ValidationError:
+        continue
+    raise SystemExit("Installed bundle accepted incompatible " + fault)
+assert not {"numpy", "sklearn", "pubburi_recommendation.content_model"} & set(sys.modules)
+""",
+        ],
+        input=json.dumps(bundle),
+        cwd=work,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    if validation.returncode != 0:
+        raise RuntimeError("Installed typed bundle failed scope/unknown validation")
     snapshot = json.loads(Path(args["business-snapshot"]).read_text())
     by_id = {r["product"]["data"]["id"]: r for r in snapshot["records"]}
     for row, product in zip(bundle["records"], bundle["catalog"], strict=True):
