@@ -174,6 +174,14 @@ can/bottle/volume/ABV 조건에서 기존1ID만 반환해 신규0이며 전체 �
 5/5 unknown이다. [원값/한계](measurements/2026-11-03-family-browse-demo.md)를 보존하며
 source11·container DEMO1에 합산하거나 서비스 카탈로그 품질/전체 AI03 완료로 세지 않는다.
 
+이후 [기존 허용 상품군의 새 적용](plans/2026-11-04-reviewed-family-application.md)은 별도
+accepted4후보의 미적용 family1개를 새 검수/정제하고 두 소유 업무 DB에 각각 명시 매핑했다.
+같은12개 독립 사실·제약/fallback을 기존 B1/B0로 각12/12 재현했으며 도수5.2는 known 상수,
+용량/맛/향은 unknown이다. 새 목적의6후보 원문 수집은 api_maxlag로 중단해 신규 live 성공0과
+기존 원천 새 적용1을 구분한다. 현재 container-only Backend는 family를 계속 거절하며,
+별도 browse scope의 공동 소비 계약·현재 업무 재검증·Backend/React 연결과 충분한 허용
+카탈로그/독립 평가는 남는다. 물리 SKU/판매·서비스 권위나 전체 R02/AI03 완료로 승격하지 않는다.
+
 후속 [실제 상품군 사실 평가](plans/2026-11-01-source-family-fact-evaluation.md)는 다른 발견 조건으로
 8항목(기존1/신규7)을 확보해6개 명시 상품군을4fit/2transform으로 검수/학습했다. 도수 단위와
 포장 qualifier는 unknown을 유지했다. 학습 전 선언한 같은 P31 사실 검색은 양성1질의/후보4의
