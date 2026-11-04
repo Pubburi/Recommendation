@@ -154,6 +154,88 @@ def test_flags_are_actual_booleans(bundle, flag):
         BackendCatalogBundle.model_validate(value)
 
 
+@pytest.mark.parametrize(
+    "scope", ["reviewed_mapped_business_demo_only", "reviewed_source_family_browse_demo_only"]
+)
+@pytest.mark.parametrize("evidence", ["authored_regression_fixture", "reviewed_public_source"])
+@pytest.mark.parametrize(
+    "origin",
+    ["demo_fixture", "owned_demo_fixture", "existing_local_catalog", "owned_family_browse_demo"],
+)
+def test_scope_evidence_origin_matrix_matches_existing_export_contract(
+    bundle, scope, evidence, origin
+):
+    # Structural DTO controls, not reapproval of the authored fixture as public source data.
+    value = build_bundle(load(bundle, now=bundle["now"]), bundle["args"][5])
+    value["checked_export"].update(data_scope=scope, evidence_kind=evidence, snapshot_origin=origin)
+    if scope == "reviewed_mapped_business_demo_only":
+        for product, row in zip(value["catalog"], value["records"], strict=True):
+            product["volume_ml"] = row["features"]["data"]["volumeMl"] = 500
+            row["eligibility_scope"] = "public_browse_row_exists"
+    allowed = {
+        ("reviewed_mapped_business_demo_only", "authored_regression_fixture", "demo_fixture"),
+        ("reviewed_mapped_business_demo_only", "authored_regression_fixture", "owned_demo_fixture"),
+        ("reviewed_mapped_business_demo_only", "reviewed_public_source", "existing_local_catalog"),
+        ("reviewed_source_family_browse_demo_only", "authored_regression_fixture", "demo_fixture"),
+        (
+            "reviewed_source_family_browse_demo_only",
+            "reviewed_public_source",
+            "owned_family_browse_demo",
+        ),
+    }
+    if (scope, evidence, origin) in allowed:
+        BackendCatalogBundle.model_validate(value)
+    else:
+        with pytest.raises(ValidationError, match="bundle_scope_evidence_and_origin_conflict"):
+            BackendCatalogBundle.model_validate(value)
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("volumeMl", 500),
+        ("description", "unreviewed prose"),
+        ("description", ""),
+        ("tasteTags", ["unreviewed"]),
+        ("tasteTags", []),
+        ("aromaTags", ["unreviewed"]),
+        ("aromaTags", []),
+    ],
+)
+def test_family_raw_unknown_fields_cannot_be_filled_even_with_matching_catalog(
+    bundle, field, value
+):
+    data = build_bundle(load(bundle, now=bundle["now"]), bundle["args"][5])
+    data["records"][0]["features"]["data"][field] = value
+    if field == "volumeMl":
+        data["catalog"][0]["volume_ml"] = value
+    with pytest.raises(ValidationError, match="bundle_scope_quantity_or_unknown_fields_conflict"):
+        BackendCatalogBundle.model_validate(data)
+
+
+@pytest.mark.parametrize("volume", [None, 500])
+def test_container_requires_known_volume_but_preserves_unmodeled_original_fields(bundle, volume):
+    data = build_bundle(load(bundle, now=bundle["now"]), bundle["args"][5])
+    data["checked_export"]["data_scope"] = "reviewed_mapped_business_demo_only"
+    for product, row in zip(data["catalog"], data["records"], strict=True):
+        row["eligibility_scope"] = "public_browse_row_exists"
+        product["volume_ml"] = row["features"]["data"]["volumeMl"] = volume
+        row["features"]["data"].update(
+            description="업무 원문 그대로", tasteTags=["원문,태그"], aromaTags=["원문\n향"]
+        )
+    if volume is None:
+        with pytest.raises(
+            ValidationError, match="bundle_scope_quantity_or_unknown_fields_conflict"
+        ):
+            BackendCatalogBundle.model_validate(data)
+    else:
+        result = BackendCatalogBundle.model_validate(data)
+        assert result.records[0].features.data.description == "업무 원문 그대로"
+        assert result.records[0].features.data.tasteTags == ["원문,태그"]
+        assert result.records[0].features.data.aromaTags == ["원문\n향"]
+        assert all(product.taste_tags is product.aroma_tags is None for product in result.catalog)
+
+
 def test_publication_is_complete_only_after_recheck_and_sha_matches_whole_file(bundle, monkeypatch):
     monkeypatch.setattr(module, "utc_now", lambda: bundle["now"])
     args = arguments(bundle)
