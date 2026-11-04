@@ -1,7 +1,8 @@
 import json
 from decimal import Decimal, DecimalException
+from typing import Annotated
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
@@ -73,19 +74,9 @@ def health() -> dict[str, str]:
     return {"status": "ok", "service": "pubburi-recommendation"}
 
 
-@app.post(
-    "/v1/recommendations/search-phrases",
-    response_model=SearchPhraseResponse,
-    responses={
-        413: {"description": "Request exceeds 524288 bytes"},
-        408: {"description": "Request body timed out"},
-    },
-)
-async def search_phrases(
-    request: SearchPhraseRequest, raw_request: Request
-) -> SearchPhraseResponse:
-    # Only this route needs BE BigDecimal's raw scale, which binary JSON floats lose.
-    # Existing bounded body/media/syntax handling and all six older routes stay intact.
+async def precise_body(model, raw_request: Request):
+    # Revalidate only explicit BE-shaped inputs after the original body/schema path.
+    # The bounded cached body retains BigDecimal scale lost by binary JSON floats.
     try:
         exact_body = json.loads(await raw_request.body(), parse_float=Decimal)
     except DecimalException as error:
@@ -99,12 +90,50 @@ async def search_phrases(
             ]
         ) from error
     try:
-        precise = SearchPhraseRequest.model_validate(exact_body)
+        precise = model.model_validate(exact_body)
     except ValidationError as error:
         raise RequestValidationError(
             [dict(item, loc=("body", *item["loc"])) for item in error.errors()]
         ) from error
-    return recommend_search_phrases(precise)
+    return precise
+
+
+async def content_input(request: ContentRecommendationRequest, raw_request: Request):
+    return (
+        await precise_body(type(request), raw_request)
+        if request.preferences is not None
+        else request
+    )
+
+
+async def exploration_input(request: ExplorationRequest, raw_request: Request):
+    return (
+        await precise_body(type(request), raw_request)
+        if request.preferences is not None
+        else request
+    )
+
+
+async def feedback_input(request: FeedbackRecommendationRequest, raw_request: Request):
+    return (
+        await precise_body(type(request), raw_request)
+        if request.preferences is not None
+        else request
+    )
+
+
+@app.post(
+    "/v1/recommendations/search-phrases",
+    response_model=SearchPhraseResponse,
+    responses={
+        413: {"description": "Request exceeds 524288 bytes"},
+        408: {"description": "Request body timed out"},
+    },
+)
+async def search_phrases(
+    request: SearchPhraseRequest, raw_request: Request
+) -> SearchPhraseResponse:
+    return recommend_search_phrases(await precise_body(SearchPhraseRequest, raw_request))
 
 
 @app.post(
@@ -128,7 +157,9 @@ def baseline(request: RecommendationRequest) -> RecommendationResponse:
         408: {"description": "Catalog request body timed out"},
     },
 )
-def content(request: ContentRecommendationRequest) -> ContentRecommendationResponse:
+def content(
+    request: Annotated[ContentRecommendationRequest, Depends(content_input)],
+) -> ContentRecommendationResponse:
     """Fit this request's explicit catalog and rank it without retaining model/user state."""
     return recommend_content(request)
 
@@ -141,7 +172,9 @@ def content(request: ContentRecommendationRequest) -> ContentRecommendationRespo
         408: {"description": "Catalog request body timed out"},
     },
 )
-def exploration(request: ExplorationRequest) -> ExplorationResponse:
+def exploration(
+    request: Annotated[ExplorationRequest, Depends(exploration_input)],
+) -> ExplorationResponse:
     """Select a bounded diverse pool without relaxing B1 relevance or hard constraints."""
     return recommend_exploration(request)
 
@@ -180,6 +213,8 @@ def context(request: ContextRecommendationRequest) -> ContextRecommendationRespo
         408: {"description": "Catalog request body timed out"},
     },
 )
-def feedback(request: FeedbackRecommendationRequest) -> FeedbackRecommendationResponse:
+def feedback(
+    request: Annotated[FeedbackRecommendationRequest, Depends(feedback_input)],
+) -> FeedbackRecommendationResponse:
     """Apply explicit feedback facts and exclusions without learning or storing user state."""
     return recommend_feedback(request)

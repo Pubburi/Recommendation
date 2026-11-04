@@ -48,6 +48,7 @@ class ExplorationResponse(ContentRecommendationResponse):
 
 
 def recommend_exploration(request: ExplorationRequest) -> ExplorationResponse:
+    request = request.resolved()
     if not request.catalog:
         base = recommend_content(request)
         return ExplorationResponse(

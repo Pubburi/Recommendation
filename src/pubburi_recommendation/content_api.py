@@ -2,7 +2,8 @@
 
 from typing import Literal, Self
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
+from pydantic.json_schema import SkipJsonSchema
 
 from pubburi_recommendation.baseline import Constraints, ContractModel
 from pubburi_recommendation.content_contracts import (
@@ -12,6 +13,8 @@ from pubburi_recommendation.content_contracts import (
     profile_tokens,
     validate_catalog,
 )
+from pubburi_recommendation.preference_input import resolve_preferences
+from pubburi_recommendation.search_phrases import SearchPreferenceSnapshot
 
 
 class ContentRecommendationRequest(ContractModel):
@@ -20,11 +23,35 @@ class ContentRecommendationRequest(ContractModel):
     constraints: Constraints = Field(default_factory=Constraints)
     limit: int = Field(default=12, ge=1, le=100)
     include_explanations: bool = Field(default=False, exclude_if=lambda value: not value)
+    preferences: SearchPreferenceSnapshot | SkipJsonSchema[None] = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        json_schema_extra=lambda schema: schema.pop("default", None),
+    )
+
+    @field_validator("preferences")
+    @classmethod
+    def explicit_preferences_require_snapshot(cls, value):
+        if value is None:
+            raise ValueError("preferences_require_complete_backend_snapshot")
+        return value
 
     @model_validator(mode="after")
     def unique_catalog(self) -> Self:
         validate_catalog(self.catalog, allow_empty=True)
+        if self.preferences is not None:
+            if "profile" in self.model_fields_set:
+                raise ValueError("preferences_and_profile_are_mutually_exclusive")
+            resolve_preferences(self.preferences, self.constraints)
         return self
+
+    def resolved(self) -> Self:
+        if self.preferences is None:
+            return self
+        profile, constraints = resolve_preferences(self.preferences, self.constraints)
+        return self.model_copy(
+            update={"profile": profile, "constraints": constraints, "preferences": None}
+        )
 
 
 class ContentRecommendationResponse(ContentResponse):
@@ -34,6 +61,7 @@ class ContentRecommendationResponse(ContentResponse):
 
 
 def recommend_content(request: ContentRecommendationRequest) -> ContentRecommendationResponse:
+    request = request.resolved()
     if not request.catalog:
         return ContentRecommendationResponse(
             representation_fitted=False,
