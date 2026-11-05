@@ -26,7 +26,7 @@
 
 ## ✍ 프로젝트 개요
 
-주점부리의 Python·FastAPI 서버입니다. 명시한 카탈로그·필수 조건의 B0 기본 추천과 요청마다 지역적으로 fit/rank하는 B1 콘텐츠 HTTP, 원천 감사·표현 실험·API 문서·패키징·CI를 제공합니다. B0는 학습하지 않은 기준선이며 B1 HTTP는 현재 허구 입력으로 연결을 검증했습니다. 별도 실험에서는 실제 CC0 상품군 표현을 학습·분할 검사합니다. 검수 서비스 SKU 카탈로그 학습·추천 품질 평가와 Backend B1 연동은 진행할 과제입니다.
+주점부리의 Python·FastAPI 서버입니다. 명시 카탈로그·필수 조건의 B0 기본 추천, 요청별 fit/rank하는 B1 콘텐츠와 R06 명시 검색 문구 HTTP, 원천 감사·표현 실험·API 문서·패키징·CI를 제공합니다. Backend의 B0·R06 호출과 검수 DEMO의 B1·웹 이유 표시를 연결했습니다. B0는 학습하지 않는 기준선이며 일반 서비스 SKU 카탈로그 채택·추천 품질 평가·최종 인수는 진행할 과제입니다.
 
 <a id="features"></a>
 
@@ -36,18 +36,20 @@
 |---|---|
 | 헬스 체크 | GET /health → 상태와 서비스 이름 반환 |
 | 기본 추천 | POST /v1/recommendations/baseline → 필수/제외 조건을 통과한 상품 ID 기본순과 적용 이유 |
-| 제약·결측 처리 | 주종·가격·도수·판매 상태·제외 ID, unknown을 요구 조건에 임의 통과시키지 않음 |
+| 제약·결측 처리 | 주종·가격·도수·입력 가용성·제외 ID, unknown을 요구 조건에 임의 통과시키지 않음 |
 | 오프라인 원천 감사 | 명세·출처/revision·수량 단위·분류/생산자 관계 모순·unknown·브랜드/SKU 정체성을 구분하고 명시 검수 후 B0 시연 요청 변환 |
 | 제한된 원천 수집 | 고정 Wikidata GET·ID/revision/오류 검증·기본 라벨/원천 언어 보존·불변 snapshot/영수증·offline 재생. 수집 검증과 실제 SKU/학습 준비를 구분 |
 | 기존 시드·자산 감사 | SQL 실행 없이 활성 상품 literal·실제 웹 이미지 매핑·해시/중복·개별 사실/권리 미확인을 분리하고 학습 입력으로 자동 승격하지 않음 |
 | 고정 시나리오 검사 | 수동 기대 사실·명세/응답 해시를 고정하고 추천 엔진과 분리해 제약·중복·결측·이유·후보 부족 확인 |
 | 콘텐츠 추천 HTTP | POST /v1/recommendations/content → 요청 카탈로그의 TF-IDF·관측 수치 fit/점수·실제 기여. 입력·모델/사용자 상태를 저장하지 않고 무정보·OOV·제약 fallback 구분 |
 | 별도 취향 탐색 후보 | POST /v1/recommendations/exploration → B1 상위100의 양수/최소 관련성·필수 조건 안에서 그룹 중복과 알려진 텍스트 겹침을 제한. 원점수/기여와 선택 metadata를 구분하며 전체 R08·웹 연결/사용자 품질은 미완료 |
-| 기준 상품의 유사 후보 | POST /v1/recommendations/similar → 명시 기준 상품의 검수 사실과 기존 B1로 같은 상품군·필수 조건 탈락을 제외한 양수 후보를 반환. 기준 부재/판매 불가·근거 부족을 구분하며 전체 R03·Backend/상세 화면 연결은 미완료 |
+| 기준 상품의 유사 후보 | POST /v1/recommendations/similar → 명시 기준 상품의 검수 사실과 기존 B1로 같은 상품군·필수 조건 탈락을 제외한 양수 후보를 반환. 기준 부재/입력 가용 불가·근거 부족을 구분하며 전체 R03·Backend/상세 화면 연결은 미완료 |
 | 명시 다중 상품 맥락 후보 | POST /v1/recommendations/context → 장바구니·데모 주문의 명시 상품 사실과 기존 B1을 비교해 기준별 최대 양수 점수·winning 기준/실제 기여를 반환. 모든 알려진 기준 그룹·hard 탈락을 제외하며 공동구매 통계·전체 장바구니 적합성·전체 R07/웹 연동은 미완료 |
+| 명시 피드백 후보 | POST /v1/recommendations/feedback → 긍정 상품·명시 취향의 실제 근거를 비교하고 관심 없음 ID/그룹을 제외. 피드백 저장·계정/웹 연결과 전체 R05는 미완료 |
+| 명시 검색 문구 | POST /v1/recommendations/search-phrases → 선택한 취향의 고정 문구·typed 검색 조건을 반환. soft 취향을 자동 hard로 승격하지 않으며 Backend·웹 검색 조건 연결 제공 |
 | 오프라인 콘텐츠 모듈 | 학습군 fit/변환과 명시 취향/선택 상품 유사도. HTTP의 known-catalog 표현을 신규 상품 일반화·실카탈로그 품질 평가와 구분 |
-| 원천 상품군 표현 실험 | 검수 CC0 상품군의 fit/transform·unknown/OOV·고정 사실 평가와 다중 snapshot의 미관측 제조사 실험. 별도 고정 SVD 후보의 실제 fit·정보 손실/지원 범위와 미채택 근거를 비교하며 판매 SKU·사용자 선호/서비스 품질과 구분 |
-| 포장 문맥별 용량 보존 | 검수 P2234/P518 statement의 수량·문맥·원천 버전을 분리 보존. 가족 단위 unknown과 같은 family group을 유지하고 완성 SKU·업무 매핑으로 자동 승격하지 않음 |
+| 원천 상품군 표현 실험 | 검수 CC0 상품군의 fit/transform·unknown/OOV·고정 사실 평가와 다중 snapshot의 미관측 제조사 실험. 미채택 SVD는 과거 비교 결과·고정 코드만 보존하며 현재 runtime에서 제외. 판매 SKU·사용자 선호/서비스 품질과 구분 |
+| 포장 문맥별 용량 보존 | 검수 P2234/P518 statement의 수량·문맥·원천 버전을 분리 보존. 상품군 단위 unknown과 같은 family group을 유지하고 완성 SKU·업무 매핑으로 자동 승격하지 않음 |
 | 검수 업무 카탈로그 fit | 실제 원천 사실과 업무 DEMO 매핑에 기존 B1을 실행하고 고정 사실·제약으로 B0와 비교. 단일 상품/상수 수량의 한계와 품질·일반화 미완료를 구분 |
 | API 문서 | FastAPI 자동 생성 /docs와 /openapi.json |
 | 독립 실행 | DB·모델 파일·외부 AI 키 없이 기동 |
@@ -72,12 +74,13 @@
 
 ~~~mermaid
 flowchart LR
-    Web["웹 클라이언트"] -. "후속 기능" .-> Backend["Backend"]
-    Backend -. "후속 내부 API 연동" .-> API["Recommendation · FastAPI"]
+    Web["웹 클라이언트"] -->|현재 구현 API| Backend["Backend"]
+    Backend -->|B0 · R06 · 검수 DEMO B1 호출| API["Recommendation · FastAPI"]
     API --> Health["/health"]
     API --> Baseline["명시 카탈로그 → 필수 필터 → B0 기본순"]
     API --> Model["B1 요청 카탈로그 fit · 콘텐츠 점수"]
-    Fixture["명시 로컬 입력 · 현재 허구 fixture"] --> Model
+    API --> Search["R06 명시 검색 문구 · 검색 조건"]
+    Fixture["명시 카탈로그 · 검수 DEMO/허구 fixture"] --> Model
 ~~~
 
 <a id="problem-solving"></a>
@@ -274,7 +277,7 @@ main은 PR·recommendation-ci 성공·최신 main 반영·대화 해결을 요�
 
 ## 🗺️ 개발 계획
 
-기한은 **2027년 2월 5일**이며 P1·P2 추천 모두 필수 목표입니다. [추천 데이터·모델·평가 계획](docs/DATA-AND-MODEL-PLAN.md)을 기준으로 진행합니다.
+전체 20개 MVP의 구현·연결·필수 검증 기한은 **2026년 12월 31일**, 최종 인계는 **2027년 2월 5일**입니다. P1·P2 모두 필수이며 [추천 데이터·모델·평가 계획](docs/DATA-AND-MODEL-PLAN.md)을 기준으로 진행합니다. 아래 항목은 제공자 부분 구현과 별개로 남은 일반 서비스 카탈로그·신호·업무/웹 연결·최종 인수 범위입니다.
 
 - [ ] 상품 특성·사용자 취향·평점·찜 데이터 계약 정리
 - [ ] 콘텐츠 기반 추천·유사 상품·신규 사용자 대체 추천
