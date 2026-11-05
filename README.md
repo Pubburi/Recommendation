@@ -32,7 +32,7 @@
 
 ## 🥃 현재 기능과 범위
 
-| 기능 | 제공 내용 |
+| 영역 | 현재 제공 기능 |
 |---|---|
 | 헬스 체크 | GET /health → 상태와 서비스 이름 반환 |
 | 기본 추천 | POST /v1/recommendations/baseline → 필수/제외 조건을 통과한 상품 ID 기본순과 적용 이유 |
@@ -59,20 +59,25 @@
 
 ## ⚙️ 기술 스택
 
-| 영역 | 기술 |
-|---|---|
-| 런타임 | Python 3.12 |
-| 서버 | FastAPI, Uvicorn |
-| 콘텐츠 표현 | scikit-learn TF-IDF·MinMaxScaler, NumPy |
-| 의존성·패키징 | uv, uv.lock, pyproject.toml, Hatchling |
-| 테스트·검사 | pytest, HTTPX, Ruff |
-| CI | GitHub Actions · recommendation-ci |
+| 기술 스택 |
+|---|
+| Python |
+| FastAPI |
+| Uvicorn |
+| scikit-learn |
+| NumPy |
+| uv |
+| Hatchling |
+| pytest |
+| HTTPX |
+| Ruff |
+| GitHub Actions |
 
 <a id="architecture"></a>
 
 ## 🏛️ 시스템 구조
 
-~~~mermaid
+```mermaid
 flowchart LR
     Web["웹 클라이언트"] -->|현재 구현 API| Backend["Backend"]
     Backend -->|B0 · R06 · 검수 DEMO B1 호출| API["Recommendation · FastAPI"]
@@ -81,13 +86,13 @@ flowchart LR
     API --> Model["B1 요청 카탈로그 fit · 콘텐츠 점수"]
     API --> Search["R06 명시 검색 문구 · 검색 조건"]
     Fixture["명시 카탈로그 · 검수 DEMO/허구 fixture"] --> Model
-~~~
+```
 
 <a id="problem-solving"></a>
 
 ## 🧩 문제 해결
 
-### HTTP200 안의 원천 오류를 격리한 카탈로그 수집
+### 1. HTTP200 안의 원천 오류를 격리한 카탈로그 수집
 
 #### 문제
 
@@ -113,7 +118,7 @@ HTTP 상태만 확인하면 구현은 단순하지만 데이터의 완료 조건
 
 API 오류를 원문 저장 전에 거절하는 핵심 분기다. [실제 수집기](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/wikidata_collect.py) · [실제 관측·실행과 한계](docs/WIKIDATA-COLLECTION.md)
 
-~~~python
+```python
     if "error" in payload:
         error = payload["error"]
         code = error.get("code") if isinstance(error, dict) else None
@@ -122,9 +127,9 @@ API 오류를 원문 저장 전에 거절하는 핵심 분기다. [실제 수집
             if isinstance(code, str)
             else "unrecognized_api_error"
         )
-~~~
+```
 
-### JSON 해석부터 필수 조건과 상품 ID를 보존한 추천
+### 2. JSON 해석부터 필수 조건과 상품 ID를 보존한 추천
 
 #### 문제
 
@@ -150,7 +155,7 @@ JSON decoder가 같은 이름의 마지막 값만 남긴 뒤 Pydantic에 전달�
 
 전체 JSON 파싱이 성공했을 때만 앞서 기록한 중복 판정을 반환하는 핵심 분기다. [실제 입력 경계](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/request_limits.py) · [B0 계약](docs/BASELINE-API.md) · [B1 계약](docs/CONTENT-API.md)
 
-~~~python
+```python
     try:
         # Object hooks see decoded names, so escaped equivalent keys cannot evade this check.
         # Discard this bounded preflight tree; FastAPI still owns schema/numeric validation.
@@ -160,9 +165,9 @@ JSON decoder가 같은 이름의 마지막 값만 남긴 뒤 Pydantic에 전달�
         # A duplicate found before a later parse error must not mask that error.
         return False
     return duplicate
-~~~
+```
 
-### 원천 수량의 의미를 지켜 잘못된 학습 관측 차단
+### 3. 원천 수량의 의미를 지켜 잘못된 학습 관측 차단
 
 #### 문제
 
@@ -207,7 +212,7 @@ URI 변환표·권리·사실 검수를 각각 확장해야 하며 이 검사는
 [정규화 처리](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/catalog_audit.py) ·
 [실제 학습 경계](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/source_family_experiment.py)
 
-~~~python
+```python
         if (
             ("property" in snak and snak["property"] != prop)
             or ("datatype" in snak and snak["datatype"] != "quantity")
@@ -219,7 +224,7 @@ URI 변환표·권리·사실 검수를 각각 확장해야 하며 이 검사는
         if not isinstance(unit, str) or unit not in unit_factors:
             issues.add("unsupported_unit")
             continue
-~~~
+```
 
 <a id="development"></a>
 
@@ -229,10 +234,10 @@ Python 3.12와 uv 0.13.6을 사용합니다. 레포 루트에서 실행합니다
 
 세 서버와 DB를 함께 실행하는 방법은 [로컬 통합 실행](https://github.com/Pubburi/Backend/blob/main/docs/LOCAL-DEVELOPMENT.md)을 참고하세요.
 
-~~~bash
+```bash
 uv sync --locked
 ./scripts/dev.sh
-~~~
+```
 
 - 서버: http://localhost:8000
 - 개발 포트: PUBBURI_RECOMMENDATION_PORT(기본 8000)
@@ -263,9 +268,9 @@ GTIN·명시 포장/단위와 수동 검수의 분리는 [포장 식별 감사](
 
 ## ✅ 검증과 협업
 
-~~~bash
+```bash
 ./scripts/check.sh
-~~~
+```
 
 격리 환경의 배포 파일 설치·실행 검증 절차는 [테스트·CI 안내](docs/TESTING.md)를 따릅니다. 빌드 파일 생성은 실제 서버 배포를 뜻하지 않습니다.
 
@@ -277,10 +282,6 @@ main은 PR·recommendation-ci 성공·최신 main 반영·대화 해결을 요�
 
 ## 🗺️ 개발 계획
 
-전체 20개 MVP의 구현·연결·필수 검증 기한은 **2026년 12월 31일**, 최종 인계는 **2027년 2월 5일**입니다. P1·P2 모두 필수이며 [추천 데이터·모델·평가 계획](docs/DATA-AND-MODEL-PLAN.md)을 기준으로 진행합니다. 아래 항목은 제공자 부분 구현과 별개로 남은 일반 서비스 카탈로그·신호·업무/웹 연결·최종 인수 범위입니다.
+전체 R01–R08·F01–F12 MVP의 구현·연결·필수 검증 기한은 **2026년 12월 31일**, 최종 인계는 **2027년 2월 5일**입니다. P1·P2 모두 필수입니다.
 
-- [ ] 상품 특성·사용자 취향·평점·찜 데이터 계약 정리
-- [ ] 콘텐츠 기반 추천·유사 상품·신규 사용자 대체 추천
-- [ ] 추천 이유·관심 없음 반영과 Backend API 연동
-- [ ] 검수 카탈로그로 특성·TF-IDF 모델을 실제 fit하고 학습·검증·최종 평가를 분리
-- [ ] 기본순·콘텐츠 기준선과 비교하고, 고정 사실 시나리오 평가와 실제 사용자 선호를 구분
+현재 진행 범위와 완료 기준은 [추천 데이터·모델 계획](docs/DATA-AND-MODEL-PLAN.md)을 따릅니다. MVP 완료 이후에는 오류 개선과 실측 최적화를 이어갑니다.
