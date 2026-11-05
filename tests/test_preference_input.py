@@ -190,6 +190,163 @@ def test_original_snapshot_unknown_and_known_empty_are_retained_without_mutation
         )
 
 
+@pytest.mark.parametrize("status", ["NOT_STARTED", "SKIPPED", "COMPLETED"])
+def test_activity_categories_fill_only_missing_soft_categories(status, monkeypatch):
+    calls = []
+    original = FittedContentModel.fit
+    monkeypatch.setattr(
+        FittedContentModel, "fit", lambda catalog: (calls.append(1), original(catalog))[1]
+    )
+    preferences = unknown_snapshot(status)
+    body = dict(
+        catalog=CATALOG,
+        preferences=preferences,
+        activity_categories=dict(
+            favorite_categories=["과실주"], highly_rated_categories=["과실주"]
+        ),
+        include_explanations=True,
+    )
+    request = ContentRecommendationRequest.model_validate(body)
+    assert request.resolved().profile.categories == ["과실주"]
+    assert request.preferences.model_dump() == preferences == unknown_snapshot(status)
+
+    with TestClient(app) as client:
+        actual = post(client, "content", body)
+        assert actual.status_code == 200 and len(calls) == 1
+        direct = post(
+            client,
+            "content",
+            dict(catalog=CATALOG, profile={"categories": ["과실주"]}, include_explanations=True),
+        )
+        cold = post(
+            client,
+            "content",
+            dict(catalog=CATALOG, preferences=preferences, include_explanations=True),
+        )
+    assert actual.content == direct.content
+    result = actual.json()
+    assert "activity_categories" not in result
+    assert result["fallback_reason"] is None and result["supported_profile_tokens"] == 1
+    assert [item["product_id"] for item in result["items"]] == [3, 1, 2, 4]
+    assert [item["product_id"] for item in cold.json()["items"]] == [1, 2, 3, 4]
+    assert cold.json()["fallback_reason"] == "no_supported_preferences"
+    category = result["items"][0]["explanation"]["score_evidence"]
+    assert len(category) == 1 and category[0]["kind"] == "category_match"
+    assert category[0]["actual_value"] == category[0]["target_value"] == "과실주"
+
+
+def test_activity_categories_union_preserves_explicit_tags_zero_and_hard_exclusions():
+    preferences = snapshot()
+    preferences["softPreferences"].update(categories=None, aromaTags=[])
+    body = dict(
+        catalog=CATALOG,
+        preferences=preferences,
+        activity_categories=dict(favorite_categories=["과실주"], highly_rated_categories=["맥주"]),
+        constraints=dict(max_price_krw=0, max_abv_percent=0),
+        include_explanations=True,
+    )
+    with TestClient(app) as client:
+        actual = post(client, "content", body)
+        body["constraints"]["exclude_product_ids"] = [1]
+        excluded = post(client, "content", body)
+    assert actual.status_code == 200
+    result = actual.json()
+    assert result["supported_profile_tokens"] == 3
+    assert result["eligible_count"] == 1
+    assert [item["product_id"] for item in result["items"]] == [1]
+    evidence = result["items"][0]["explanation"]["score_evidence"]
+    assert {e["kind"]: e["target_value"] for e in evidence} == {
+        "category_match": "맥주",
+        "taste_match": "단,맛\n질감",
+        "abv_comparison": 0,
+    }
+    assert excluded.status_code == 200 and excluded.json()["items"] == []
+    assert excluded.json()["fallback_reason"] == "no_eligible_products"
+
+
+@pytest.mark.parametrize(
+    "activity, message",
+    [
+        (None, "activity_categories_require_two_lists"),
+        ({"favorite_categories": []}, "Field required"),
+        ({"favorite_categories": ["맥주"], "highly_rated_categories": None}, "valid list"),
+        ({"favorite_categories": [], "highly_rated_categories": []}, "nonempty_union"),
+        (
+            {"favorite_categories": ["맥주", "맥주"], "highly_rated_categories": []},
+            "must_be_unique",
+        ),
+        ({"favorite_categories": ["맥주"] * 9, "highly_rated_categories": []}, "at most 8"),
+        ({"favorite_categories": [" 맥주 "], "highly_rated_categories": []}, "Input should be"),
+        ({"favorite_categories": [True], "highly_rated_categories": []}, "Input should be"),
+        ({"favorite_categories": ["사케"], "highly_rated_categories": []}, "available_catalog"),
+        (
+            {"favorite_categories": ["맥주"], "highly_rated_categories": [], "rating": "private"},
+            "Extra inputs",
+        ),
+    ],
+)
+def test_invalid_activity_categories_fail_before_fit(activity, message, monkeypatch):
+    monkeypatch.setattr(FittedContentModel, "fit", lambda *_: pytest.fail("invalid activity fit"))
+    catalog = [
+        *CATALOG,
+        dict(product_id=6, sku_group="authored-f", available=False, category="사케"),
+    ]
+    with TestClient(app) as client:
+        response = post(
+            client,
+            "content",
+            dict(catalog=catalog, preferences=unknown_snapshot(), activity_categories=activity),
+        )
+    assert response.status_code == 422 and message in response.text
+    assert "private" not in response.text and "authored-" not in response.text
+
+
+@pytest.mark.parametrize("fault", ["omitted", "partial", "profile", "explicit", "empty"])
+def test_activity_needs_complete_preferences_and_never_overwrites_explicit_categories(
+    fault, monkeypatch
+):
+    monkeypatch.setattr(
+        FittedContentModel, "fit", lambda *_: pytest.fail("conflicting activity fit")
+    )
+    preferences = unknown_snapshot("COMPLETED")
+    body = dict(
+        catalog=CATALOG,
+        preferences=preferences,
+        activity_categories=dict(favorite_categories=["맥주"], highly_rated_categories=[]),
+    )
+    if fault == "omitted":
+        del body["preferences"]
+    elif fault == "partial":
+        del preferences["softPreferences"]["categories"]
+    elif fault == "profile":
+        body["profile"] = {}
+    else:
+        preferences["softPreferences"]["categories"] = ["맥주"] if fault == "explicit" else []
+    with TestClient(app) as client:
+        response = post(client, "content", body)
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("route", ["exploration", "feedback"])
+def test_only_content_accepts_activity_categories(route, monkeypatch):
+    monkeypatch.setattr(
+        FittedContentModel, "fit", lambda *_: pytest.fail("other route fit activity")
+    )
+    with TestClient(app) as client:
+        response = post(
+            client,
+            route,
+            dict(
+                catalog=CATALOG,
+                preferences=unknown_snapshot(),
+                activity_categories=dict(favorite_categories=["맥주"], highly_rated_categories=[]),
+            ),
+        )
+    assert response.status_code == 422
+    error = response.json()["detail"][0]
+    assert error["type"] == "extra_forbidden" and error["loc"] == ["body", "activity_categories"]
+
+
 @pytest.mark.parametrize("route", ROUTES)
 def test_soft_target_outside_hard_range_remains_soft_and_all_hard_directions_intersect(route):
     preferences = snapshot()
