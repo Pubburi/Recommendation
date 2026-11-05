@@ -18,6 +18,7 @@ from pubburi_recommendation.catalog_audit import AuditError, SourceManifest, rea
 from pubburi_recommendation.catalog_authority import load_export_catalog
 from pubburi_recommendation.family_browse_catalog import (
     ALGORITHM,
+    AT_ALGORITHM,
     SCOPE,
     FamilyBrowseCuration,
     load_family_browse_catalog,
@@ -139,6 +140,192 @@ def business(catalog):
 
 def export(catalog, snapshot, mapping, now):
     return build_exports(catalog, snapshot, "a" * 64, ReviewedMapping.model_validate(mapping), now)
+
+
+def at_inputs(tmp_path):
+    from test_at_source import EVIDENCE, raw_csv, receipt, review
+
+    manifest = ROOT / "sources/at-traditional-liquor.json"
+    raw = tmp_path / "at.csv"
+    raw.write_bytes(raw_csv())
+    captured = write(tmp_path / "at-receipt.json", receipt(raw.read_bytes()).model_dump())
+    reviewed = review(raw.read_bytes()).model_dump()
+    reviewed.update(manifest_sha256=sha(manifest), receipt_sha256=sha(captured))
+    review_path = write(tmp_path / "at-review.json", reviewed)
+    evidence = tmp_path / "at-provider.html"
+    evidence.write_bytes(EVIDENCE)
+    source_key = f"at:15048755:{sha(raw)}:row:1"
+    curation = {
+        "schema_version": 1,
+        "algorithm": AT_ALGORITHM,
+        "evidence_kind": "authored_regression_fixture",
+        "input_sha256": sha(raw),
+        "receipt_sha256": sha(captured),
+        "manifest_sha256": sha(manifest),
+        "review_sha256": sha(review_path),
+        "catalog_version": "authored-at-browse-v1",
+        "reviewed_at_utc": (datetime.now(UTC) - timedelta(seconds=1)).isoformat(),
+        "fact_evidence_files": [evidence.name],
+        "records": {
+            source_key: {
+                "catalog_record_id": "at-browse-20260731-row1",
+                "source_variant_group": "authored-at-browse-group",
+                "identity_scope": SCOPE,
+                "checked_facts": {
+                    "source_row_number": 1,
+                    "source_version": "20260731",
+                    "label": "가상 원천 A",
+                    "producer_name": "가상 양조장",
+                    "category": "과실주",
+                    "abv_percent": 0.0,
+                    "volume_ml": None,
+                },
+                "review_note": "Explicit named source browse only; not a product_family/QID/SKU.",
+            }
+        },
+    }
+    path = write(tmp_path / "at-curation.json", curation)
+    return (manifest, raw, captured, path, review_path), curation
+
+
+def test_at_named_rows_reuse_browse_scope_without_fabricating_wikidata_or_business_identity(
+    tmp_path,
+):
+    paths, _ = at_inputs(tmp_path)
+    catalog, report = load_family_browse_catalog(*paths)
+    assert report["selected_named_records"] == 1 and "selected_families" not in report
+    row = catalog["records"][0]
+    assert row["source"]["source_grain"] == "named_csv_product_record_not_verified_sku"
+    assert row["source"]["input_sha256"] == sha(paths[1])
+    assert row["facts"] == dict(
+        label="가상 원천 A", category="과실주", abv_percent=0, volume_ml=None
+    )
+    assert all(value is None for value in row["unknown"].values())
+    assert row["field_provenance"]["label"]["csv_column"] == "제품명"
+    assert row["field_provenance"]["abv_percent"]["source_unit"] == "%"
+    assert not (
+        {"source_revision", "instance_of_ids", "producer_ids"} & row["reviewed_source_facts"].keys()
+    )
+    assert not row["physical_sku_or_service_catalog_approved"]
+    loaded, _ = load_export_catalog(*paths[:4], family_review=paths[4])
+    assert loaded == catalog
+    with pytest.raises(AuditError, match="source_review_required"):
+        load_export_catalog(*paths[:4])
+
+
+@pytest.mark.parametrize(
+    "field", ["input_sha256", "receipt_sha256", "review_sha256", "manifest_sha256"]
+)
+def test_at_browse_requires_exact_original_authority_hashes(tmp_path, field):
+    paths, curation = at_inputs(tmp_path)
+    curation[field] = "f" * 64
+    write(paths[3], curation)
+    with pytest.raises(AuditError, match="authority_hash_mismatch"):
+        load_family_browse_catalog(*paths)
+
+
+def test_at_browse_cannot_mix_audited_fixture_receipt_with_later_public_kind(tmp_path, monkeypatch):
+    from pubburi_recommendation import at_source
+
+    paths, curation = at_inputs(tmp_path)
+    curation["evidence_kind"] = "reviewed_public_source"
+    write(paths[3], curation)
+    original = paths[2].read_bytes()
+    (tmp_path / "receipt-before-replacement.json").write_bytes(original)
+    audit = at_source.audit_at_source
+
+    def audit_then_replace(*args):
+        result = audit(*args)
+        changed = json.loads(original)
+        changed["evidence_kind"] = "operator_public_download_receipt"
+        write(paths[2], changed)
+        return result
+
+    monkeypatch.setattr(at_source, "audit_at_source", audit_then_replace)
+    with pytest.raises(AuditError, match="receipt_evidence_kind_mismatch"):
+        load_family_browse_catalog(*paths)
+    assert sha(paths[2]) != curation["receipt_sha256"]
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("source_row_number", 2),
+        ("source_version", "20260101"),
+        ("label", "다른 이름"),
+        ("producer_name", "다른 양조장"),
+        ("category", "증류주"),
+        ("abv_percent", 10.0),
+    ],
+)
+def test_at_browse_checked_facts_cannot_override_the_original_row_review(tmp_path, field, value):
+    paths, curation = at_inputs(tmp_path)
+    next(iter(curation["records"].values()))["checked_facts"][field] = value
+    write(paths[3], curation)
+    with pytest.raises(AuditError, match="facts_conflict"):
+        load_family_browse_catalog(*paths)
+
+
+@pytest.mark.parametrize(
+    "mode", ["unreviewed", "wrong-key", "fixture-as-public", "future", "evidence", "path", "QID"]
+)
+def test_at_browse_never_promotes_other_rows_evidence_or_source_grain(tmp_path, mode):
+    paths, curation = at_inputs(tmp_path)
+    selected = next(iter(curation["records"].values()))
+    if mode == "unreviewed":
+        curation["records"] = {f"at:15048755:{sha(paths[1])}:row:2": selected}
+    elif mode == "wrong-key":
+        selected["catalog_record_id"] = "at-browse-20260731-row2"
+    elif mode == "fixture-as-public":
+        curation["evidence_kind"] = "reviewed_public_source"
+    elif mode == "future":
+        curation["reviewed_at_utc"] = (datetime.now(UTC) + timedelta(days=1)).isoformat()
+    elif mode == "evidence":
+        (tmp_path / "at-provider.html").write_bytes(b"changed")
+    elif mode == "path":
+        curation["fact_evidence_files"] = ["../at-provider.html"]
+    else:
+        curation["records"] = {"Q1": selected}
+    write(paths[3], curation)
+    with pytest.raises((AuditError, ValidationError)):
+        load_family_browse_catalog(*paths)
+
+
+def test_at_browse_current_product_category_and_unknown_features_remain_hard_boundaries(tmp_path):
+    paths, _ = at_inputs(tmp_path)
+    catalog, _ = load_family_browse_catalog(*paths)
+    snapshot, mapping, now = business(catalog)
+    # Fresh hashes cannot approve an actual business category conflicting with the source fact.
+    with pytest.raises(AuditError, match="source_and_business_category_conflict"):
+        export(catalog, snapshot, mapping, now)
+    snapshot["records"][0]["product"]["data"]["type"] = " 과실주 "
+    mapping["records"][0]["product_response_sha256"] = content_hash(
+        snapshot["records"][0]["product"]
+    )
+    with pytest.raises(AuditError, match="source_and_business_category_conflict"):
+        export(catalog, snapshot, mapping, now)
+    snapshot["records"][0]["product"]["data"]["type"] = "과실주"
+    mapping["records"][0]["product_response_sha256"] = content_hash(
+        snapshot["records"][0]["product"]
+    )
+    report, requests = export(catalog, snapshot, mapping, now)
+    assert (
+        report["data_scope"] == SCOPE
+        and report["physical_sku_or_service_catalog_approved"] is False
+    )
+    row = requests["b1-demo-request.json"]["catalog"][0]
+    assert row["product_id"] == 37 and row["abv_percent"] == 0 and row["volume_ml"] is None
+    assert row["taste_tags"] is row["aroma_tags"] is None
+    assert (
+        report["mapping_provenance"][0]["category_and_price_authority"]
+        == "reviewed_source_category_and_captured_business_demo_price"
+    )
+    snapshot["records"][0]["features"]["data"]["tasteTags"] = []
+    mapping["records"][0]["features_response_sha256"] = content_hash(
+        snapshot["records"][0]["features"]
+    )
+    with pytest.raises(AuditError, match="unknown_fields_conflict"):
+        export(catalog, snapshot, mapping, now)
 
 
 def test_actual_authority_preserves_facts_language_relations_unknowns_and_separate_scope(tmp_path):

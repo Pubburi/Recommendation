@@ -236,6 +236,7 @@ def normalize_at_csv(
 
 
 def audit_at_source(manifest_hash, input_path, receipt_path, review_path, evidence_paths):
+    """Return the same validated receipt snapshot that binds the factual outputs."""
     if receipt_path is None:
         raise AuditError("at_public_download_receipt_required")
     receipt_data, receipt_hash = read_json(receipt_path)
@@ -243,7 +244,7 @@ def audit_at_source(manifest_hash, input_path, receipt_path, review_path, eviden
     review_data, review_hash = (None, None) if review_path is None else read_json(review_path)
     review = None if review_data is None else AtReview.model_validate(review_data)
     evidence_hashes = {hashlib.sha256(bounded_bytes(path)).hexdigest() for path in evidence_paths}
-    report, records, request = normalize_at_csv(
+    report, records, _ = normalize_at_csv(
         bounded_bytes(input_path),
         receipt,
         manifest_hash=manifest_hash,
@@ -252,4 +253,4 @@ def audit_at_source(manifest_hash, input_path, receipt_path, review_path, eviden
         evidence_hashes=evidence_hashes,
     )
     report.update(review_sha256=review_hash, fact_evidence_sha256=sorted(evidence_hashes))
-    return report, records, request
+    return report, records, receipt

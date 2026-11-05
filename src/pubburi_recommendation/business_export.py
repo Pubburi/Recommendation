@@ -257,6 +257,11 @@ def build_exports(
         facts = source["facts"]
         if family_browse:
             if (
+                facts.get("category") is not None
+                and raw["product"]["data"]["type"] != facts["category"]
+            ):
+                raise AuditError("family_browse_source_and_business_category_conflict")
+            if (
                 selected.eligibility_scope != FAMILY_SCOPE
                 or record.product.data.name != facts["label"]
                 or facts["volume_ml"] is not None
@@ -305,7 +310,11 @@ def build_exports(
                 "price_kind": selected.price_kind,
                 "identity_review_note": selected.identity_review_note,
                 "source_provenance": source["field_provenance"],
-                "category_and_price_authority": "captured_business_demo_response",
+                "category_and_price_authority": (
+                    "reviewed_source_category_and_captured_business_demo_price"
+                    if facts.get("category") is not None
+                    else "captured_business_demo_response"
+                ),
                 "taste_and_aroma": "source_unknown_preserved_business_tags_and_prose_excluded",
             }
         )

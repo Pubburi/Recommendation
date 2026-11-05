@@ -6,6 +6,7 @@ import hashlib
 import io
 import json
 import subprocess
+from datetime import UTC, datetime
 from pathlib import Path
 
 from smoke_business_export import smoke_business_export
@@ -152,6 +153,99 @@ def smoke_at_source(python: Path, work: Path, manifest: Path) -> None:
     )
     if (output / "b0-demo-request.json").exists():
         raise RuntimeError("Source rows must not automatically become service requests")
+    browse = write(
+        "authored-at-browse.json",
+        {
+            "schema_version": 1,
+            "algorithm": "reviewed-at-named-browse-demo-v1",
+            "evidence_kind": "authored_regression_fixture",
+            "input_sha256": sha(raw),
+            "receipt_sha256": sha(receipt),
+            "manifest_sha256": sha(manifest),
+            "review_sha256": sha(review),
+            "catalog_version": "authored-at-browse-v1",
+            "reviewed_at_utc": datetime.now(UTC).isoformat(),
+            "fact_evidence_files": [evidence.name],
+            "records": {
+                f"at:15048755:{sha(raw)}:row:1": {
+                    "catalog_record_id": "at-browse-20260731-row1",
+                    "source_variant_group": "at-fixture-group",
+                    "identity_scope": "reviewed_source_family_browse_demo_only",
+                    "checked_facts": {
+                        "source_row_number": 1,
+                        "source_version": "20260731",
+                        "label": "가상 원천",
+                        "producer_name": "가상 양조장",
+                        "category": "과실주",
+                        "abv_percent": 0.0,
+                        "volume_ml": None,
+                    },
+                    "review_note": "Authored named row, no QID or physical SKU claim.",
+                }
+            },
+        },
+    )
+    browse_output = work / ".pubburi" / "at-browse"
+    browse_command = [str(python), "-I", "-m", "pubburi_recommendation.family_browse_catalog"]
+    for name, value in {
+        "manifest": manifest,
+        "input": raw,
+        "receipt": receipt,
+        "review": review,
+        "curation": browse,
+        "output-dir": browse_output,
+    }.items():
+        browse_command += ["--" + name, str(value)]
+    subprocess.run(browse_command, cwd=work, check=True, timeout=10, stdout=subprocess.DEVNULL)
+    export_probe = """
+import json,sys
+from pathlib import Path
+from datetime import UTC,datetime
+from pubburi_recommendation.catalog_authority import load_export_catalog
+from pubburi_recommendation.business_export import build_exports,ReviewedMapping,content_hash
+from pubburi_recommendation.content_api import ContentRecommendationRequest
+from pubburi_recommendation.content_model import FittedContentModel,ContentProfile
+from pubburi_recommendation.baseline import RecommendationRequest,recommend_baseline
+manifest,raw,receipt,curation,review=map(Path,sys.argv[1:])
+catalog,_=load_export_catalog(manifest,raw,receipt,curation,family_review=review)
+assert catalog['records'][0]['source']['source_grain']=='named_csv_product_record_not_verified_sku'
+now=datetime.now(UTC);stamp=now.isoformat();scope='reviewed_source_family_browse_demo_only'
+product={'data':{'id':377,'name':'가상 원천','type':'과실주','price':1000,'img':None,
+                 'abv':0,'orderCount':0},'message':'authored','error':None}
+features={'data':dict(productId=377,volumeMl=None,description=None,tasteTags=None,aromaTags=None,
+                     sourceName='Authored',sourceUrl=None,sourceNote=None),
+          'message':'authored','error':None}
+snapshot=dict(schema_version=1,snapshot_origin='demo_fixture',capture_method='authored',
+              capture_started_at_utc=stamp,capture_finished_at_utc=stamp,
+              records=[dict(product=product,features=features)])
+mapping=ReviewedMapping(schema_version=1,algorithm='reviewed-business-demo-export-v1',
+ source_catalog_sha256=content_hash(catalog),business_snapshot_sha256='a'*64,reviewed_at_utc=stamp,
+ records=[dict(catalog_record_id='at-browse-20260731-row1',backend_product_id=377,
+ product_response_sha256=content_hash(product),features_response_sha256=content_hash(features),
+ source_variant_group='at-fixture-group',eligibility_scope=scope,demo_browse_eligible=True,
+ price_kind='demo_snapshot_krw',identity_review_note='Authored explicit mapping, no real ID')])
+report,exports=build_exports(catalog,snapshot,'a'*64,mapping,now)
+assert report['physical_sku_or_service_catalog_approved'] is False
+products=ContentRecommendationRequest.model_validate(exports['b1-demo-request.json']).catalog
+assert products[0].product_id==377 and products[0].abv_percent==0
+assert products[0].volume_ml is products[0].taste_tags is products[0].aroma_tags is None
+model=FittedContentModel.fit(products)
+assert len(model.rank(products,ContentProfile(categories=['과실주'])).items)==1
+b0=recommend_baseline(RecommendationRequest.model_validate(exports['b0-demo-request.json']))
+assert [row.product_id for row in b0.items]==[377]
+"""
+    subprocess.run(
+        [
+            str(python),
+            "-I",
+            "-c",
+            export_probe,
+            *map(str, (manifest, raw, receipt, browse, review)),
+        ],
+        cwd=work,
+        check=True,
+        timeout=30,
+    )
     raw.write_bytes(raw.read_bytes() + b"\n")
     changed = work / ".pubburi" / "at-changed"
     command[-1] = str(changed)
