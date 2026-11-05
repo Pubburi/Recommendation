@@ -3,26 +3,25 @@
   "source_id": "at-traditional-liquor",
   "provider": "한국농수산식품유통공사",
   "source_url": "https://www.data.go.kr/data/15048755/fileData.do?recommendDataYn=Y",
-  "reviewed_on": "2026-10-31",
+  "reviewed_on": "2026-11-05",
   "license_label": "portal-unrestricted-with-additional-notes",
   "evidence_urls": [
     "https://www.data.go.kr/data/15048755/fileData.do?recommendDataYn=Y",
     "https://www.data.go.kr/ugs/selectPortalPolicyView.do"
   ],
-  "local_structured_normalization": false,
-  "structured_feature_fit": false,
+  "local_structured_normalization": true,
+  "structured_feature_fit": true,
   "raw_redistribution_in_git": false,
   "linked_media_included": false,
   "free_text_included": false,
   "additional_conditions": [
-    "The portal lists free/unrestricted use and says file download is possible without login.",
-    "The provider notes seller permission for the registered information, consultation before commercial use/additional information, and possible blank fields.",
-    "Portal policy requires legitimate permission where third-party rights exist; linked images and introduction prose are not included in the proposed structured scope."
+    "Portal free/unrestricted scope and provider seller-permission/commercial-consultation/missingness notes are reviewed together for this noncommercial structured-fact use.",
+    "Only source product labels, brewery labels and individually reviewed same-provider category/alcohol facts are included. No images, creative introductions, inferred sensory tags or raw Git redistribution.",
+    "Bare CSV quantities do not establish units, variants, packaging, sale price, stock or business identity. No dataset-wide unit or SKU promotion."
   ],
   "decision_notes": [
-    "Metadata reviewed: snapshot name 20260731, portal modified 2026-10-22, reported 1251 rows and 16 columns; these are portal metadata, not measured file statistics.",
-    "A public download-metadata POST was rejected by automatic approval review because third-party/training/redistribution conditions were considered unconfirmed. No retry or indirect download was performed.",
-    "This is the specific acquisition/right-review hold from this run, not a rule that commercial consultation alone prohibits this noncommercial project.",
-    "Actual CSV sampling and normalization remain incomplete; no aT data file is committed or used by this CLI."
+    "The earlier automatic acquisition hold is preserved in private evidence. A separately authorized normal public download passed the portal rate guard without login, captcha bypass, accounts or contacts.",
+    "Actual 20260731 CSV: 568141 bytes, SHA256 dce7ab67d7d03a75f8ca1ad9b290ef26ba8d33b29fd029b1865553ff962d4643, strict CP949, 16 columns and 1251 source rows.",
+    "Normalization binds receipt/version/raw bytes and manual review/evidence hashes. Structured feature fit is source-only on explicitly reviewed rows; this manifest never approves service catalog, business IDs or sellable SKUs."
   ]
 }

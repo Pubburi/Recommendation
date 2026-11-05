@@ -1,7 +1,9 @@
 """Run source-container curation from an isolated wheel using authored source shapes."""
 
 import copy
+import csv
 import hashlib
+import io
 import json
 import subprocess
 from pathlib import Path
@@ -9,6 +11,153 @@ from pathlib import Path
 from smoke_business_export import smoke_business_export
 from smoke_gtin_metadata import smoke_gtin_metadata
 from smoke_source_relations import smoke_package_relations
+
+
+def smoke_at_source(python: Path, work: Path, manifest: Path) -> None:
+    """Installed audit -> authored fact curation -> unchanged B1, without live acquisition."""
+
+    def write(name, value):
+        path = work / name
+        path.write_text(json.dumps(value), encoding="utf-8")
+        return path
+
+    def sha(path):
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+
+    stream = io.StringIO(newline="")
+    writer = csv.writer(stream)
+    writer.writerow(
+        [
+            "제품명",
+            "제품소개",
+            "알콜도수1",
+            "알콜도수2",
+            "알콜도수3",
+            "용량1",
+            "용량2",
+            "용량3",
+            "성분1",
+            "성분2",
+            "특이사항",
+            "특징",
+            "양조장",
+            "양조장주소",
+            "홈페이지주소",
+            "수상내역",
+        ]
+    )
+    writer.writerow(
+        [
+            "가상 원천",
+            "제외할 소개",
+            "0",
+            "",
+            "",
+            "750",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "가상 양조장",
+            "",
+            "",
+            "",
+        ]
+    )
+    raw = work / "authored-at.csv"
+    raw.write_bytes(stream.getvalue().encode("cp949"))
+    evidence = work / "authored-at-evidence.html"
+    evidence.write_bytes(b"Authored category and zero ABV fact, not actual provider content")
+    receipt = write(
+        "authored-at-receipt.json",
+        {
+            "schema_version": 1,
+            "evidence_kind": "authored_regression_fixture",
+            "dataset_id": "15048755",
+            "source_version": "20260731",
+            "observed_at_utc": "2026-11-05T00:00:00Z",
+            "source_sha256": sha(raw),
+            "source_bytes": raw.stat().st_size,
+            "http_status": 200,
+            "normal_public_rate_guard_passed": True,
+            "images_fetched": False,
+        },
+    )
+    review = write(
+        "authored-at-review.json",
+        {
+            "schema_version": 1,
+            "algorithm": "at-reviewed-source-facts-v1",
+            "input_sha256": sha(raw),
+            "receipt_sha256": sha(receipt),
+            "manifest_sha256": sha(manifest),
+            "source_version": "20260731",
+            "records": [
+                {
+                    "row_number": 1,
+                    "expected_label": "가상 원천",
+                    "expected_producer": "가상 양조장",
+                    "category": "과실주",
+                    "abv_percent": 0.0,
+                    "abv_unit": "%",
+                    "evidence_url": "https://thesool.com/front/publication/M000000066/view.do?publicationId=fixture",
+                    "evidence_sha256": sha(evidence),
+                    "review_note": "Authored regression only",
+                }
+            ],
+        },
+    )
+    output = work / ".pubburi" / "at-curated"
+    command = [
+        str(python),
+        "-I",
+        "-m",
+        "pubburi_recommendation.catalog_audit",
+        "--manifest",
+        str(manifest),
+        "--input",
+        str(raw),
+        "--receipt",
+        str(receipt),
+        "--review",
+        str(review),
+        "--fact-evidence",
+        str(evidence),
+        "--output-dir",
+        str(output),
+    ]
+    subprocess.run(command, cwd=work, check=True, timeout=10, stdout=subprocess.DEVNULL)
+    probe = (
+        "import json,sys; from pathlib import Path; "
+        "from pubburi_recommendation.content_model import "
+        "ContentProduct,ContentProfile,FittedContentModel; "
+        "from pubburi_recommendation.baseline import Constraints; "
+        "rows=json.loads(Path(sys.argv[1]).read_text()); r=rows[0]; "
+        "assert r['abv_percent']==0 and r['volume_ml'] is r['taste_tags'] is None; "
+        "assert r['backend_product_id'] is None and r['sku_group'] is None; "
+        "p=ContentProduct(product_id=1,sku_group='explicit-offline-row',available=True,"
+        "category=r['category'],abv_percent=r['abv_percent']); "
+        "m=FittedContentModel.fit([p]); "
+        "assert m.summary['numeric_fit']['abv_percent']['observed_count']==1; "
+        "assert len(m.rank([p],ContentProfile(),Constraints(max_abv_percent=0)).items)==1; "
+        "assert m.rank([p],ContentProfile()).fallback_reason=='no_supported_preferences'"
+    )
+    subprocess.run(
+        [str(python), "-I", "-c", probe, str(output / "normalized-records.json")],
+        cwd=work,
+        check=True,
+        timeout=20,
+    )
+    if (output / "b0-demo-request.json").exists():
+        raise RuntimeError("Source rows must not automatically become service requests")
+    raw.write_bytes(raw.read_bytes() + b"\n")
+    changed = work / ".pubburi" / "at-changed"
+    command[-1] = str(changed)
+    rejected = subprocess.run(command, cwd=work, capture_output=True, timeout=10)
+    if rejected.returncode != 2 or changed.exists():
+        raise RuntimeError("Changed source bytes bypassed the installed receipt boundary")
 
 
 def smoke_source_catalog(python: Path, work: Path, manifest: Path, authored_entity: dict) -> None:

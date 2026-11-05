@@ -1,8 +1,8 @@
 # 원천·단위·상품 정체성 감사
 
-`python -m pubburi_recommendation.catalog_audit`는 로컬 JSON을 읽는 오프라인 도구다.
+`python -m pubburi_recommendation.catalog_audit`는 로컬 원문을 읽는 오프라인 도구다.
 네트워크 요청·학습·DB 변경·원본 자동 다운로드를 하지 않는다. 현재 지원하는 실제 입력은
-Wikidata `wbgetentities`의 item JSON이며, 원천 명세는 `sources/`에 둔다.
+Wikidata `wbgetentities` item JSON과 아래 범위의 aT CSV이며, 원천 명세는 `sources/`에 둔다.
 
 원문 준비의 제한된 GET·영수증·offline 재생은 [수집 경계](WIKIDATA-COLLECTION.md)의 별도 CLI를 쓴다.
 HTTP200의 API error는 카탈로그 부재/성공으로 처리하지 않으며 원천 보류와 item 정체성 검수를 분리한다.
@@ -22,19 +22,39 @@ HTTP200의 API error는 카탈로그 부재/성공으로 처리하지 않으며 
 
 ### aT 전통주정보의 현재 확인 상태
 
-[공식 상세](https://www.data.go.kr/data/15048755/fileData.do?recommendDataYn=Y)에서 파일명
-20260731, 수정일 2026-10-22, 16컬럼·1251행, 무료/이용허락범위 제한 없음과 판매자 허락·
-상업적 이용 전 협의·공란 가능 유의사항을 확인했다. **이는 포털 메타데이터이며 파일 실측이 아니다.**
+[공식 상세](https://www.data.go.kr/data/15048755/fileData.do)와
+[포털 정책](https://www.data.go.kr/ugs/selectPortalPolicyView.do)의 무료/제한 없음·판매자 허락·
+상업 이용 전 협의·공란 조건을 함께 검토했다. 이전 자동 승인 보류는 보존하고, 별도 비상업
+사실 필드 이용 승인 후 정상 공개 버튼·rate guard(`needCaptcha:false`)로 CSV를 획득했다.
+로그인·차단 우회·이미지 수집·소개문장 학습·원문 Git 재배포는 하지 않았다.
 
-다운로드 전 메타데이터를 얻는 공개 버튼의 POST가 자동 승인 검토에서 거절됐다. 검토 사유는
-제3자 권리와 학습/재배포 조건 미확정 상태의 실제 응답 저장 위험이었다. 이 요청을 우회하거나
-재시도하지 않았고 aT CSV는 받지 않았다. `sources/at-traditional-liquor.json`에는 이번 획득·
-권리 확인의 보류 상태를 남겼다. **상업적 이용 전 협의 문구만으로 현재 비상업 사용이 금지된다는
-일반 규칙으로 해석하지 않는다.** 추가 권리/검토 문제가 해결되면 별도로 갱신한다.
+실측 원문은 20260731 버전, 568141바이트, SHA256
+`dce7ab67d7d03a75f8ca1ad9b290ef26ba8d33b29fd029b1865553ff962d4643`다.
+응답 charset과 달리 CP949 strict로 16컬럼·1251행을 읽으며 잘못된 인코딩·헤더/행 폭은 거절한다.
+제품명1251·양조장1126을 보존하고 같은 이름/양조장의 중복23행은 자동 병합하지 않는다.
+도수 복수13행·용량 복수31행이며 단위 정의가 `-`이므로 숫자만 보고 vol%/mL나 SKU 조합을 만들지 않는다.
 
-메타데이터의 도수1–3/용량1–3을 서로 곱해 SKU로 만들 수 없고, 공개된 컬럼에는 가격·사용자
-선호·정량 맛 점수와 명시적인 주종 컬럼도 없다. 제품소개·특징 같은 원문은 구조화 수치와 권리를
-구분해 다뤄야 한다. [포털 정책](https://www.data.go.kr/ugs/selectPortalPolicyView.do)도 함께 검토했다.
+`--receipt`는 원문 바이트/해시·버전과 정상 공개 획득의 운영자 기록을 결속한다(서명/권리 판정 아님).
+선택적인 `--review`는 manifest/receipt/원문 해시·버전·행번호·정확한 이름/양조장을 결속하고,
+`--fact-evidence`로 제공한 같은 제공자의 원문 해시와 수동 검수 사실이 일치해야 한다.
+현재 [같은 제공자의 복숭아 자료](https://thesool.com/front/publication/M000000066/view.do?bbsId=A000000044&publicationId=C000002763)와
+[자두 자료](https://thesool.com/front/publication/M000000066/view.do?bbsId=A000000044&publicationId=C000002572)를
+개별 대조한 두 행만 주종/단일 도수 사실을 채택했다. 검수는 원문 의미를 사람이 확인한 명시 권위이며,
+프로그램이 HTML의 진실·동일 상품을 자동 판정하지 않는다. 다른 행·용량·맛/향으로 일반화하지 않는다.
+
+```bash
+python -m pubburi_recommendation.catalog_audit \
+  --manifest sources/at-traditional-liquor.json --input "$PRIVATE_CSV" \
+  --receipt "$PRIVATE_RECEIPT" --review "$PRIVATE_REVIEW" \
+  --fact-evidence "$PRIVATE_PROVIDER_PAGE" --output-dir "$PRIVATE_NEW_OUTPUT"
+```
+
+결과는 버전+원문 해시+행번호의 source row이며 제품명/양조장·원문 수치 문자열을 보존한다.
+미검수 필드와 volume/taste/aroma는 null, 업무 ID/그룹·가격·판매가능성은 미확인이다.
+검수 두 행의 주종/도수만 기존 B1/B0에 명시 offline local ID로 적용해 고정12조건을 실행했다.
+vocabulary1/IDF1·도수6.5–8.5 활성·용량 관측0이며 독립 관련성 정답이 없어 Recall/NDCG는 산출하지 않았다.
+시험 availability/local ID는 선언형 기능 입력이지 원천 관측값·업무 ID가 아니다. 원천 export/bundle은
+계속 거절하며 서비스 SKU·서비스 모델 채택·사람의 추천 품질을 검증한 결과로 세지 않는다.
 
 ## 단위·범위·정체성
 

@@ -417,10 +417,14 @@ def test_cli_writes_private_reports_and_never_overwrites_prior_run(tmp_path):
 
 
 def test_cli_checks_permission_before_opening_source_and_keeps_errors_private(tmp_path):
+    manifest = json.loads(Path("sources/at-traditional-liquor.json").read_text())
+    manifest["local_structured_normalization"] = False
+    denied = tmp_path / "denied-source.json"
+    denied.write_text(json.dumps(manifest))
     result = subprocess.run(
         command(
             "--manifest",
-            "sources/at-traditional-liquor.json",
+            denied,
             "--input",
             tmp_path / "nonexistent-private-input",
             "--output-dir",
