@@ -6,8 +6,8 @@ from pydantic import Field, model_validator
 
 from pubburi_recommendation.baseline import ContractModel, ProductId
 from pubburi_recommendation.content_api import (
-    ContentRecommendationRequest,
     ContentRecommendationResponse,
+    ProfileRecommendationRequest,
 )
 from pubburi_recommendation.content_contracts import GroupId, profile_tokens
 
@@ -24,7 +24,7 @@ class ExplicitFeedback(ContractModel):
         return self
 
 
-class FeedbackRecommendationRequest(ContentRecommendationRequest):
+class FeedbackRecommendationRequest(ProfileRecommendationRequest):
     feedback: ExplicitFeedback = Field(default_factory=ExplicitFeedback)
 
 

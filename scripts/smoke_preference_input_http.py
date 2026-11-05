@@ -37,6 +37,15 @@ def verify_preference_input_http(base_url, request_json):
         ),
         "hardConstraints": dict(minPriceKrw=0, maxPriceKrw=1000, minAbvPercent=0, maxAbvPercent=10),
     }
+    skipped = {
+        "surveyStatus": "SKIPPED",
+        "softPreferences": dict(
+            categories=None, tasteTags=None, aromaTags=None, targetAbvPercent=None
+        ),
+        "hardConstraints": dict(
+            minPriceKrw=None, maxPriceKrw=None, minAbvPercent=None, maxAbvPercent=None
+        ),
+    }
     schema = request_json(base_url, "/openapi.json")
 
     def raw_post(path, raw):
@@ -55,8 +64,32 @@ def verify_preference_input_http(base_url, request_json):
         ref = schema["paths"][path]["post"]["requestBody"]["content"]["application/json"]["schema"][
             "$ref"
         ].split("/")[-1]
-        if "preferences" not in schema["components"]["schemas"][ref]["properties"]:
+        request_schema = schema["components"]["schemas"][ref]
+        properties = request_schema["properties"]
+        if "preferences" not in properties:
             raise RuntimeError("Installed B1 schema missed opt-in Backend preferences")
+        if ("activity_categories" in properties) != (route == "content"):
+            raise RuntimeError("Installed activity scope changed")
+        if route == "content" and (
+            properties["activity_categories"].get("$ref", "").split("/")[-1] != "ActivityCategories"
+            or "activity_categories" in request_schema.get("required", [])
+        ):
+            raise RuntimeError("Installed activity schema must be omittable and non-null")
+        if route != "content":
+            rejected = request_json(
+                base_url,
+                path,
+                body=dict(
+                    catalog=catalog,
+                    preferences=skipped,
+                    activity_categories=dict(
+                        favorite_categories=["과실주"], highly_rated_categories=[]
+                    ),
+                ),
+                expected_status=422,
+            )
+            if rejected["detail"][0]["type"] != "extra_forbidden":
+                raise RuntimeError("Installed non-content route accepted activity input schema")
         extra = {"feedback": {"not_interested_product_ids": [2]}} if route == "feedback" else {}
         enabled = dict(
             catalog=catalog,
@@ -84,15 +117,6 @@ def verify_preference_input_http(base_url, request_json):
             or [i["product_id"] for i in value["items"]] != [1]
         ):
             raise RuntimeError("Installed B1 changed explicit legacy equivalence/zero/hard bounds")
-        skipped = {
-            "surveyStatus": "SKIPPED",
-            "softPreferences": dict(
-                categories=None, tasteTags=None, aromaTags=None, targetAbvPercent=None
-            ),
-            "hardConstraints": dict(
-                minPriceKrw=None, maxPriceKrw=None, minAbvPercent=None, maxAbvPercent=None
-            ),
-        }
         cold = request_json(base_url, path, body=dict(catalog=catalog, preferences=skipped))
         if cold != request_json(base_url, path, body=dict(catalog=catalog)):
             raise RuntimeError("Installed B1 changed skipped cold fallback")
@@ -130,3 +154,35 @@ def verify_preference_input_http(base_url, request_json):
                 "detail": "Catalog request body timed out"
             }:
                 raise RuntimeError("Installed opt-in B1 violated the production body deadline")
+
+    path = "/v1/recommendations/content"
+    activity = dict(favorite_categories=["과실주"], highly_rated_categories=["과실주"])
+    common = dict(catalog=catalog, include_explanations=True)
+    enabled = dict(common, preferences=skipped, activity_categories=activity)
+    status, actual = raw_post(path, json.dumps(enabled))
+    direct_status, direct = raw_post(
+        path, json.dumps(dict(common, profile={"categories": ["과실주"]}))
+    )
+    result = json.loads(actual)
+    if (
+        status != 200
+        or direct_status != 200
+        or actual != direct
+        or [item["product_id"] for item in result["items"]] != [2, 1]
+        or result["items"][0]["explanation"]["score_evidence"][0]["actual_value"] != "과실주"
+        or result["supported_profile_tokens"] != 1
+    ):
+        raise RuntimeError("Installed activity ranking diverged from the existing B1 profile")
+    bounded = request_json(
+        base_url, path, body=dict(enabled, constraints={"max_price_krw": 0, "max_abv_percent": 0})
+    )
+    if [item["product_id"] for item in bounded["items"]] != [1] or bounded[
+        "fallback_reason"
+    ] != "no_matching_features":
+        raise RuntimeError("Installed activity relaxed hard zero bounds or changed fallback")
+    for bad in (
+        dict(enabled, activity_categories=None),
+        dict(enabled, preferences=preferences),
+        dict(enabled, activity_categories=dict(activity, favorite_categories=["사케"])),
+    ):
+        request_json(base_url, path, body=bad, expected_status=422)

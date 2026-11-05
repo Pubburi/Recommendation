@@ -32,7 +32,7 @@ Backend GET 취향의 완전한 shape를 받는다. 기존 R06의 `SearchPrefere
 | targetAbvPercent | preferred_abv_percent. 실제0을 유지하며 soft target이 hard 범위 밖이어도 hard를 바꾸지 않음 |
 | min/maxPriceKrw | 기존 가격 hard bounds와 교집합 |
 | min/maxAbvPercent | 기존 도수 hard bounds와 교집합 |
-| surveyStatus NOT_STARTED / SKIPPED | 모든 필드는 null이어야 함. 원래 빈 취향/B0 fallback을 유지 |
+| surveyStatus NOT_STARTED / SKIPPED | 모든 취향 필드는 null이어야 함. 별도 활동 주종이 없으면 기존 빈 취향/B0 fallback 유지 |
 
 완료 설문의 null은 미확인, `[]`는 확인한 선택 없음이다. 요청 snapshot은 둘을 그대로 보존하고
 둘 다 긍정 취향 근거를 제공하지 않는다. 입력을 수정하거나 저장하지 않는다. 가격/도수의0은
@@ -43,6 +43,20 @@ null로 바꾸지 않는다. volume 취향을 추정하거나 R06의 검색 opt-
 기존 추가 constraints의 hard 주종/제외 ID와 feedback의 negative/positive 그룹 정책은 그대로다.
 결과가 비어도 조건을 넓히지 않는다. 원래 모델 원점수·순서·기여·이유/승리 기준과 요청별1fit,
 정보 없는 profile fallback/positive mode의 무채움을 재사용한다. 빈 catalog는 fit하지 않는다.
+
+## 활동 주종 입력
+
+`content`에서만 선택적 `activity_categories`를 받는다. Backend가 현재 본인과 권한 상태를
+확인하고 승인된 현재 가용 상품의 찜과 상품별 최신 본인 후기(4점 이상)를 각각 주종 배열로 전달한다.
+필수 두 키는 `favorite_categories`, `highly_rated_categories`이며 각각 기존 8개 주종의 고유 배열이다.
+두 배열이 공유하는 주종은 한 번만 반영한다. 합집합은 비어 있으면 안 되며 모든 주종이
+`catalog`의 `available: true` 상품에 있어야 한다.
+
+완전한 `preferences`와 `softPreferences.categories: null`이 필요하다. 명시 선택(`[]` 포함),
+별도 `profile`, 추가 키 또는 활동 입력 자체가 null이면 422다. 활동이 없으면 키를 생략한다.
+유효한 세 설문 상태 모두 원본 snapshot을 유지하며 합집합은 요청의 B1 soft 주종만 채운다.
+맛·향·도수 취향과 필수/제외 조건은 기존 변환을 따른다. 응답의 점수·이유는 기존 B1 의미를
+유지한다. 계정·찜 상품 ID·평점·원시 활동은 전달하지 않으며 제공자 응답에 활동 필드를 추가하지 않는다.
 
 ## 정확한 원문과 정규화 경계
 

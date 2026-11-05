@@ -6,8 +6,8 @@ from pydantic import Field
 
 from pubburi_recommendation.baseline import ContractModel, ProductId
 from pubburi_recommendation.content_api import (
-    ContentRecommendationRequest,
     ContentRecommendationResponse,
+    ProfileRecommendationRequest,
     recommend_content,
 )
 from pubburi_recommendation.content_contracts import GroupId, Score
@@ -21,7 +21,7 @@ class ExplorationPolicy(ContractModel):
     min_relevance_score: Score = 0.0
 
 
-class ExplorationRequest(ContentRecommendationRequest):
+class ExplorationRequest(ProfileRecommendationRequest):
     policy: ExplorationPolicy = Field(default_factory=ExplorationPolicy)
 
 

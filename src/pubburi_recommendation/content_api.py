@@ -14,10 +14,25 @@ from pubburi_recommendation.content_contracts import (
     validate_catalog,
 )
 from pubburi_recommendation.preference_input import resolve_preferences
-from pubburi_recommendation.search_phrases import SearchPreferenceSnapshot
+from pubburi_recommendation.search_phrases import Category, SearchPreferenceSnapshot
 
 
-class ContentRecommendationRequest(ContractModel):
+class ActivityCategories(ContractModel):
+    favorite_categories: list[Category] = Field(max_length=8)
+    highly_rated_categories: list[Category] = Field(max_length=8)
+
+    @field_validator("favorite_categories", "highly_rated_categories")
+    @classmethod
+    def unique_categories(cls, values):
+        if len(values) != len(set(values)):
+            raise ValueError("activity_category_lists_must_be_unique")
+        return values
+
+    def categories(self) -> list[Category]:
+        return sorted(set(self.favorite_categories) | set(self.highly_rated_categories))
+
+
+class ProfileRecommendationRequest(ContractModel):
     catalog: list[ContentProduct] = Field(max_length=1000)
     profile: ContentProfile = Field(default_factory=ContentProfile)
     constraints: Constraints = Field(default_factory=Constraints)
@@ -54,13 +69,53 @@ class ContentRecommendationRequest(ContractModel):
         )
 
 
+class ContentRecommendationRequest(ProfileRecommendationRequest):
+    activity_categories: ActivityCategories | SkipJsonSchema[None] = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        json_schema_extra=lambda schema: schema.pop("default", None),
+    )
+
+    @field_validator("activity_categories")
+    @classmethod
+    def explicit_activity_requires_categories(cls, value):
+        if value is None:
+            raise ValueError("activity_categories_require_two_lists")
+        return value
+
+    @model_validator(mode="after")
+    def validate_activity_categories(self) -> Self:
+        if self.activity_categories is None:
+            return self
+        if self.preferences is None:
+            raise ValueError("activity_categories_require_preferences")
+        if self.preferences.softPreferences.categories is not None:
+            raise ValueError("activity_categories_require_unknown_explicit_categories")
+        categories = self.activity_categories.categories()
+        if not categories:
+            raise ValueError("activity_categories_require_nonempty_union")
+        available = {product.category for product in self.catalog if product.available}
+        if not available.issuperset(categories):
+            raise ValueError("activity_categories_require_available_catalog_categories")
+        return self
+
+    def resolved(self) -> Self:
+        resolved = super().resolved()
+        if self.activity_categories is None:
+            return resolved
+        profile = resolved.profile.model_copy(
+            update={"categories": self.activity_categories.categories()}
+        )
+        return resolved.model_copy(update={"profile": profile, "activity_categories": None})
+
+
 class ContentRecommendationResponse(ContentResponse):
     fit_scope: Literal["request_catalog"] = "request_catalog"
     representation_fitted: bool
     model_fingerprint: str | None = None
 
 
-def recommend_content(request: ContentRecommendationRequest) -> ContentRecommendationResponse:
+def recommend_content(request: ProfileRecommendationRequest) -> ContentRecommendationResponse:
     request = request.resolved()
     if not request.catalog:
         return ContentRecommendationResponse(
