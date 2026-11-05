@@ -24,6 +24,7 @@ from smoke_feedback_http import verify_feedback_http
 from smoke_preference_input_http import verify_preference_input_http
 from smoke_search_phrases_http import verify_search_phrases_http
 from smoke_similar_http import verify_similar_http
+from smoke_source_catalog import smoke_at_source
 from smoke_source_family import smoke_source_family
 from smoke_volume_context import smoke_volume_context
 
@@ -367,6 +368,10 @@ def main(progress: dict[str, str]) -> None:
                 )
         progress["stage"] = "isolated-source-family-fit-cli"
         smoke_source_family(python, work, source_manifest)
+        progress["stage"] = "isolated-at-fact-curation-and-fit"
+        at_manifest = work / "at-manifest.json"
+        shutil.copy2(ROOT / "sources/at-traditional-liquor.json", at_manifest)
+        smoke_at_source(python, work, at_manifest)
         progress["stage"] = "isolated-volume-context-cli"
         smoke_volume_context(python, work, source_manifest)
         progress["stage"] = "isolated-legacy-inventory-cli"

@@ -374,23 +374,43 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--review", type=Path)
+    parser.add_argument("--receipt", type=Path)
+    parser.add_argument("--fact-evidence", type=Path, action="append", default=[])
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
     try:
-        manifest = SourceManifest.model_validate(read_json(args.manifest)[0])
+        manifest_data, manifest_hash = read_json(args.manifest)
+        manifest = SourceManifest.model_validate(manifest_data)
         if not manifest.local_structured_normalization:
             raise AuditError("source_normalization_not_approved")
-        if manifest.source_id != "wikidata-structured" or manifest.license_label != "CC0-1.0":
-            raise AuditError("unsupported_source_or_license")
         if ".pubburi" not in args.output_dir.resolve().parts:
             raise AuditError("outputs_must_be_inside_private_pubburi_directory")
-        payload, input_hash = read_json(args.input)
-        review = (
-            None
-            if args.review is None
-            else ReviewManifest.model_validate(read_json(args.review)[0])
-        )
-        report, records, request = audit(payload, input_hash, review)
+        if (
+            manifest.source_id == "at-traditional-liquor"
+            and manifest.license_label == "portal-unrestricted-with-additional-notes"
+        ):
+            from pubburi_recommendation.at_source import AuditError as AtAuditError
+            from pubburi_recommendation.at_source import audit_at_source
+
+            try:
+                report, records, request = audit_at_source(
+                    manifest_hash, args.input, args.receipt, args.review, args.fact_evidence
+                )
+            except AtAuditError as error:
+                # `python -m` has a distinct __main__ module/class identity.
+                raise AuditError(str(error)) from error
+        elif manifest.source_id == "wikidata-structured" and manifest.license_label == "CC0-1.0":
+            if args.receipt is not None or args.fact_evidence:
+                raise AuditError("at_evidence_options_require_at_source")
+            payload, input_hash = read_json(args.input)
+            review = (
+                None
+                if args.review is None
+                else ReviewManifest.model_validate(read_json(args.review)[0])
+            )
+            report, records, request = audit(payload, input_hash, review)
+        else:
+            raise AuditError("unsupported_source_or_license")
         # New directories prevent overwriting an earlier source/review snapshot.
         args.output_dir.mkdir(parents=True, exist_ok=False)
         outputs = {"audit-report.json": report, "normalized-records.json": records}
