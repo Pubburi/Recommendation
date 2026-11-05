@@ -59,19 +59,13 @@
 
 ## ⚙️ 기술 스택
 
-| 기술 스택 |
-|---|
-| Python |
-| FastAPI |
-| Uvicorn |
-| scikit-learn |
-| NumPy |
-| uv |
-| Hatchling |
-| pytest |
-| HTTPX |
-| Ruff |
-| GitHub Actions |
+| 분류 | 기술 스택 |
+|---|---|
+| 언어 | Python |
+| 애플리케이션 | FastAPI · Uvicorn · scikit-learn · NumPy |
+| 빌드·실행 | uv · Hatchling |
+| 테스트·품질 | pytest · HTTPX · Ruff |
+| CI | GitHub Actions |
 
 <a id="architecture"></a>
 
