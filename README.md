@@ -105,7 +105,7 @@ flowchart LR
 
 #### 결과
 
-당시 단일 item GET의 HTTP200/maxlag 응답은 `api_maxlag`·`accepted=false`·실패 종료로 처리했고 새 상품 원문/카탈로그를 만들지 않았다. 기존 CC0 4항목은 같은 원문 해시로 offline 재생했지만 신규 수집으로 집계하지 않는다. 이 실패 관측의 새 accepted item은0이며 원천의 제품 부재·카탈로그 완성·추천 품질이나 시간 성능 개선을 의미하지 않는다. 이후 정상 복구된 소량 snapshot의 검수와 정보 보존 결과는 [원천 기록](docs/WIKIDATA-COLLECTION.md)에 구분해 남겼다.
+당시 단일 item GET의 HTTP200/maxlag 응답은 `api_maxlag`·`accepted=false`·실패 종료로 처리했고 새 상품 원문/카탈로그를 만들지 않았다. 기존 CC0 4항목은 같은 원문 해시로 offline 재생했지만 신규 수집으로 집계하지 않는다. 이 실패 관측의 새 accepted item은0이며 원천의 제품 부재·카탈로그 완성·추천 품질이나 시간 성능 개선을 의미하지 않는다. 이후 정상 복구된 소량 snapshot의 검수와 정보 보존 결과도 이전 실패와 구분해 남겼다.
 
 #### 대체안/회고
 
@@ -113,7 +113,7 @@ HTTP 상태만 확인하면 구현은 단순하지만 데이터의 완료 조건
 
 #### 코드
 
-API 오류를 원문 저장 전에 거절하는 핵심 분기다. [실제 수집기](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/wikidata_collect.py) · [실제 관측·실행과 한계](docs/WIKIDATA-COLLECTION.md)
+API 오류를 원문 저장 전에 거절하는 핵심 분기다.
 
 ```python
     if "error" in payload:
@@ -150,7 +150,7 @@ JSON decoder가 같은 이름의 마지막 값만 남긴 뒤 Pydantic에 전달�
 
 #### 코드
 
-전체 JSON 파싱이 성공했을 때만 앞서 기록한 중복 판정을 반환하는 핵심 분기다. [실제 입력 경계](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/request_limits.py) · [B0 계약](docs/BASELINE-API.md) · [B1 계약](docs/CONTENT-API.md)
+전체 JSON 파싱이 성공했을 때만 앞서 기록한 중복 판정을 반환하는 핵심 분기다.
 
 ```python
     try:
@@ -193,8 +193,8 @@ unknown을 숫자로 선언한 명세를 거절하도록 연결했다.
 실제 fit/report 승인은 각각 **10/10 → 0/10**, 오류율 차이는 -100%p였다. null 사실로
 수정한 명세는 남은 도수15 하나만 관측하고 상수 열을 비활성화했다. 기존 실제11상품군의
 5fit/6transform 전체 보고서·fingerprint와 원천 authority 해시는 불변이었다.
-[동일 입력의 원값·조건·한계](docs/measurements/2026-11-02-source-quantity-fit-integrity.md)에
-남겼으며 자연 발생률·추천 품질·서비스 성능 개선이나 신규 서비스 카탈로그 학습은 아니다.
+동일 입력의 원값·조건·한계를 함께 남겼으며 자연 발생률·추천 품질·서비스 성능 개선이나
+신규 서비스 카탈로그 학습은 아니다.
 
 #### 대체안/회고
 
@@ -206,8 +206,6 @@ URI 변환표·권리·사실 검수를 각각 확장해야 하며 이 검사는
 #### 코드
 
 명시 수량 타입의 모순과 지원하지 않는 단위를 보류하는 핵심 분기다.
-[정규화 처리](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/catalog_audit.py) ·
-[실제 학습 경계](https://github.com/Pubburi/Recommendation/blob/main/src/pubburi_recommendation/source_family_experiment.py)
 
 ```python
         if (
