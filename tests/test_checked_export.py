@@ -657,6 +657,31 @@ def test_reference_group_exclusion_count_is_checked_without_returned_items(bundl
     assert inspect_response(case, body, constraints, result, checked, spec)
 
 
+@pytest.mark.parametrize("provider", ["content", "feedback"])
+def test_checked_provider_accepts_deterministic_zero_score_profile_fallback(bundle, provider):
+    checked = load(bundle, now=bundle["now"])
+    data = specification(bundle, checked)
+    raw_case = next(c for c in data["cases"] if c["provider"] == provider)
+    keys = list(data["expected_facts"])
+    raw_case.update(
+        profile={},
+        positive_keys=[],
+        expected_eligible_keys=keys,
+        expected_item_keys=keys,
+        expected_comparisons=dict.fromkeys(keys),
+        expected_fallback="no_supported_preferences",
+    )
+    data["cases"] = [raw_case]
+    spec = ProviderSpec.model_validate(data)
+    case, body, constraints = prepare_cases(spec, checked, datetime.now(UTC))[0]
+    with TestClient(app) as client:
+        result = client.post("/v1/recommendations/" + provider, json=body).json()
+    assert [item["score"] for item in result["items"]] == [0.0, 0.0]
+    if provider == "feedback":
+        assert result["ranking_mode"] == "profile_fallback"
+    assert inspect_response(case, body, constraints, result, checked, spec) == []
+
+
 @pytest.mark.parametrize("provider", ["context", "feedback"])
 @pytest.mark.parametrize("fault", ["phantom_on_empty", "duplicate", "unbound_id", "order"])
 def test_matches_exactly_follow_items_even_when_the_result_is_empty(bundle, provider, fault):
