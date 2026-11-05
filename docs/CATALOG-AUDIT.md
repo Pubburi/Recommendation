@@ -53,8 +53,9 @@ python -m pubburi_recommendation.catalog_audit \
 미검수 필드와 volume/taste/aroma는 null, 업무 ID/그룹·가격·판매가능성은 미확인이다.
 검수 두 행의 주종/도수만 기존 B1/B0에 명시 offline local ID로 적용해 고정12조건을 실행했다.
 vocabulary1/IDF1·도수6.5–8.5 활성·용량 관측0이며 독립 관련성 정답이 없어 Recall/NDCG는 산출하지 않았다.
-시험 availability/local ID는 선언형 기능 입력이지 원천 관측값·업무 ID가 아니다. 원천 export/bundle은
-계속 거절하며 서비스 SKU·서비스 모델 채택·사람의 추천 품질을 검증한 결과로 세지 않는다.
+시험 availability/local ID는 선언형 기능 입력이지 원천 관측값·업무 ID가 아니다. 이 감사 출력
+자체의 업무 export/bundle은 계속 거절한다. 별도 명시 검수·업무 매핑은 [browse DEMO](FAMILY-BROWSE-DEMO.md)
+권위를 따르며 서비스 SKU·일반 서비스 모델 채택·사람의 추천 품질로 세지 않는다.
 
 ## 단위·범위·정체성
 

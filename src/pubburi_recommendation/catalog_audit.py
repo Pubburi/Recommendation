@@ -393,12 +393,13 @@ def main() -> int:
             from pubburi_recommendation.at_source import audit_at_source
 
             try:
-                report, records, request = audit_at_source(
+                report, records, _ = audit_at_source(
                     manifest_hash, args.input, args.receipt, args.review, args.fact_evidence
                 )
             except AtAuditError as error:
                 # `python -m` has a distinct __main__ module/class identity.
                 raise AuditError(str(error)) from error
+            request = None
         elif manifest.source_id == "wikidata-structured" and manifest.license_label == "CC0-1.0":
             if args.receipt is not None or args.fact_evidence:
                 raise AuditError("at_evidence_options_require_at_source")

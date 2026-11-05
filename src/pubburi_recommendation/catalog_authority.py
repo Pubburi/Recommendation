@@ -6,7 +6,10 @@ from pubburi_recommendation.source_catalog import load_source_catalog
 
 def load_export_catalog(manifest, raw, receipt, curation, *, family_review=None):
     data, _ = read_json(curation)
-    if data.get("algorithm") == "reviewed-source-family-browse-demo-v1":
+    if data.get("algorithm") in (
+        "reviewed-source-family-browse-demo-v1",
+        "reviewed-at-named-browse-demo-v1",
+    ):
         if family_review is None:
             raise AuditError("family_browse_source_review_required")
         from pubburi_recommendation.family_browse_catalog import load_family_browse_catalog
