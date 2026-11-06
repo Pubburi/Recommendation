@@ -2,6 +2,7 @@
 
 import asyncio
 import copy
+import math
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -110,6 +111,63 @@ def test_unknown_numeric_does_not_pass_a_required_zero_and_unrelated_zero_is_not
     assert result.eligible_count == 4  # Known hard candidates include the all-unknown item.
     assert 40 not in [item.product_id for item in result.items]
     assert all(item.score > 0 for item in result.items)
+
+
+def test_observed_abv_span_is_zero_without_dropping_legitimate_small_interior_scores():
+    catalog = [
+        {
+            "product_id": product_id,
+            "sku_group": f"authored-{product_id}",
+            "category": category,
+            "abv_percent": abv,
+            "price_krw": price,
+            "available": True,
+        }
+        for product_id, category, abv, price in (
+            (1, "맥주", 3.2, 1000),
+            (2, "과실주", 5.0, 2000),
+        )
+    ]
+    with TestClient(app) as client:
+        similar = client.post(
+            PATH,
+            json={"catalog": catalog, "reference_product_id": 1, "include_explanations": True},
+        ).json()
+        content = client.post(
+            "/v1/recommendations/content",
+            json={
+                "catalog": catalog,
+                "profile": {"preferred_abv_percent": 3.2},
+                "constraints": {"min_price_krw": 1500},
+                "include_explanations": True,
+            },
+        ).json()
+        interior = client.post(
+            PATH,
+            json={
+                "catalog": [
+                    *catalog,
+                    {**catalog[1], "product_id": 3, "abv_percent": 4.1},
+                    {**catalog[1], "product_id": 4, "abv_percent": math.nextafter(5.0, 3.2)},
+                ],
+                "reference_product_id": 1,
+                "include_explanations": True,
+            },
+        ).json()
+
+    assert similar["eligible_count"] == content["eligible_count"] == 1
+    assert similar["fallback_reason"] == content["fallback_reason"] == "no_matching_features"
+    assert similar["items"] == []
+    assert [item["product_id"] for item in content["items"]] == [2]
+    baseline = content["items"][0]
+    assert baseline["score"] == 0 and baseline["contributions"] == []
+    assert baseline["explanation"]["score_evidence"] == []
+    assert baseline["explanation"]["basis"] == "deterministic_baseline"
+    assert [item["product_id"] for item in interior["items"]] == [3, 4]
+    assert interior["items"][0]["score"] == pytest.approx(0.25)
+    near_end = interior["items"][1]
+    assert 0 < near_end["score"] < 1e-14
+    assert near_end["explanation"]["score_evidence"][0]["kind"] == "abv_comparison"
 
 
 @pytest.mark.parametrize("mode", ["empty", "missing", "unavailable"])
