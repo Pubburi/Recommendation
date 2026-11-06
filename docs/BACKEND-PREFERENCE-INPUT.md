@@ -46,7 +46,7 @@ null로 바꾸지 않는다. volume 취향을 추정하거나 R06의 검색 opt-
 
 ## 활동 주종 입력
 
-`content`에서만 선택적 `activity_categories`를 받는다. Backend가 현재 본인과 권한 상태를
+`content`와 `feedback`에서 선택적 `activity_categories`를 받는다. Backend가 현재 본인과 권한 상태를
 확인하고 승인된 현재 가용 상품의 찜과 상품별 최신 본인 후기(4점 이상)를 각각 주종 배열로 전달한다.
 필수 두 키는 `favorite_categories`, `highly_rated_categories`이며 각각 기존 8개 주종의 고유 배열이다.
 두 배열이 공유하는 주종은 한 번만 반영한다. 합집합은 비어 있으면 안 되며 모든 주종이
