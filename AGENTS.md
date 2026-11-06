@@ -51,6 +51,9 @@ The coordinator owns shared runtime/DB/API decisions, Notion, final merge and cl
   Provider/fixture-only work never completes a whole feature. Do not wait for external users/future logs.
 - Required unfinished work remains first, even after a missed deadline; report it without extending it.
   Additional models/tuning/optimization/portfolio work begins from2027-01-01 only after MVP acceptance.
+  The 2026-11-06 user instruction brings forward the first offline D1 training and baseline comparison
+  as part of AI03. This scope covers the reviewed cohort experiment and its verification. Broader
+  tuning and service adoption retain their existing gates.
   Final deadline is2027-02-05 inclusive; no implementation/commits/merges from2027-02-06 00:00 KST.
   Chatbot/mobile implementation, real payment/shipping and AWS resources remain outside scope.
 - Resume this chat every4hours with gpt-6.1-sol/ultra. Read current context/ownership/Git/PR status and
