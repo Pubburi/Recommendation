@@ -63,3 +63,29 @@ fit/채택하지 않았다.
 이 baseline은 그대로 유지하며 이후 [별도 고정 SVD 비교](measurements/2026-11-03-source-representation-comparison.md)에서
 같은 원천/분할·전체 보고서를 재검증한 뒤 후보를 실제 fit했다. 원래 baseline의 SVD 미학습 상태와
 별도 후보의 실행/운영 미채택을 구분하고 source 가족을 서비스 SKU로 승격하지 않는다.
+
+## 다층 신경망 후보
+
+같은 승인 snapshot과 상품군·제조사 분할을 사용해 TF-IDF 벡터를 복원하는 신경망을 실제 학습했다.
+은닉층은 `8 → 2 → 8`이고, 가운데 2차원 임베딩의 양수 코사인으로 유사 후보를 비교한다.
+tanh, L-BFGS, seed 0과 최대 1,000회 조건을 첫 학습 전에 고정했다. TF-IDF와 신경망은
+학습군 5개에만 fit하며, 미관측 제조사 상품군 6개는 변환만 한다. 어휘가 전혀 겹치지 않는
+입력은 신경망의 편향 때문에 유사 근거로 바뀌지 않도록 점수를 0으로 유지한다.
+
+| 관측 | TF-IDF 기준 | 신경망 후보 |
+|---|---:|---:|
+| 학습 표현 크기 | 5 × 7 | 5 × 2 |
+| 변환 질의에서 표현이 0인 수 | 5/6 | 5/6 |
+| 양성 사실 질의 1개의 Recall/NDCG@1, @3 | 각각 1.0/1.0 | 각각 1.0/1.0 |
+
+Python 3.12·scikit-learn 1.9.1에서 170회 최적화 후 수렴했다. 복원 RMSE는 학습군 5개에서
+0.00327, 지원되는 변환군 1개에서 0.18829였다. 같은 입력으로 두 번 실행한 보고서는 바이트
+단위로 일치했다. Recall/NDCG는 나머지 5개 질의에 양성 판단이 없어 생략했다. 정답과 표현이
+같은 P31 분류 사실을 사용하고 지원 범위가 늘지 않아, 이번 결과로는 운영 채택이나 추천 품질
+향상을 뒷받침할 수 없다.
+
+위 cohort 예시에서 명령을 `uv run --locked python scripts/evaluate_neural_cohort.py`로 바꾸고
+같은 manifest·spec·snapshot 입력과 새로운 ignored 출력 경로를 지정하면 재현할 수 있다.
+실험 스크립트는 서비스 배포 패키지 밖에 두고 학습 데이터와 상세 보고서는 ignored에 보관한다.
+모델 구성의 근거는 [다층 오토인코더 논문](https://pubmed.ncbi.nlm.nih.gov/16873662/)과
+[MLPRegressor 공식 문서](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html)다.
