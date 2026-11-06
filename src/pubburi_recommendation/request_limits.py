@@ -25,6 +25,15 @@ CATALOG_PATHS = {
 }
 
 
+def routed_path(scope: Message) -> str:
+    path = scope["path"]
+    root_path = scope.get("root_path", "")
+    # Match the router's ASGI path handling, including only a complete prefix segment.
+    if root_path and (path == root_path or path.startswith(root_path + "/")):
+        return path[len(root_path) :]
+    return path
+
+
 def json_media_type(scope: Message) -> bool:
     content_type = next(
         (
@@ -75,7 +84,9 @@ class CatalogRequestLimit:
 
     async def __call__(self, scope: Message, receive: Receive, send: Send) -> None:
         if not (
-            scope["type"] == "http" and scope["method"] == "POST" and scope["path"] in CATALOG_PATHS
+            scope["type"] == "http"
+            and scope["method"] == "POST"
+            and routed_path(scope) in CATALOG_PATHS
         ):
             await self.app(scope, receive, send)
             return

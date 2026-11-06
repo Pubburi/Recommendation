@@ -239,25 +239,56 @@ def test_http_and_openapi_expose_reference_source_and_uncomputed_eligibility():
 
 
 @pytest.mark.parametrize("media", ["application/json", "application/vnd.pubburi+json", None])
-def test_raw_key_ambiguity_and_original_malformed_priority_are_preserved(media):
+@pytest.mark.parametrize("root_path", ["", "/internal/recommendation"])
+def test_raw_key_ambiguity_and_original_malformed_priority_are_preserved(media, root_path):
     headers = {} if media is None else {"Content-Type": media}
-    with TestClient(app) as client:
+    path = root_path + PATH
+    with TestClient(app, root_path=root_path) as client:
         response = client.post(
-            PATH,
+            path,
             content='{"catalog":[],"reference_product_id":1,"reference_product_\\u0069d":1}',
             headers=headers,
         )
         assert response.status_code == 422
         assert response.json()["detail"][0]["type"] == "duplicate_json_key"
         invalid = '{"catalog":[],"catalog":[]} trailing'
-        response = client.post(PATH, content=invalid, headers=headers)
-        existing = client.post("/v1/recommendations/content", content=invalid, headers=headers)
+        response = client.post(path, content=invalid, headers=headers)
+        existing = client.post(
+            root_path + "/v1/recommendations/content", content=invalid, headers=headers
+        )
         assert response.status_code == existing.status_code == 422
         assert response.json() == existing.json()
-        assert client.post(PATH, content=b" " * 524289, headers=headers).status_code == 413
+        error_type = response.json()["detail"][0]["type"]
+        assert error_type != "duplicate_json_key"
+        if media is not None:
+            assert error_type == "json_invalid"
+        assert client.post(path, content=b" " * 524289, headers=headers).status_code == 413
 
 
-def test_absolute_receive_deadline_and_disconnect_precede_schema_and_fit():
+@pytest.mark.parametrize(
+    "root_path, path, expected_status",
+    [
+        ("/internal/recommendation", PATH, 422),
+        ("/v1/recommenda", PATH, 422),
+        ("/internal/recommendation", "/internal/recommendation-other" + PATH, 404),
+        (PATH, PATH, 404),
+    ],
+)
+def test_root_path_is_removed_only_as_a_complete_prefix(root_path, path, expected_status):
+    with TestClient(app, root_path=root_path) as client:
+        result = client.post(
+            path,
+            content='{"catalog":[],"catalog":[],"reference_product_id":1}',
+            headers={"Content-Type": "application/json"},
+            follow_redirects=False,
+        )
+    assert result.status_code == expected_status
+    if expected_status == 422:
+        assert result.json()["detail"][0]["type"] == "duplicate_json_key"
+
+
+@pytest.mark.parametrize("root_path", ["", "/internal/recommendation"])
+def test_absolute_receive_deadline_and_disconnect_precede_schema_and_fit(root_path):
     called = False
 
     async def inner(scope, receive, send):
@@ -277,7 +308,9 @@ def test_absolute_receive_deadline_and_disconnect_precede_schema_and_fit():
             messages.append(message)
 
         await CatalogRequestLimit(inner, body_timeout_seconds=0.01)(
-            {"type": "http", "method": "POST", "path": PATH}, receive, send
+            {"type": "http", "method": "POST", "path": root_path + PATH, "root_path": root_path},
+            receive,
+            send,
         )
         return messages
 
