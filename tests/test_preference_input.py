@@ -190,8 +190,9 @@ def test_original_snapshot_unknown_and_known_empty_are_retained_without_mutation
         )
 
 
+@pytest.mark.parametrize("route", ["content", "feedback"])
 @pytest.mark.parametrize("status", ["NOT_STARTED", "SKIPPED", "COMPLETED"])
-def test_activity_categories_fill_only_missing_soft_categories(status, monkeypatch):
+def test_activity_categories_fill_only_missing_soft_categories(route, status, monkeypatch):
     calls = []
     original = FittedContentModel.fit
     monkeypatch.setattr(
@@ -211,16 +212,16 @@ def test_activity_categories_fill_only_missing_soft_categories(status, monkeypat
     assert request.preferences.model_dump() == preferences == unknown_snapshot(status)
 
     with TestClient(app) as client:
-        actual = post(client, "content", body)
+        actual = post(client, route, body)
         assert actual.status_code == 200 and len(calls) == 1
         direct = post(
             client,
-            "content",
+            route,
             dict(catalog=CATALOG, profile={"categories": ["과실주"]}, include_explanations=True),
         )
         cold = post(
             client,
-            "content",
+            route,
             dict(catalog=CATALOG, preferences=preferences, include_explanations=True),
         )
     assert actual.content == direct.content
@@ -301,9 +302,10 @@ def test_invalid_activity_categories_fail_before_fit(activity, message, monkeypa
     assert "private" not in response.text and "authored-" not in response.text
 
 
+@pytest.mark.parametrize("route", ["content", "feedback"])
 @pytest.mark.parametrize("fault", ["omitted", "partial", "profile", "explicit", "empty"])
 def test_activity_needs_complete_preferences_and_never_overwrites_explicit_categories(
-    fault, monkeypatch
+    route, fault, monkeypatch
 ):
     monkeypatch.setattr(
         FittedContentModel, "fit", lambda *_: pytest.fail("conflicting activity fit")
@@ -323,19 +325,18 @@ def test_activity_needs_complete_preferences_and_never_overwrites_explicit_categ
     else:
         preferences["softPreferences"]["categories"] = ["맥주"] if fault == "explicit" else []
     with TestClient(app) as client:
-        response = post(client, "content", body)
+        response = post(client, route, body)
     assert response.status_code == 422
 
 
-@pytest.mark.parametrize("route", ["exploration", "feedback"])
-def test_only_content_accepts_activity_categories(route, monkeypatch):
+def test_exploration_does_not_accept_activity_categories(monkeypatch):
     monkeypatch.setattr(
         FittedContentModel, "fit", lambda *_: pytest.fail("other route fit activity")
     )
     with TestClient(app) as client:
         response = post(
             client,
-            route,
+            "exploration",
             dict(
                 catalog=CATALOG,
                 preferences=unknown_snapshot(),
@@ -442,6 +443,44 @@ def test_feedback_positive_source_and_negative_priority_remain_existing_engine()
     ]
     assert result["excluded_not_interested_count"] == 2
     assert result["evaluated_positive_count"] == result["informative_positive_count"] == 1
+
+
+def test_feedback_keeps_activity_and_positive_reference_evidence_separate():
+    matching_candidate = dict(CATALOG[1], product_id=6, sku_group="authored-f")
+    body = dict(
+        catalog=[*CATALOG, matching_candidate],
+        preferences=unknown_snapshot(),
+        activity_categories=dict(favorite_categories=["과실주"], highly_rated_categories=[]),
+        feedback=dict(positive_product_ids=[1, 2], not_interested_product_ids=[5]),
+        include_explanations=True,
+    )
+    with TestClient(app) as client:
+        actual = post(client, "feedback", body)
+        excluded_activity = post(
+            client,
+            "feedback",
+            dict(body, feedback=dict(not_interested_product_ids=[3, 5])),
+        )
+    assert actual.status_code == 200
+    result = actual.json()
+    assert result["ranking_mode"] == "positive_feedback"
+    assert result["positive_references"][0]["state"] == "blocked"
+    assert result["excluded_not_interested_count"] == 2
+    assert result["evaluated_positive_count"] == result["informative_positive_count"] == 1
+    assert result["matches"] == [
+        dict(product_id=3, source="profile", positive_product_id=None),
+        dict(product_id=6, source="positive_feedback", positive_product_id=2),
+    ]
+    assert [i["explanation"]["comparison"] for i in result["items"]] == [
+        {"kind": "profile"},
+        {"kind": "reference_product", "product_id": 2},
+    ]
+    assert excluded_activity.status_code == 200
+    fallback = excluded_activity.json()
+    assert fallback["ranking_mode"] == "profile_fallback"
+    assert fallback["fallback_reason"] == "no_matching_features"
+    assert [i["product_id"] for i in fallback["items"]] == [2, 4, 6]
+    assert all(m["source"] == "baseline" for m in fallback["matches"])
 
 
 @pytest.mark.parametrize("route", ROUTES)

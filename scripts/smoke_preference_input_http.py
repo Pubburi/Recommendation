@@ -68,14 +68,15 @@ def verify_preference_input_http(base_url, request_json):
         properties = request_schema["properties"]
         if "preferences" not in properties:
             raise RuntimeError("Installed B1 schema missed opt-in Backend preferences")
-        if ("activity_categories" in properties) != (route == "content"):
+        supports_activity = route in ("content", "feedback")
+        if ("activity_categories" in properties) != supports_activity:
             raise RuntimeError("Installed activity scope changed")
-        if route == "content" and (
+        if supports_activity and (
             properties["activity_categories"].get("$ref", "").split("/")[-1] != "ActivityCategories"
             or "activity_categories" in request_schema.get("required", [])
         ):
             raise RuntimeError("Installed activity schema must be omittable and non-null")
-        if route != "content":
+        if not supports_activity:
             rejected = request_json(
                 base_url,
                 path,
@@ -89,7 +90,7 @@ def verify_preference_input_http(base_url, request_json):
                 expected_status=422,
             )
             if rejected["detail"][0]["type"] != "extra_forbidden":
-                raise RuntimeError("Installed non-content route accepted activity input schema")
+                raise RuntimeError("Installed exploration accepted activity input schema")
         extra = {"feedback": {"not_interested_product_ids": [2]}} if route == "feedback" else {}
         enabled = dict(
             catalog=catalog,
@@ -186,3 +187,18 @@ def verify_preference_input_http(base_url, request_json):
         dict(enabled, activity_categories=dict(activity, favorite_categories=["사케"])),
     ):
         request_json(base_url, path, body=bad, expected_status=422)
+
+    path = "/v1/recommendations/feedback"
+    active = request_json(
+        base_url, path, body=dict(enabled, feedback={"not_interested_product_ids": [1]})
+    )
+    fallback = request_json(
+        base_url, path, body=dict(enabled, feedback={"not_interested_product_ids": [2]})
+    )
+    if (
+        active["matches"] != [dict(product_id=2, source="profile", positive_product_id=None)]
+        or active["items"][0]["explanation"]["comparison"] != {"kind": "profile"}
+        or fallback["matches"] != [dict(product_id=1, source="baseline", positive_product_id=None)]
+        or fallback["fallback_reason"] != "no_matching_features"
+    ):
+        raise RuntimeError("Installed feedback lost activity provenance or negative exclusion")
