@@ -476,6 +476,12 @@ def inspect_response(case, body, constraints, response, checked, spec):
     issues = []
     if [item.product_id for item in parsed.items] != [ids[key] for key in case.expected_item_keys]:
         issues.append("declared_items_or_order_conflict")
+    requires_positive_scores = case.provider in ("exploration", "similar", "context") or (
+        isinstance(parsed, FeedbackRecommendationResponse)
+        and parsed.ranking_mode == "positive_feedback"
+    )
+    if requires_positive_scores and any(item.score <= 0 for item in parsed.items):
+        issues.append("positive_only_provider_returned_nonpositive_score")
     count = None if case.expected_eligible_keys is None else len(case.expected_eligible_keys)
     if parsed.eligible_count != count or parsed.fallback_reason != case.expected_fallback:
         issues.append("declared_eligibility_or_fallback_conflict")

@@ -53,6 +53,7 @@ def smoke_checked_provider_http(python, work, base_url):
         "metadata",
         "exploration_selection",
         "reference_counts",
+        "zero_similarity",
         "spec_changed",
         "spec_deleted",
     ):
@@ -95,6 +96,24 @@ def smoke_checked_provider_http(python, work, base_url):
                         )
                 if mode == "reference_counts" and self.path.endswith(("/similar", "/context")):
                     value["excluded_reference_group_count"] = 0
+                if (
+                    mode == "zero_similarity"
+                    and value["items"]
+                    and (
+                        self.path.endswith(("/similar", "/context", "/exploration"))
+                        or value.get("ranking_mode") == "positive_feedback"
+                    )
+                ):
+                    item = value["items"][0]
+                    item["reasons"].remove("content_similarity")
+                    item["reasons"].append("no_shared_features")
+                    item.update(score=0.0, contributions=[])
+                    item["explanation"].update(
+                        basis="no_shared_features",
+                        score_evidence=[],
+                        score_evidence_truncated=False,
+                        total_positive_contributions=0,
+                    )
                 if state["calls"] == 1 and mode == "spec_changed":
                     copied_spec.write_bytes(copied_spec.read_bytes() + b" ")
                 if state["calls"] == 1 and mode == "spec_deleted":
@@ -123,12 +142,13 @@ def smoke_checked_provider_http(python, work, base_url):
                 proxy.shutdown()
                 thread.join(timeout=5)
         receipt = json.loads((fault_output / "receipt.json").read_text())
-        if mode in ("metadata", "exploration_selection", "reference_counts"):
+        if mode in ("metadata", "exploration_selection", "reference_counts", "zero_similarity"):
             failed = json.loads((fault_output / "acceptance-report.json").read_text())
             rejected_ids = {
                 "metadata": {"feedback", "feedback-blocked-empty"},
                 "exploration_selection": {"exploration", "exploration-cold-empty"},
                 "reference_counts": {"similar", "context"},
+                "zero_similarity": {"similar", "context", "exploration", "feedback"},
             }[mode]
             if (
                 fault.returncode != 1
@@ -137,9 +157,13 @@ def smoke_checked_provider_http(python, work, base_url):
                 or {case["case_id"] for case in failed["cases"] if not case["passed"]}
                 != rejected_ids
             ):
-                raise RuntimeError(
-                    "Installed CLI approved response-level selection/reference faults"
-                )
+                raise RuntimeError("Installed CLI approved a response contract fault")
+            if mode == "zero_similarity" and any(
+                case["issues"] != ["positive_only_provider_returned_nonpositive_score"]
+                for case in failed["cases"]
+                if case["case_id"] in rejected_ids
+            ):
+                raise RuntimeError("Installed CLI missed the positive-only score diagnostic")
         elif (
             fault.returncode != 2
             or receipt["completed"] is not False
