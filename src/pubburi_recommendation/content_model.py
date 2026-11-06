@@ -210,7 +210,12 @@ class FittedContentModel:
                 actual = getattr(product, attribute)
                 if actual is None:
                     continue  # Unknown is neither zero nor evidence of numeric similarity.
-                positions = self.scalers[attribute].transform([[target], [actual]])[:, 0]
+                scaler = self.scalers[attribute]
+                # The exact zero boundary is in source units. Transforming endpoints
+                # separately can round their distance below one and add false evidence.
+                if abs(target - actual) >= scaler.data_range_[0]:
+                    continue
+                positions = scaler.transform([[target], [actual]])[:, 0]
                 similarity = max(0.0, 1.0 - abs(float(positions[0] - positions[1])))
                 if similarity > 0:
                     contributions.append(
