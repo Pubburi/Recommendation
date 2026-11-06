@@ -1,8 +1,9 @@
 # B1 오프라인 상품 표현 fit
 
 `content_model`은 상품 표현을 **실제로 fit하는 메모리 내 모듈**이다. [B1 HTTP adapter](CONTENT-API.md)는
-명시한 각 요청 카탈로그를 지역적으로 fit/rank한다. 모델 저장/로드·Backend B1 연동은 아직 없고,
-자동 수집·다운로드·DB·외부 AI API 없이 직접 작성한 fixture로 HTTP와 fit/transform 경계를 검증한다.
+명시한 각 요청 카탈로그에서 어휘·IDF와 수치 변환을 학습해 순위를 계산한다.
+[검수 DEMO](BACKEND-CATALOG-BUNDLE.md)는 Backend와 Frontend에서 이 B1을 호출하며,
+요청별 fit을 사용한다. 일반 서비스 카탈로그 채택과 버전 모델 저장·로드는 후속 범위다.
 
 실제 감사한 CC0 표본의 검수 판매 SKU는 여전히 0개다. 이 증가분은 모델 코드가 동작한다는
 근거이며 서비스 카탈로그 학습·신규 상품 일반화 품질·AI03/DAT04 전체 완료를 뜻하지 않는다.
@@ -97,9 +98,10 @@ CLI는 `authored_model_fixture`만 받는다. 제공자가 검수하지 않은 �
 ## 후속 작업과 공식 근거
 
 검수 서비스 SKU 확보·실제 source-to-feature 매핑, 관련성 명세·개발/검증/최종 평가와 신규 상품
-평가, 버전별 준비 상태/장애 계약·Backend/Frontend B1 연동은 남아 있다. B1 HTTP 연결 검증이
-실서비스 데이터 fit/품질 완료는 아니다. TruncatedSVD는 현재의
-작은 회귀 fixture로 채택하거나 기각하지 않았고, 충분한 실카탈로그 차원/다양성에서 비교한다.
+평가, 버전별 준비 상태·장애 계약과 일반 서비스의 Backend/Frontend 연결은 남아 있다.
+별도 원천 상품군에서 [TruncatedSVD](measurements/2026-11-03-source-representation-comparison.md)와
+[신경망 오토인코더](SOURCE-FAMILY-COHORT.md#다층-신경망-후보)를 실제 학습해 비교했다.
+두 후보의 서비스 채택에는 더 다양한 검수 카탈로그와 독립 관련성 평가가 필요하다.
 
 2026-11-01 확인한 [TF-IDF analyzer/IDF/L2](https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html),
 [MinMax fit/transform](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html),
