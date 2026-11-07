@@ -66,3 +66,25 @@ def test_reviewed_producer_cannot_cross_partition(monkeypatch):
     rows[-1]["producer_name"] = " F i r s t "
     with pytest.raises(AuditError, match="heldout_producer_groups_must_be_known_and_disjoint"):
         evaluate(protocol, rows, HASH)
+
+
+def test_zero_latent_weight_keeps_b1_order_and_does_not_refit_representation(monkeypatch):
+    evaluate, protocol, rows = inputs(monkeypatch)
+    default = evaluate(protocol, rows, HASH)
+    explicit = evaluate(protocol, rows, HASH, latent_weight=0.5)
+    assert default == explicit
+    baseline = evaluate(protocol, rows, HASH, latent_weight=0)
+    assert all(case["orders"]["b1"] == case["orders"]["d1"] for case in baseline["cases"])
+    assert baseline["b1_fit"] == default["b1_fit"]
+    assert baseline["d1_fit"] == default["d1_fit"]
+
+
+@pytest.mark.parametrize("weight", [-0.1, 1.1, float("nan"), float("inf"), True])
+def test_invalid_latent_weight_is_rejected_before_fit(monkeypatch, weight):
+    evaluate, protocol, rows = inputs(monkeypatch)
+    monkeypatch.setattr(
+        "pubburi_recommendation.content_model.FittedContentModel.fit",
+        lambda *_: pytest.fail("invalid weight reached fit"),
+    )
+    with pytest.raises(AuditError, match="heldout_latent_weight_must_be_finite"):
+        evaluate(protocol, rows, HASH, latent_weight=weight)
