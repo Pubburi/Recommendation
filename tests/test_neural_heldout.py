@@ -68,6 +68,25 @@ def test_reviewed_producer_cannot_cross_partition(monkeypatch):
         evaluate(protocol, rows, HASH)
 
 
+def test_reviewed_volume_is_fitted_only_on_training_observations(monkeypatch):
+    evaluate, protocol, rows = inputs(monkeypatch)
+    rows[0]["volume_ml"] = 375
+    rows[1]["volume_ml"] = 750
+    report = evaluate(protocol, rows, HASH)
+    assert report["training"]["numeric_fit"]["volume_ml"] == {
+        "observed_count": 2,
+        "missing_count": 1,
+        "active": True,
+        "minimum": 375.0,
+        "maximum": 750.0,
+    }
+    rows[-1]["volume_ml"] = 1_000_000
+    changed = evaluate(protocol, rows, HASH)
+    assert changed["training"] == report["training"]
+    assert changed["b1_fit"] == report["b1_fit"]
+    assert changed["d1_fit"] == report["d1_fit"]
+
+
 def test_zero_latent_weight_keeps_b1_order_and_does_not_refit_representation(monkeypatch):
     evaluate, protocol, rows = inputs(monkeypatch)
     default = evaluate(protocol, rows, HASH)

@@ -213,6 +213,17 @@ def test_at_named_rows_reuse_browse_scope_without_fabricating_wikidata_or_busine
         load_export_catalog(*paths[:4])
 
 
+def test_offline_reviewed_volume_does_not_enter_family_browse_as_unknown(tmp_path):
+    paths, curation = at_inputs(tmp_path)
+    reviewed = json.loads(paths[4].read_text())
+    reviewed["records"][0].update(volume_ml=750, volume_unit="mL", volume_scope="single_container")
+    write(paths[4], reviewed)
+    curation["review_sha256"] = sha(paths[4])
+    write(paths[3], curation)
+    with pytest.raises(AuditError, match="at_browse_facts_conflict_with_reviewed_source"):
+        load_family_browse_catalog(*paths)
+
+
 @pytest.mark.parametrize(
     "field", ["input_sha256", "receipt_sha256", "review_sha256", "manifest_sha256"]
 )

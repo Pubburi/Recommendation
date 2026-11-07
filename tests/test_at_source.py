@@ -135,6 +135,56 @@ def test_unreviewed_dataset_is_fact_preserving_not_numerical_or_sku_approval():
     assert report["b0_demo_exported"] == report["b1_wire_exports"] == 0
 
 
+def test_single_container_volume_needs_an_explicit_matching_review():
+    content = raw_csv()
+    data = review(content).model_dump()
+    data["records"][0].update(volume_ml=750, volume_unit="mL", volume_scope="single_container")
+    report, rows, request = run(content, AtReview.model_validate(data))
+    assert rows[0]["volume_ml"] == 750 and rows[1]["volume_ml"] is None
+    assert report["known"]["volume_ml"] == 1
+    assert not rows[0]["service_feature_fit_eligible"]
+    assert rows[0]["backend_product_id"] is rows[0]["sku_group"] is request is None
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"volume_ml": 750},
+        {"volume_unit": "mL", "volume_scope": "single_container"},
+        {"volume_ml": 0, "volume_unit": "mL", "volume_scope": "single_container"},
+        {"volume_ml": True, "volume_unit": "mL", "volume_scope": "single_container"},
+        {"volume_ml": 750, "volume_unit": "L", "volume_scope": "single_container"},
+        {"volume_ml": 750, "volume_unit": "mL", "volume_scope": "multipack"},
+        {
+            "volume_ml": 750,
+            "volume_unit": "mL",
+            "volume_scope": "single_container",
+            "abv_percent": None,
+            "abv_unit": None,
+        },
+    ],
+)
+def test_volume_without_single_container_unit_or_abv_is_not_a_fact(changes):
+    data = review(raw_csv()).model_dump()
+    data["records"][0].update(changes)
+    with pytest.raises(ValueError):
+        AtReview.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    "first,second",
+    [("", ""), ("500", ""), ("750x2", ""), ("750", "375"), ("NaN", ""), ("Infinity", "")],
+)
+def test_volume_review_cannot_override_missing_different_or_multiple_csv_values(first, second):
+    source = list(csv.reader(io.StringIO(raw_csv().decode("cp949"))))[1:]
+    source[0][5:7] = [first, second]
+    content = raw_csv(source)
+    data = review(content).model_dump()
+    data["records"][0].update(volume_ml=750, volume_unit="mL", volume_scope="single_container")
+    with pytest.raises(AuditError, match="volume_requires_matching_single_source_value"):
+        run(content, AtReview.model_validate(data))
+
+
 @pytest.mark.parametrize(
     "field,value",
     [

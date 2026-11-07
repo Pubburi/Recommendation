@@ -66,6 +66,9 @@ class AtRowReview(ContractModel):
     category: str | None = Field(default=None, min_length=1, max_length=64)
     abv_percent: float | None = Field(default=None, ge=0, le=100, allow_inf_nan=False)
     abv_unit: Literal["%"] | None = None
+    volume_ml: int | None = Field(default=None, ge=1, le=1_000_000)
+    volume_unit: Literal["mL"] | None = None
+    volume_scope: Literal["single_container"] | None = None
     evidence_url: str = Field(max_length=2000)
     evidence_sha256: Hash
     review_note: FactText
@@ -84,6 +87,13 @@ class AtRowReview(ContractModel):
             raise ValueError("at_review_requires_same_provider_publication")
         if (self.abv_percent is None) != (self.abv_unit is None):
             raise ValueError("at_reviewed_abv_requires_explicit_percent_unit")
+        unknown_volume = self.volume_ml is None
+        if unknown_volume != (self.volume_unit is None) or unknown_volume != (
+            self.volume_scope is None
+        ):
+            raise ValueError("at_reviewed_volume_requires_explicit_single_container_ml")
+        if self.volume_ml is not None and self.abv_percent is None:
+            raise ValueError("at_reviewed_volume_requires_reviewed_abv")
         if self.category is None and self.abv_percent is None:
             raise ValueError("at_review_requires_an_explicit_feature_fact")
         return self
@@ -179,6 +189,14 @@ def normalize_at_csv(
                     matches = False
                 if not matches or any(value.strip() for value in row[3:5]):
                     raise AuditError("at_reviewed_abv_requires_matching_single_source_value")
+            if facts.volume_ml is not None:
+                try:
+                    value = Decimal(row[5])
+                    matches = value.is_finite() and value == facts.volume_ml
+                except InvalidOperation:
+                    matches = False
+                if not matches or any(value.strip() for value in row[6:8]):
+                    raise AuditError("at_reviewed_volume_requires_matching_single_source_value")
         records.append(
             {
                 "source_record_id": f"at:15048755:{input_hash}:row:{number}",
@@ -189,7 +207,7 @@ def normalize_at_csv(
                 "producer_name": producer,
                 "category": None if facts is None else facts.category,
                 "abv_percent": None if facts is None else facts.abv_percent,
-                "volume_ml": None,
+                "volume_ml": None if facts is None else facts.volume_ml,
                 "taste_tags": None,
                 "aroma_tags": None,
                 "raw_abv_values": row[2:5],
