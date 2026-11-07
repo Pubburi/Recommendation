@@ -59,13 +59,15 @@ def metrics(order, relevant):
     return {"recall": len(hits) / len(relevant), "ndcg": dcg / ideal}
 
 
-def evaluate(protocol, source_records, review_hash, latent_weight=0.5):
+def evaluate(protocol, source_records, review_hash, latent_weight=0.5, *, bottleneck_dimension=2):
     if (
         type(latent_weight) not in (int, float)
         or not math.isfinite(latent_weight)
         or not 0 <= latent_weight <= 1
     ):
         raise AuditError("heldout_latent_weight_must_be_finite_between_zero_and_one")
+    if type(bottleneck_dimension) is not int or bottleneck_dimension not in (2, 4):
+        raise AuditError("heldout_bottleneck_dimension_must_be_two_or_four")
     if protocol.review_sha256 != review_hash:
         raise AuditError("heldout_review_hash_mismatch")
     train_ids = set(protocol.train_rows)
@@ -111,9 +113,8 @@ def evaluate(protocol, source_records, review_hash, latent_weight=0.5):
     train = matrix(b1, training)
     with warnings.catch_warnings(record=True) as emitted:
         warnings.simplefilter("always", ConvergenceWarning)
-        d1 = MLPRegressor(**MODEL_SETTINGS).fit(
-            train, train if train.shape[1] > 1 else train.ravel()
-        )
+        settings = MODEL_SETTINGS | {"hidden_layer_sizes": (8, bottleneck_dimension, 8)}
+        d1 = MLPRegressor(**settings).fit(train, train if train.shape[1] > 1 else train.ravel())
     heldout_ids = sorted(judgments)
     latent = dict(
         zip(heldout_ids, encode(d1, matrix(b1, [products[k] for k in heldout_ids])), strict=True)
@@ -161,6 +162,12 @@ def evaluate(protocol, source_records, review_hash, latent_weight=0.5):
         "scope": "offline_source_material_retrieval_not_service_acceptance",
         "latent_weight": latent_weight,
         "cutoff": AT_K,
+        "neural_representation": {
+            "bottleneck_dimension": bottleneck_dimension,
+            "training_reconstruction_rmse": float(
+                np.sqrt(np.mean((d1.predict(train).reshape(train.shape) - train) ** 2))
+            ),
+        },
         "training": {
             "rows": len(training),
             "producers": len(train_producers),
@@ -186,7 +193,7 @@ def evaluate(protocol, source_records, review_hash, latent_weight=0.5):
         "d1_fit": digest(
             {
                 "b1": b1.fingerprint,
-                "settings": MODEL_SETTINGS,
+                "settings": settings,
                 "weights": [x.tolist() for x in d1.coefs_],
                 "biases": [x.tolist() for x in d1.intercepts_],
             }
@@ -203,6 +210,7 @@ def main():
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--evidence", type=Path, action="append", required=True)
     parser.add_argument("--latent-weight", type=float, default=0.5)
+    parser.add_argument("--bottleneck-dimension", type=int, choices=(2, 4), default=2)
     args = parser.parse_args()
     try:
         if ".pubburi" not in args.output.resolve().parts or args.output.exists():
@@ -218,7 +226,13 @@ def main():
         source, records, receipt = audit_at_source(
             manifest_hash, args.input, args.receipt, args.review, args.evidence
         )
-        report = evaluate(protocol, records, source["review_sha256"], args.latent_weight)
+        report = evaluate(
+            protocol,
+            records,
+            source["review_sha256"],
+            args.latent_weight,
+            bottleneck_dimension=args.bottleneck_dimension,
+        )
         report["protocol_sha256"] = protocol_hash
         report["source_sha256"] = source["input_sha256"]
         report["manifest_sha256"] = source["manifest_sha256"]
