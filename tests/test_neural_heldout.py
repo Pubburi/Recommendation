@@ -1,3 +1,4 @@
+import math
 import runpy
 from pathlib import Path
 
@@ -96,6 +97,39 @@ def test_zero_latent_weight_keeps_b1_order_and_does_not_refit_representation(mon
     assert all(case["orders"]["b1"] == case["orders"]["d1"] for case in baseline["cases"])
     assert baseline["b1_fit"] == default["b1_fit"]
     assert baseline["d1_fit"] == default["d1_fit"]
+
+
+def test_candidate_width_is_consumed_without_refitting_on_heldout_facts(monkeypatch):
+    evaluate, protocol, rows = inputs(monkeypatch)
+    default = evaluate(protocol, rows, HASH)
+    assert default == evaluate(protocol, rows, HASH, bottleneck_dimension=2)
+    candidate = evaluate(protocol, rows, HASH, bottleneck_dimension=4)
+    assert candidate["b1_fit"] == default["b1_fit"]
+    assert candidate["d1_fit"] != default["d1_fit"]
+    representation = candidate["neural_representation"]
+    assert representation["bottleneck_dimension"] == 4
+    assert math.isfinite(representation["training_reconstruction_rmse"])
+    assert representation["training_reconstruction_rmse"] >= 0
+    unsupported = next(row for row in candidate["cases"] if row["query"] == 7)
+    assert unsupported["orders"] == {"b1": [], "d1": []}
+
+    rows[-1].update(category="takju", abv_percent=6.0, volume_ml=1_000_000)
+    protocol.heldout["4"].material = "wheat"
+    changed = evaluate(protocol, rows, HASH, bottleneck_dimension=4)
+    assert changed["d1_fit"] == candidate["d1_fit"]
+    assert changed["training"] == candidate["training"]
+    assert changed["neural_representation"] == representation
+
+
+@pytest.mark.parametrize("dimension", [0, 1, 3, 5, True, 2.0])
+def test_invalid_width_is_rejected_before_fit(monkeypatch, dimension):
+    evaluate, protocol, rows = inputs(monkeypatch)
+    monkeypatch.setattr(
+        "pubburi_recommendation.content_model.FittedContentModel.fit",
+        lambda *_: pytest.fail("invalid dimension reached fit"),
+    )
+    with pytest.raises(AuditError, match="bottleneck_dimension_must_be_two_or_four"):
+        evaluate(protocol, rows, HASH, bottleneck_dimension=dimension)
 
 
 @pytest.mark.parametrize("weight", [-0.1, 1.1, float("nan"), float("inf"), True])

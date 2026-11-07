@@ -1,11 +1,26 @@
 import runpy
 from pathlib import Path
 
+import numpy as np
+from sklearn.neural_network import MLPRegressor
 from test_source_family_cohort import inputs
 
 from pubburi_recommendation.source_family_cohort import CohortExperiment, load_cohort
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/evaluate_neural_cohort.py"
+
+
+def test_encoder_uses_fitted_width_and_keeps_unsupported_rows_zero():
+    script = runpy.run_path(str(SCRIPT))
+    train = np.array([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+    model = MLPRegressor(**(script["MODEL_SETTINGS"] | {"hidden_layer_sizes": (8, 4, 8)})).fit(
+        train, train
+    )
+    transformed = script["encode"](model, np.array([[0.0, 0.0], [1.0, 0.0]]))
+    assert transformed.shape == (2, 4)
+    assert np.all(transformed[0] == 0)
+    assert np.isfinite(transformed).all()
+    assert model.predict(train).shape == train.shape
 
 
 def test_heldout_facts_cannot_train_network_or_make_oov_evidence(tmp_path):

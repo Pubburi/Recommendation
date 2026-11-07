@@ -35,7 +35,7 @@ MODEL_SETTINGS = {
 def encode(model, matrix):
     # Biases must not turn an entirely unsupported item into evidence.
     supported = np.any(matrix != 0, axis=1)
-    vectors = np.zeros((len(matrix), MODEL_SETTINGS["hidden_layer_sizes"][1]))
+    vectors = np.zeros((len(matrix), model.coefs_[1].shape[1]))
     values = matrix[supported]
     for weights, bias in zip(model.coefs_[:2], model.intercepts_[:2], strict=True):
         values = np.tanh(values @ weights + bias)
