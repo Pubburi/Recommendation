@@ -59,7 +59,13 @@ def metrics(order, relevant):
     return {"recall": len(hits) / len(relevant), "ndcg": dcg / ideal}
 
 
-def evaluate(protocol, source_records, review_hash):
+def evaluate(protocol, source_records, review_hash, latent_weight=0.5):
+    if (
+        type(latent_weight) not in (int, float)
+        or not math.isfinite(latent_weight)
+        or not 0 <= latent_weight <= 1
+    ):
+        raise AuditError("heldout_latent_weight_must_be_finite_between_zero_and_one")
     if protocol.review_sha256 != review_hash:
         raise AuditError("heldout_review_hash_mismatch")
     train_ids = set(protocol.train_rows)
@@ -126,7 +132,10 @@ def evaluate(protocol, source_records, review_hash):
         reranked = sorted(
             positive,
             key=lambda item: (
-                -(item.score + max(0.0, float(latent[key] @ latent[item.product_id]))),
+                -(
+                    (1 - latent_weight) * item.score
+                    + latent_weight * max(0.0, float(latent[key] @ latent[item.product_id]))
+                ),
                 item.product_id,
             ),
         )
@@ -149,6 +158,7 @@ def evaluate(protocol, source_records, review_hash):
     return {
         "algorithm": ALGORITHM,
         "scope": "offline_source_material_retrieval_not_service_acceptance",
+        "latent_weight": latent_weight,
         "cutoff": AT_K,
         "training": {
             "rows": len(training),
@@ -190,6 +200,7 @@ def main():
     for name in ("manifest", "input", "receipt", "review", "protocol", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--evidence", type=Path, action="append", required=True)
+    parser.add_argument("--latent-weight", type=float, default=0.5)
     args = parser.parse_args()
     try:
         if ".pubburi" not in args.output.resolve().parts or args.output.exists():
@@ -205,7 +216,7 @@ def main():
         source, records, _ = audit_at_source(
             manifest_hash, args.input, args.receipt, args.review, args.evidence
         )
-        report = evaluate(protocol, records, source["review_sha256"])
+        report = evaluate(protocol, records, source["review_sha256"], args.latent_weight)
         report["protocol_sha256"] = protocol_hash
         report["source_sha256"] = source["input_sha256"]
         write_report(args.output, report)
