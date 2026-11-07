@@ -100,6 +100,7 @@ def evaluate(protocol, source_records, review_hash, latent_weight=0.5):
             available=True,  # Membership in the offline candidate pool only.
             category=row["category"],
             abv_percent=row["abv_percent"],
+            volume_ml=row.get("volume_ml"),
         )
         for key, row in reviewed.items()
     }
@@ -164,6 +165,7 @@ def evaluate(protocol, source_records, review_hash, latent_weight=0.5):
             "rows": len(training),
             "producers": len(train_producers),
             "features": train.shape[1],
+            "numeric_fit": b1.summary["numeric_fit"],
         },
         "heldout": {
             "rows": len(heldout_ids),
@@ -213,12 +215,15 @@ def main():
             raise AuditError("heldout_source_fit_not_approved")
         raw_protocol, protocol_hash = read_json(args.protocol)
         protocol = Protocol.model_validate(raw_protocol)
-        source, records, _ = audit_at_source(
+        source, records, receipt = audit_at_source(
             manifest_hash, args.input, args.receipt, args.review, args.evidence
         )
         report = evaluate(protocol, records, source["review_sha256"], args.latent_weight)
         report["protocol_sha256"] = protocol_hash
         report["source_sha256"] = source["input_sha256"]
+        report["manifest_sha256"] = source["manifest_sha256"]
+        report["source_receipt_sha256"] = source["receipt_sha256"]
+        report["source_captured_at_utc"] = receipt.observed_at_utc
         write_report(args.output, report)
         print(
             json.dumps({key: report[key] for key in ("training", "heldout", "macro", "converged")})

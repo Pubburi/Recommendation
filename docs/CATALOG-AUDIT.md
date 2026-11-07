@@ -37,10 +37,14 @@ HTTP200의 API error는 카탈로그 부재/성공으로 처리하지 않으며 
 `--receipt`는 원문 바이트/해시·버전과 정상 공개 획득의 운영자 기록을 결속한다(서명/권리 판정 아님).
 선택적인 `--review`는 manifest/receipt/원문 해시·버전·행번호·정확한 이름/양조장을 결속하고,
 `--fact-evidence`로 제공한 같은 제공자의 원문 해시와 수동 검수 사실이 일치해야 한다.
-현재 [같은 제공자의 복숭아 자료](https://thesool.com/front/publication/M000000066/view.do?bbsId=A000000044&publicationId=C000002763)와
-[자두 자료](https://thesool.com/front/publication/M000000066/view.do?bbsId=A000000044&publicationId=C000002572)를
-개별 대조한 두 행만 주종/단일 도수 사실을 채택했다. 검수는 원문 의미를 사람이 확인한 명시 권위이며,
-프로그램이 HTML의 진실·동일 상품을 자동 판정하지 않는다. 다른 행·용량·맛/향으로 일반화하지 않는다.
+검수는 원문 의미를 사람이 확인한 명시 권위이며 프로그램이 HTML의 진실·동일 상품을 자동
+판정하지 않는다. 개별 검수와 독립 분할·fit 결과는 [cohort](SOURCE-FAMILY-COHORT.md)에 둔다.
+변경금지 조건이 충돌하는 공식 게시물은 새 정제·학습·정답 근거에서 보류한다.
+
+선택적 `volume_ml`은 1–1,000,000의 정수이며 `volume_unit="mL"`,
+`volume_scope="single_container"`와 검수한 도수를 함께 요구한다. 같은 상품·생산자·단일 도수와
+단일 포장 용량을 공식 자료에서 확인하고, 단위가 없는 CSV의 단일 용량과 수치가 정확히 같아야
+한다. 복수 값·묶음/변형의 모호함·누락·불일치는 거절하거나 unknown으로 보존한다.
 
 ```bash
 python -m pubburi_recommendation.catalog_audit \
@@ -50,12 +54,15 @@ python -m pubburi_recommendation.catalog_audit \
 ```
 
 결과는 버전+원문 해시+행번호의 source row이며 제품명/양조장·원문 수치 문자열을 보존한다.
-미검수 필드와 volume/taste/aroma는 null, 업무 ID/그룹·가격·판매가능성은 미확인이다.
-검수 두 행의 주종/도수만 기존 B1/B0에 명시 offline local ID로 적용해 고정12조건을 실행했다.
-vocabulary1/IDF1·도수6.5–8.5 활성·용량 관측0이며 독립 관련성 정답이 없어 Recall/NDCG는 산출하지 않았다.
+미검수 필드와 taste/aroma는 null이며 명시적으로 검수하지 않은 용량도 null이다. 검수 용량은
+오프라인 원천 특성 평가에만 쓴다. 업무 ID/그룹·가격·판매가능성은 미확인이다.
+기존 family browse는 volume=null 계약을 유지하며 알려진 용량을 unknown으로 바꾸어 받지 않는다.
 시험 availability/local ID는 선언형 기능 입력이지 원천 관측값·업무 ID가 아니다. 이 감사 출력
 자체의 업무 export/bundle은 계속 거절한다. 별도 명시 검수·업무 매핑은 [browse DEMO](FAMILY-BROWSE-DEMO.md)
 권위를 따르며 서비스 SKU·일반 서비스 모델 채택·사람의 추천 품질로 세지 않는다.
+
+정책 개정 뒤의 재검수는 원래 CSV·receipt 바이트와 획득 시각을 보존하고 새 review에서 원
+receipt 해시와 새 manifest 해시를 함께 고정한다. 과거 명세는 당시 고정 manifest로 재현한다.
 
 ## 단위·범위·정체성
 

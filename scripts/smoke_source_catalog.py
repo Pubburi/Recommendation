@@ -70,7 +70,7 @@ def smoke_at_source(python: Path, work: Path, manifest: Path) -> None:
     raw = work / "authored-at.csv"
     raw.write_bytes(stream.getvalue().encode("cp949"))
     evidence = work / "authored-at-evidence.html"
-    evidence.write_bytes(b"Authored category and zero ABV fact, not actual provider content")
+    evidence.write_bytes(b"Authored category, zero percent ABV and one 750 mL container")
     receipt = write(
         "authored-at-receipt.json",
         {
@@ -246,6 +246,23 @@ assert [row.product_id for row in b0.items]==[377]
         check=True,
         timeout=30,
     )
+    volume_review_data = json.loads(review.read_text())
+    volume_review_data["records"][0].update(
+        volume_ml=750, volume_unit="mL", volume_scope="single_container"
+    )
+    volume_review = write("authored-at-volume-review.json", volume_review_data)
+    volume_output = work / ".pubburi" / "at-reviewed-volume"
+    volume_command = command.copy()
+    volume_command[volume_command.index("--review") + 1] = str(volume_review)
+    volume_command[volume_command.index("--output-dir") + 1] = str(volume_output)
+    subprocess.run(volume_command, cwd=work, check=True, timeout=10, stdout=subprocess.DEVNULL)
+    row = json.loads((volume_output / "normalized-records.json").read_text())[0]
+    if (
+        row["volume_ml"] != 750
+        or row["service_feature_fit_eligible"]
+        or any(row[field] is not None for field in ("backend_product_id", "sku_group", "price_krw"))
+    ):
+        raise RuntimeError("Installed reviewed volume bypassed the offline source boundary")
     raw.write_bytes(raw.read_bytes() + b"\n")
     changed = work / ".pubburi" / "at-changed"
     command[-1] = str(changed)

@@ -3,7 +3,7 @@
   "source_id": "at-traditional-liquor",
   "provider": "한국농수산식품유통공사",
   "source_url": "https://www.data.go.kr/data/15048755/fileData.do?recommendDataYn=Y",
-  "reviewed_on": "2026-11-05",
+  "reviewed_on": "2026-11-07",
   "license_label": "portal-unrestricted-with-additional-notes",
   "evidence_urls": [
     "https://www.data.go.kr/data/15048755/fileData.do?recommendDataYn=Y",
@@ -16,7 +16,8 @@
   "free_text_included": false,
   "additional_conditions": [
     "Portal free/unrestricted scope and provider seller-permission/commercial-consultation/missingness notes are reviewed together for this noncommercial structured-fact use.",
-    "Only source product labels, brewery labels and individually reviewed same-provider category/alcohol facts are included. No images, creative introductions, inferred sensory tags or raw Git redistribution.",
+    "Only source product labels, brewery labels and individually reviewed same-provider category/alcohol facts are included. A volume observation additionally requires explicit single-container mL, matching single CSV volume and reviewed alcohol; it is offline source-only. No images, creative introductions, inferred sensory tags or raw Git redistribution.",
+    "Publications with conflicting no-derivatives notices remain held for new normalization, feature fit and evaluation labels. Existing approved factual evidence is assessed by its own terms.",
     "Bare CSV quantities do not establish units, variants, packaging, sale price, stock or business identity. No dataset-wide unit or SKU promotion."
   ],
   "decision_notes": [
