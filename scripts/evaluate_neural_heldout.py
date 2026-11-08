@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 from pydantic import Field
 from sklearn.exceptions import ConvergenceWarning
-from sklearn.neural_network import MLPRegressor
+from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 from pubburi_recommendation.at_source import audit_at_source
 from pubburi_recommendation.baseline import ContractModel, ProductId
@@ -25,6 +25,12 @@ from scripts.evaluate_neural_cohort import MODEL_SETTINGS, encode
 
 AT_K = 3
 ALGORITHM = "b1-neural-rerank-at-heldout-v1"
+PAIRWISE_POLICY = (
+    "Individually reviewed coarse food-base judgments may supervise offline factual-relationship "
+    "learning and evaluation. They are manual target labels, not sensory/user-preference labels, "
+    "ingredient model features or automatic service-catalog fields; creative text and source media "
+    "remain excluded."
+)
 
 
 class MaterialJudgment(ContractModel):
@@ -36,6 +42,9 @@ class Protocol(ContractModel):
     review_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     train_rows: list[ProductId] = Field(min_length=3, max_length=100)
     heldout: dict[str, MaterialJudgment] = Field(min_length=3, max_length=100)
+    training_materials: dict[str, MaterialJudgment] | None = Field(
+        default=None, min_length=3, max_length=100, exclude_if=lambda value: value is None
+    )
 
 
 def matrix(b1, products):
@@ -74,6 +83,41 @@ def training_views(train, category_columns, mode):
     return np.vstack(inputs), np.vstack(targets)
 
 
+def pair_features(left, right):
+    """Symmetric feature pairs; material labels never become model inputs."""
+    return np.concatenate((np.abs(left - right), left * right), axis=-1)
+
+
+def supervised_pairs(protocol, training, reviewed, producers, train):
+    if not protocol.training_materials:
+        raise AuditError("pairwise_requires_reviewed_training_materials")
+    judgments = {int(key): value for key, value in protocol.training_materials.items()}
+    train_ids = {row.product_id for row in training}
+    if (
+        {str(key) for key in judgments} != set(protocol.training_materials)
+        or not judgments.keys() <= train_ids
+        or any(
+            value.evidence_sha256 != reviewed[key]["review_evidence"]["sha256"]
+            for key, value in judgments.items()
+        )
+    ):
+        raise AuditError("pairwise_training_material_authority_mismatch")
+    inputs, targets = [], []
+    for first, left in enumerate(training):
+        for second in range(first + 1, len(training)):
+            right = training[second]
+            a, b = left.product_id, right.product_id
+            if a not in judgments or b not in judgments or producers[a] == producers[b]:
+                continue
+            if not np.any(train[first]) or not np.any(train[second]):
+                continue
+            inputs.append(pair_features(train[first], train[second]))
+            targets.append(int(judgments[a].material == judgments[b].material))
+    if set(targets) != {0, 1}:
+        raise AuditError("pairwise_requires_positive_and_negative_training_pairs")
+    return np.vstack(inputs), np.array(targets), judgments
+
+
 def evaluate(
     protocol,
     source_records,
@@ -84,7 +128,23 @@ def evaluate(
     observation_scale=1.0,
     training_mode="clean",
     max_iterations=1000,
+    objective="reconstruction",
+    pairwise_alpha=0.001,
 ):
+    if type(objective) is not str or objective not in ("reconstruction", "pairwise-material"):
+        raise AuditError("heldout_objective_not_supported")
+    if objective == "reconstruction" and (
+        protocol.training_materials is not None or pairwise_alpha != 0.001
+    ):
+        raise AuditError("training_materials_require_explicit_pairwise_objective")
+    if (
+        type(pairwise_alpha) not in (int, float)
+        or not math.isfinite(pairwise_alpha)
+        or pairwise_alpha not in (0.001, 0.01)
+    ):
+        raise AuditError("heldout_pairwise_alpha_must_be_point001_or_point01")
+    if objective == "pairwise-material" and (training_mode != "clean" or bottleneck_dimension != 2):
+        raise AuditError("pairwise_does_not_use_reconstruction_width_or_corruption")
     if (
         type(latent_weight) not in (int, float)
         or not math.isfinite(latent_weight)
@@ -161,17 +221,35 @@ def evaluate(
             "hidden_layer_sizes": (8, bottleneck_dimension, 8),
             "max_iter": max_iterations,
         }
-        d1 = MLPRegressor(**settings).fit(
-            fit_inputs, fit_targets if train.shape[1] > 1 else fit_targets.ravel()
-        )
+        if objective == "reconstruction":
+            d1 = MLPRegressor(**settings).fit(
+                fit_inputs, fit_targets if train.shape[1] > 1 else fit_targets.ravel()
+            )
+            training_judgments = None
+        else:
+            fit_inputs, fit_targets, training_judgments = supervised_pairs(
+                protocol, training, reviewed, producers, train
+            )
+            settings |= {"hidden_layer_sizes": (8, 4), "alpha": pairwise_alpha}
+            d1 = MLPClassifier(**settings).fit(fit_inputs, fit_targets)
     heldout_ids = sorted(judgments)
-    latent = dict(
-        zip(
-            heldout_ids,
-            encode(d1, matrix(b1, [products[k] for k in heldout_ids]) * input_scale),
-            strict=True,
-        )
+    transformed = matrix(b1, [products[k] for k in heldout_ids]) * input_scale
+    features = dict(zip(heldout_ids, transformed, strict=True))
+    latent = (
+        dict(zip(heldout_ids, encode(d1, transformed), strict=True))
+        if objective == "reconstruction"
+        else None
     )
+
+    def neural_score(query, candidate):
+        if latent is not None:
+            return max(0.0, float(latent[query] @ latent[candidate]))
+        left, right = features[query], features[candidate]
+        if not np.any(left) or not np.any(right):
+            return 0.0
+        # A probability of the reviewed material relationship, never user satisfaction.
+        return float(d1.predict_proba(pair_features(left, right)[None, :])[0, 1])
+
     cases = []
     for key in heldout_ids:
         candidates = [
@@ -189,7 +267,7 @@ def evaluate(
             key=lambda item: (
                 -(
                     (1 - latent_weight) * item.score
-                    + latent_weight * max(0.0, float(latent[key] @ latent[item.product_id]))
+                    + latent_weight * neural_score(key, item.product_id)
                 ),
                 item.product_id,
             ),
@@ -210,13 +288,9 @@ def evaluate(
             }
         )
     labeled = [case["metrics"] for case in cases if case["metrics"] is not None]
-    reconstructed = d1.predict(train).reshape(train.shape)
-    return {
-        "algorithm": ALGORITHM,
-        "scope": "offline_source_material_retrieval_not_service_acceptance",
-        "latent_weight": latent_weight,
-        "cutoff": AT_K,
-        "neural_representation": {
+    if objective == "reconstruction":
+        reconstructed = d1.predict(train).reshape(train.shape)
+        representation = {
             "bottleneck_dimension": bottleneck_dimension,
             "max_iterations": max_iterations,
             "observation_scale": observation_scale,
@@ -231,7 +305,29 @@ def evaluate(
                     np.mean((d1.predict(fit_inputs).reshape(fit_targets.shape) - fit_targets) ** 2)
                 )
             ),
-        },
+        }
+    else:
+        representation = {
+            "objective": objective,
+            "hidden_layer_sizes": list(settings["hidden_layer_sizes"]),
+            "alpha": pairwise_alpha,
+            "max_iterations": max_iterations,
+            "observation_scale": observation_scale,
+            "supervised_training_products": len(training_judgments),
+            "unlabeled_training_products": len(train) - len(training_judgments),
+            "training_pairs": len(fit_targets),
+            "positive_training_pairs": int(fit_targets.sum()),
+            "negative_training_pairs": int((fit_targets == 0).sum()),
+            "training_regularized_log_loss": float(d1.loss_),
+        }
+    return {
+        "algorithm": ALGORITHM
+        if objective == "reconstruction"
+        else "b1-pairwise-neural-at-heldout-v1",
+        "scope": "offline_source_material_retrieval_not_service_acceptance",
+        "latent_weight": latent_weight,
+        "cutoff": AT_K,
+        "neural_representation": representation,
         "training": {
             "rows": len(training),
             "producers": len(train_producers),
@@ -262,6 +358,17 @@ def evaluate(
                 "biases": [x.tolist() for x in d1.intercepts_],
                 **({"observation_scale": observation_scale} if observation_scale != 1 else {}),
                 **({"training_mode": training_mode} if training_mode != "clean" else {}),
+                **(
+                    {
+                        "objective": objective,
+                        "training_materials": {
+                            str(key): value.model_dump()
+                            for key, value in sorted(training_judgments.items())
+                        },
+                    }
+                    if training_judgments is not None
+                    else {}
+                ),
             }
         ),
         "converged": not any(issubclass(item.category, ConvergenceWarning) for item in emitted),
@@ -285,6 +392,10 @@ def main():
         "--training-mode", choices=("clean", "numeric-block-denoising"), default="clean"
     )
     parser.add_argument("--max-iterations", type=int, choices=(1000, 3000), default=1000)
+    parser.add_argument(
+        "--objective", choices=("reconstruction", "pairwise-material"), default="reconstruction"
+    )
+    parser.add_argument("--pairwise-alpha", type=float, choices=(0.001, 0.01), default=0.001)
     args = parser.parse_args()
     try:
         if ".pubburi" not in args.output.resolve().parts or args.output.exists():
@@ -295,6 +406,11 @@ def main():
             manifest.local_structured_normalization and manifest.structured_feature_fit
         ):
             raise AuditError("heldout_source_fit_not_approved")
+        if (
+            args.objective == "pairwise-material"
+            and PAIRWISE_POLICY not in manifest.additional_conditions
+        ):
+            raise AuditError("pairwise_source_target_review_not_approved")
         raw_protocol, protocol_hash = read_json(args.protocol)
         protocol = Protocol.model_validate(raw_protocol)
         source, records, receipt = audit_at_source(
@@ -309,6 +425,8 @@ def main():
             observation_scale=args.observation_scale,
             training_mode=args.training_mode,
             max_iterations=args.max_iterations,
+            objective=args.objective,
+            pairwise_alpha=args.pairwise_alpha,
         )
         report["protocol_sha256"] = protocol_hash
         report["source_sha256"] = source["input_sha256"]
