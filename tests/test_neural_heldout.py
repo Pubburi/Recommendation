@@ -2,6 +2,7 @@ import math
 import runpy
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from pubburi_recommendation.catalog_audit import AuditError
@@ -119,6 +120,69 @@ def test_candidate_width_is_consumed_without_refitting_on_heldout_facts(monkeypa
     assert changed["d1_fit"] == candidate["d1_fit"]
     assert changed["training"] == candidate["training"]
     assert changed["neural_representation"] == representation
+
+
+def test_observation_scale_changes_only_flags_and_restores_original_rmse(monkeypatch):
+    evaluate, protocol, rows = inputs(monkeypatch)
+    rows[0]["abv_percent"] = 0.0
+    rows[2]["abv_percent"] = None
+    estimator = evaluate.__globals__["MLPRegressor"]
+    fits = []
+
+    class Capture(estimator):
+        def fit(self, x, y):
+            fitted = super().fit(x, y)
+            fits.append((x.copy(), y.copy(), fitted))
+            return fitted
+
+    monkeypatch.setitem(evaluate.__globals__, "MLPRegressor", Capture)
+    default = evaluate(protocol, rows, HASH)
+    assert default == evaluate(protocol, rows, HASH, observation_scale=1)
+    candidate = evaluate(protocol, rows, HASH, observation_scale=0.5)
+    original, original_target, _ = fits[0]
+    scaled, scaled_target, model = fits[2]
+    # Two category columns and then ABV value/observation flag. Known zero and
+    # unknown retain the same value but distinct evidence even after downweighting.
+    np.testing.assert_array_equal(original[:, -2:], [[0, 1], [1, 1], [0, 0]])
+    np.testing.assert_array_equal(scaled[:, :-1], original[:, :-1])
+    np.testing.assert_array_equal(scaled[:, -1], original[:, -1] * 0.5)
+    np.testing.assert_array_equal(original_target, original)
+    np.testing.assert_array_equal(scaled_target, scaled)
+    prediction = model.predict(scaled)
+    inverse_scale = np.ones(scaled.shape[1])
+    inverse_scale[-1] = 0.5
+    representation = candidate["neural_representation"]
+    assert representation["training_reconstruction_rmse"] == pytest.approx(
+        np.sqrt(np.mean((prediction / inverse_scale - original) ** 2))
+    )
+    assert representation["training_objective_rmse"] == pytest.approx(
+        np.sqrt(np.mean((prediction - scaled) ** 2))
+    )
+    assert representation["observation_scale"] == 0.5
+    assert candidate["b1_fit"] == default["b1_fit"]
+    assert candidate["d1_fit"] != default["d1_fit"]
+    assert rows[0]["abv_percent"] == 0.0 and rows[2]["abv_percent"] is None
+    unsupported = next(row for row in candidate["cases"] if row["query"] == 7)
+    assert unsupported["orders"] == {"b1": [], "d1": []}
+
+    rows[-1].update(category="takju", abv_percent=80.0, volume_ml=1_000_000)
+    protocol.heldout["4"].material = "wheat"
+    changed = evaluate(protocol, rows, HASH, observation_scale=0.5)
+    assert changed["b1_fit"] == candidate["b1_fit"]
+    assert changed["d1_fit"] == candidate["d1_fit"]
+    assert changed["training"] == candidate["training"]
+    assert changed["neural_representation"] == representation
+
+
+@pytest.mark.parametrize("scale", [0, 0.25, 2, True, float("nan"), float("inf"), "0.5"])
+def test_invalid_observation_scale_is_rejected_before_fit(monkeypatch, scale):
+    evaluate, protocol, rows = inputs(monkeypatch)
+    monkeypatch.setattr(
+        "pubburi_recommendation.content_model.FittedContentModel.fit",
+        lambda *_: pytest.fail("invalid scale reached fit"),
+    )
+    with pytest.raises(AuditError, match="heldout_observation_scale_must_be_one_or_half"):
+        evaluate(protocol, rows, HASH, observation_scale=scale)
 
 
 @pytest.mark.parametrize("dimension", [0, 1, 3, 5, True, 2.0])
