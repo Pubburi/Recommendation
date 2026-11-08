@@ -83,6 +83,7 @@ def evaluate(
     bottleneck_dimension=2,
     observation_scale=1.0,
     training_mode="clean",
+    max_iterations=1000,
 ):
     if (
         type(latent_weight) not in (int, float)
@@ -104,6 +105,8 @@ def evaluate(
         "numeric-block-denoising",
     ):
         raise AuditError("heldout_training_mode_must_be_clean_or_numeric_block_denoising")
+    if type(max_iterations) is not int or max_iterations not in (1000, 3000):
+        raise AuditError("heldout_max_iterations_must_be_one_or_three_thousand")
     if protocol.review_sha256 != review_hash:
         raise AuditError("heldout_review_hash_mismatch")
     train_ids = set(protocol.train_rows)
@@ -154,7 +157,10 @@ def evaluate(
     fit_inputs, fit_targets = training_views(train, len(b1.vectorizer.vocabulary_), training_mode)
     with warnings.catch_warnings(record=True) as emitted:
         warnings.simplefilter("always", ConvergenceWarning)
-        settings = MODEL_SETTINGS | {"hidden_layer_sizes": (8, bottleneck_dimension, 8)}
+        settings = MODEL_SETTINGS | {
+            "hidden_layer_sizes": (8, bottleneck_dimension, 8),
+            "max_iter": max_iterations,
+        }
         d1 = MLPRegressor(**settings).fit(
             fit_inputs, fit_targets if train.shape[1] > 1 else fit_targets.ravel()
         )
@@ -212,6 +218,7 @@ def evaluate(
         "cutoff": AT_K,
         "neural_representation": {
             "bottleneck_dimension": bottleneck_dimension,
+            "max_iterations": max_iterations,
             "observation_scale": observation_scale,
             "training_mode": training_mode,
             "training_view_rows": len(fit_inputs),
@@ -258,6 +265,9 @@ def evaluate(
             }
         ),
         "converged": not any(issubclass(item.category, ConvergenceWarning) for item in emitted),
+        "convergence_warnings": [
+            str(item.message) for item in emitted if issubclass(item.category, ConvergenceWarning)
+        ],
         "iterations": int(d1.n_iter_),
         "cases": cases,
     }
@@ -274,6 +284,7 @@ def main():
     parser.add_argument(
         "--training-mode", choices=("clean", "numeric-block-denoising"), default="clean"
     )
+    parser.add_argument("--max-iterations", type=int, choices=(1000, 3000), default=1000)
     args = parser.parse_args()
     try:
         if ".pubburi" not in args.output.resolve().parts or args.output.exists():
@@ -297,6 +308,7 @@ def main():
             bottleneck_dimension=args.bottleneck_dimension,
             observation_scale=args.observation_scale,
             training_mode=args.training_mode,
+            max_iterations=args.max_iterations,
         )
         report["protocol_sha256"] = protocol_hash
         report["source_sha256"] = source["input_sha256"]
