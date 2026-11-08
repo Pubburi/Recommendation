@@ -221,6 +221,58 @@ URI 변환표·권리·사실 검수를 각각 확장해야 하며 이 검사는
             continue
 ```
 
+### 4. health 뒤 첫 추천이 제한 시간을 넘던 초기화 경계
+
+#### 문제
+
+운영을 가정한 로컬 세 서버 통합에서 health는 정상이었지만 첫 B1 추천이 Backend의3초 예산을
+넘어 UNAVAILABLE을 반환했다. 기본 목록은 별도 명시 선택이다. 같은 프로세스의 다음 추천은
+수 ms여서 평소 요청만으로는 발견하기 어려웠다.
+
+#### 원인
+
+요청 카탈로그에서만 fit하도록 수치 라이브러리 import도 첫 B1까지 미뤘다. 동일6상품·새 runtime-only
+설치3회에서 첫 요청은22.40–22.82초였고 같은 프로세스의 다음 요청은3.38–4.45ms였다.
+별도 단계 진단에서는 sklearn 의존성 import에 약21초가 걸렸다. bytecode와 OS 초기 로드 중
+어느 것이 원인인지는 확정하지 않았으며, health 성공이 추천 의존성 준비를 뜻하지 않는 경계가 문제였다.
+
+#### 해결
+
+ASGI lifespan에서 요청을 받기 전에 수치 의존성 import만 준비한다. 샘플 상품 fit·모델 다운로드·
+요청 간 학습 상태 공유는 추가하지 않는다. 준비 중 Python 예외가 나면 종류만 기록하고 독립적인
+health/B0는 기동시킨다. Backend3초·B0 예산과 timeout 재시도 정책은 바꾸지 않았다.
+
+#### 결과
+
+같은 조건의 완료 관측에서 health 뒤 첫 추천의3초 초과는3/3→0/3이었다. 순위·점수·fingerprint·
+기여 이유는 동일했다. 대신 health 준비가 약23초로 늘었고 프로세스 시작부터 첫 추천까지도 약23초다.
+초기화 시간을 제거하거나 전체 기동을 빠르게 한 성과로 해석하지 않는다. 앞선20초 관측 만료1회도
+실패로 보존했으며, 소량 로컬 측정은 실제 사용자 지연 분포나 운영 SLO 검증을 대신하지 않는다.
+
+#### 대체안/회고
+
+요청 제한을 늘리면 초기화 부담이 사용자에게 남는다. 프로젝트 wheel만 bytecode로 준비한 대안도
+첫 요청 지연을 없애지 못했고, 전체 의존성 precompile은 미검증 대안이다. 설치 캐시에 기대지 않는
+준비 경계를 선택했다. cold startup 대기 비용은 남으며, import 예외 뒤 health 성공도 B1 성공 보장은
+아니므로 Backend 대체 응답을 유지한다. 네이티브 종료나 끝나지 않는 import까지 격리하지는 못한다.
+
+#### 코드
+
+```python
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Pay dependency initialization before accepting B1 traffic; never fit sample/user data.
+    # Numerical dependency failures must leave the independent health/B0 paths available.
+    try:
+        import_module("pubburi_recommendation.content_model")
+    except Exception as error:
+        logging.getLogger(__name__).warning(
+            "B1 dependency preparation failed (%s); health/B0 remain available",
+            type(error).__name__,
+        )
+    yield
+```
+
 <a id="development"></a>
 
 ## 🚀 로컬 실행

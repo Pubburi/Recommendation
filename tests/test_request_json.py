@@ -223,14 +223,23 @@ def test_size_limit_still_precedes_json_ambiguity_and_other_parse_failures_stay_
         assert nonjson.status_code == 422 and nonjson.json() != EXPECTED
 
 
-def test_rejected_nonempty_content_does_not_load_or_execute_model_runtime():
-    code = """import sys
+def test_rejected_content_does_not_retry_unavailable_model_runtime():
+    code = """import sys,importlib.abc
+attempts=[]
+class UnavailableModel(importlib.abc.MetaPathFinder):
+ def find_spec(self,fullname,path=None,target=None):
+  if fullname=='pubburi_recommendation.content_model':
+   attempts.append(fullname)
+   raise ImportError('authored unavailable dependency')
+sys.meta_path.insert(0,UnavailableModel())
 from fastapi.testclient import TestClient
 from pubburi_recommendation.main import app
 with TestClient(app) as client:
+ assert len(attempts)==1  # Lifespan preparation is isolated from request validation.
  response=client.post('/v1/recommendations/content',content='{"catalog":[],"catalog":[]}',headers={'Content-Type':'application/json'})
  assert response.status_code==422
  assert client.get('/health').status_code==200
+ assert len(attempts)==1
 names=('numpy','sklearn','pubburi_recommendation.content_model')
 assert not any(name in sys.modules for name in names)
 """
