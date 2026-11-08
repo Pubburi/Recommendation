@@ -185,6 +185,83 @@ def test_invalid_observation_scale_is_rejected_before_fit(monkeypatch, scale):
         evaluate(protocol, rows, HASH, observation_scale=scale)
 
 
+def test_denoising_views_mask_only_observed_blocks_with_remaining_evidence(monkeypatch):
+    monkeypatch.syspath_prepend(str(ROOT))
+    script = runpy.run_path(str(ROOT / "scripts/evaluate_neural_heldout.py"))
+    train = np.array(
+        [[1, 0, 1, 0, 0], [1, 0.4, 1, 0.8, 1], [0, 0, 0, 0, 1], [1, 0, 0, 0, 0]],
+        dtype=float,
+    )
+    original = train.copy()
+    x, y = script["training_views"](train, 1, "numeric-block-denoising")
+    np.testing.assert_array_equal(train, original)
+    np.testing.assert_array_equal(x[:4], original)
+    np.testing.assert_array_equal(x[4:], [[1, 0, 0, 0, 0], [1, 0, 0, 0.8, 1], [1, 0.4, 1, 0, 0]])
+    np.testing.assert_array_equal(y, original[[0, 1, 2, 3, 0, 1, 1]])
+    assert np.any(x != 0, axis=1).all()
+
+
+def test_denoising_fit_uses_train_views_without_changing_facts_or_b1(monkeypatch):
+    evaluate, protocol, rows = inputs(monkeypatch)
+    rows[0].update(abv_percent=0.0, volume_ml=375)
+    rows[1]["volume_ml"] = 750
+    rows[2]["abv_percent"] = None
+    estimator = evaluate.__globals__["MLPRegressor"]
+    fits = []
+
+    class Capture(estimator):
+        def fit(self, x, y):
+            fitted = super().fit(x, y)
+            fits.append((x.copy(), y.copy(), fitted))
+            return fitted
+
+    monkeypatch.setitem(evaluate.__globals__, "MLPRegressor", Capture)
+    default = evaluate(protocol, rows, HASH)
+    assert default == evaluate(protocol, rows, HASH, training_mode="clean")
+    candidate = evaluate(protocol, rows, HASH, training_mode="numeric-block-denoising")
+    x, y, model = fits[2]
+    assert len(x) == len(y) == 7
+    np.testing.assert_array_equal(x[:3], fits[0][0])
+    np.testing.assert_array_equal(y[:3], fits[0][1])
+    representation = candidate["neural_representation"]
+    assert representation["training_view_rows"] == 7
+    assert representation["training_corrupted_views"] == 4
+    assert representation["training_mode"] == "numeric-block-denoising"
+    assert representation["training_reconstruction_rmse"] == pytest.approx(
+        np.sqrt(np.mean((model.predict(x[:3]) - y[:3]) ** 2))
+    )
+    assert representation["training_objective_rmse"] == pytest.approx(
+        np.sqrt(np.mean((model.predict(x) - y) ** 2))
+    )
+    assert candidate["training"]["rows"] == 3
+    assert candidate["b1_fit"] == default["b1_fit"]
+    assert candidate["d1_fit"] != default["d1_fit"]
+    for base, changed in zip(default["cases"], candidate["cases"], strict=True):
+        assert base["orders"]["b1"] == changed["orders"]["b1"]
+        assert set(changed["orders"]["d1"]) == set(changed["orders"]["b1"])
+    assert candidate["cases"][-1]["orders"] == {"b1": [], "d1": []}
+    assert rows[0]["abv_percent"] == 0.0 and rows[2]["abv_percent"] is None
+
+    rows[-1].update(category="takju", abv_percent=90.0, volume_ml=1_000_000)
+    protocol.heldout["4"].material = "wheat"
+    changed = evaluate(protocol, rows, HASH, training_mode="numeric-block-denoising")
+    assert changed["d1_fit"] == candidate["d1_fit"]
+    assert changed["b1_fit"] == candidate["b1_fit"]
+    assert changed["training"] == candidate["training"]
+    assert changed["neural_representation"] == representation
+
+
+@pytest.mark.parametrize("mode", ["", "denoise", "CLEAN", None, True, 1, ["clean"]])
+def test_invalid_training_mode_is_rejected_before_fit(monkeypatch, mode):
+    evaluate, protocol, rows = inputs(monkeypatch)
+    monkeypatch.setattr(
+        "pubburi_recommendation.content_model.FittedContentModel.fit",
+        lambda *_: pytest.fail("invalid training mode reached fit"),
+    )
+    with pytest.raises(AuditError, match="training_mode_must_be_clean_or_numeric_block_denoising"):
+        evaluate(protocol, rows, HASH, training_mode=mode)
+
+
 @pytest.mark.parametrize("dimension", [0, 1, 3, 5, True, 2.0])
 def test_invalid_width_is_rejected_before_fit(monkeypatch, dimension):
     evaluate, protocol, rows = inputs(monkeypatch)
