@@ -59,7 +59,15 @@ def metrics(order, relevant):
     return {"recall": len(hits) / len(relevant), "ndcg": dcg / ideal}
 
 
-def evaluate(protocol, source_records, review_hash, latent_weight=0.5, *, bottleneck_dimension=2):
+def evaluate(
+    protocol,
+    source_records,
+    review_hash,
+    latent_weight=0.5,
+    *,
+    bottleneck_dimension=2,
+    observation_scale=1.0,
+):
     if (
         type(latent_weight) not in (int, float)
         or not math.isfinite(latent_weight)
@@ -68,6 +76,13 @@ def evaluate(protocol, source_records, review_hash, latent_weight=0.5, *, bottle
         raise AuditError("heldout_latent_weight_must_be_finite_between_zero_and_one")
     if type(bottleneck_dimension) is not int or bottleneck_dimension not in (2, 4):
         raise AuditError("heldout_bottleneck_dimension_must_be_two_or_four")
+    if (
+        type(observation_scale) not in (int, float)
+        or not math.isfinite(observation_scale)
+        or observation_scale not in (0.5, 1.0)
+    ):
+        raise AuditError("heldout_observation_scale_must_be_one_or_half")
+    observation_scale = float(observation_scale)
     if protocol.review_sha256 != review_hash:
         raise AuditError("heldout_review_hash_mismatch")
     train_ids = set(protocol.train_rows)
@@ -110,14 +125,22 @@ def evaluate(protocol, source_records, review_hash, latent_weight=0.5, *, bottle
     b1 = FittedContentModel.fit(training)
     if b1.vectorizer is None:
         raise AuditError("heldout_requires_training_category_vocabulary")
-    train = matrix(b1, training)
+    original_train = matrix(b1, training)
+    input_scale = np.ones(original_train.shape[1])
+    # Each active numeric block is its scaled value followed by its observation flag.
+    input_scale[len(b1.vectorizer.vocabulary_) + 1 :: 2] = observation_scale
+    train = original_train * input_scale
     with warnings.catch_warnings(record=True) as emitted:
         warnings.simplefilter("always", ConvergenceWarning)
         settings = MODEL_SETTINGS | {"hidden_layer_sizes": (8, bottleneck_dimension, 8)}
         d1 = MLPRegressor(**settings).fit(train, train if train.shape[1] > 1 else train.ravel())
     heldout_ids = sorted(judgments)
     latent = dict(
-        zip(heldout_ids, encode(d1, matrix(b1, [products[k] for k in heldout_ids])), strict=True)
+        zip(
+            heldout_ids,
+            encode(d1, matrix(b1, [products[k] for k in heldout_ids]) * input_scale),
+            strict=True,
+        )
     )
     cases = []
     for key in heldout_ids:
@@ -157,6 +180,7 @@ def evaluate(protocol, source_records, review_hash, latent_weight=0.5, *, bottle
             }
         )
     labeled = [case["metrics"] for case in cases if case["metrics"] is not None]
+    reconstructed = d1.predict(train).reshape(train.shape)
     return {
         "algorithm": ALGORITHM,
         "scope": "offline_source_material_retrieval_not_service_acceptance",
@@ -164,9 +188,11 @@ def evaluate(protocol, source_records, review_hash, latent_weight=0.5, *, bottle
         "cutoff": AT_K,
         "neural_representation": {
             "bottleneck_dimension": bottleneck_dimension,
+            "observation_scale": observation_scale,
             "training_reconstruction_rmse": float(
-                np.sqrt(np.mean((d1.predict(train).reshape(train.shape) - train) ** 2))
+                np.sqrt(np.mean((reconstructed / input_scale - original_train) ** 2))
             ),
+            "training_objective_rmse": float(np.sqrt(np.mean((reconstructed - train) ** 2))),
         },
         "training": {
             "rows": len(training),
@@ -196,6 +222,7 @@ def evaluate(protocol, source_records, review_hash, latent_weight=0.5, *, bottle
                 "settings": settings,
                 "weights": [x.tolist() for x in d1.coefs_],
                 "biases": [x.tolist() for x in d1.intercepts_],
+                **({"observation_scale": observation_scale} if observation_scale != 1 else {}),
             }
         ),
         "converged": not any(issubclass(item.category, ConvergenceWarning) for item in emitted),
@@ -211,6 +238,7 @@ def main():
     parser.add_argument("--evidence", type=Path, action="append", required=True)
     parser.add_argument("--latent-weight", type=float, default=0.5)
     parser.add_argument("--bottleneck-dimension", type=int, choices=(2, 4), default=2)
+    parser.add_argument("--observation-scale", type=float, choices=(0.5, 1.0), default=1.0)
     args = parser.parse_args()
     try:
         if ".pubburi" not in args.output.resolve().parts or args.output.exists():
@@ -232,6 +260,7 @@ def main():
             source["review_sha256"],
             args.latent_weight,
             bottleneck_dimension=args.bottleneck_dimension,
+            observation_scale=args.observation_scale,
         )
         report["protocol_sha256"] = protocol_hash
         report["source_sha256"] = source["input_sha256"]
