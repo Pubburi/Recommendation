@@ -262,6 +262,44 @@ def test_invalid_training_mode_is_rejected_before_fit(monkeypatch, mode):
         evaluate(protocol, rows, HASH, training_mode=mode)
 
 
+def test_iteration_budget_is_consumed_without_refitting_on_heldout(monkeypatch):
+    evaluate, protocol, rows = inputs(monkeypatch)
+    estimator = evaluate.__globals__["MLPRegressor"]
+    budgets = []
+
+    class Capture(estimator):
+        def fit(self, x, y):
+            budgets.append(self.max_iter)
+            return super().fit(x, y)
+
+    monkeypatch.setitem(evaluate.__globals__, "MLPRegressor", Capture)
+    default = evaluate(protocol, rows, HASH)
+    assert default == evaluate(protocol, rows, HASH, max_iterations=1000)
+    candidate = evaluate(protocol, rows, HASH, max_iterations=3000)
+    assert budgets == [1000, 1000, 3000]
+    assert candidate["b1_fit"] == default["b1_fit"]
+    assert candidate["d1_fit"] != default["d1_fit"]
+    assert 0 < candidate["iterations"] <= 3000
+    assert candidate["neural_representation"]["max_iterations"] == 3000
+    assert isinstance(candidate["convergence_warnings"], list)
+    rows[-1].update(category="takju", abv_percent=90.0, volume_ml=1_000_000)
+    protocol.heldout["4"].material = "wheat"
+    changed = evaluate(protocol, rows, HASH, max_iterations=3000)
+    for field in ("b1_fit", "d1_fit", "training", "neural_representation", "iterations"):
+        assert changed[field] == candidate[field]
+
+
+@pytest.mark.parametrize("budget", [0, 999, 1001, 3001, True, 1000.0, "3000", None])
+def test_invalid_iteration_budget_is_rejected_before_fit(monkeypatch, budget):
+    evaluate, protocol, rows = inputs(monkeypatch)
+    monkeypatch.setattr(
+        "pubburi_recommendation.content_model.FittedContentModel.fit",
+        lambda *_: pytest.fail("invalid iteration budget reached fit"),
+    )
+    with pytest.raises(AuditError, match="max_iterations_must_be_one_or_three_thousand"):
+        evaluate(protocol, rows, HASH, max_iterations=budget)
+
+
 @pytest.mark.parametrize("dimension", [0, 1, 3, 5, True, 2.0])
 def test_invalid_width_is_rejected_before_fit(monkeypatch, dimension):
     evaluate, protocol, rows = inputs(monkeypatch)
