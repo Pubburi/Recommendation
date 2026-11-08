@@ -149,6 +149,67 @@ def test_pairwise_alpha_is_consumed_and_legacy_objective_must_be_explicit(monkey
         evaluate(protocol, rows, HASH)
 
 
+def test_balanced_loss_weights_only_observed_different_producer_pairs_without_heldout_leakage(
+    monkeypatch,
+):
+    evaluate, protocol, rows = pairwise_inputs(monkeypatch)
+    protocol.train_rows.extend([8, 9])
+    rows.extend(
+        [
+            {**rows[0], "source_row_number": 8, "producer_name": "unknown-target"},
+            {**rows[0], "source_row_number": 9},
+        ]
+    )
+    protocol.training_materials["9"] = protocol.training_materials["1"]
+    estimator = evaluate.__globals__["MLPClassifier"]
+    captured = []
+
+    class Capture(estimator):
+        def fit(self, x, y, **kwargs):
+            captured.append((x.copy(), y.copy(), kwargs.get("sample_weight")))
+            return super().fit(x, y, **kwargs)
+
+    monkeypatch.setitem(evaluate.__globals__, "MLPClassifier", Capture)
+    uniform = evaluate(protocol, rows, HASH, objective="pairwise-material")
+    explicit = evaluate(
+        protocol, rows, HASH, objective="pairwise-material", pairwise_weighting="uniform"
+    )
+    assert uniform == explicit and captured[0][2] is captured[1][2] is None
+    balanced = evaluate(
+        protocol, rows, HASH, objective="pairwise-material", pairwise_weighting="balanced"
+    )
+    x, y, weights = captured[2]
+    assert len(y) == 5 and y.sum() == 2  # Same producer and unknown target do not enter counts.
+    np.testing.assert_allclose(weights[y == 1], [1.25, 1.25])
+    np.testing.assert_allclose(weights[y == 0], [5 / 6] * 3)
+    info = balanced["neural_representation"]
+    assert info["total_weight"] == pytest.approx(5)
+    assert info["positive_weight_sum"] == pytest.approx(2.5)
+    assert info["negative_weight_sum"] == pytest.approx(2.5)
+    assert uniform["b1_fit"] == balanced["b1_fit"]
+    assert uniform["d1_fit"] != balanced["d1_fit"]
+    assert "pairwise_weighting" not in uniform["neural_representation"]
+    rows[3].update(category="unseen", abv_percent=97, volume_ml=999_999)
+    protocol.heldout["4"].material = "different"
+    changed = evaluate(
+        protocol, rows, HASH, objective="pairwise-material", pairwise_weighting="balanced"
+    )
+    assert changed["d1_fit"] == balanced["d1_fit"]
+    np.testing.assert_array_equal(x, captured[3][0])
+    np.testing.assert_array_equal(y, captured[3][1])
+    np.testing.assert_array_equal(weights, captured[3][2])
+
+
+@pytest.mark.parametrize("value", [True, None, "BALANCED", "class_weight", ""])
+def test_pairwise_weighting_is_strict_and_requires_explicit_objective(monkeypatch, value):
+    evaluate, protocol, rows = pairwise_inputs(monkeypatch)
+    with pytest.raises(AuditError, match="pairwise_weighting"):
+        evaluate(protocol, rows, HASH, objective="pairwise-material", pairwise_weighting=value)
+    protocol.training_materials = None
+    with pytest.raises(AuditError, match="explicit_pairwise_objective"):
+        evaluate(protocol, rows, HASH, pairwise_weighting="balanced")
+
+
 def test_heldout_changes_never_refit_models_and_zero_scores_never_fill(monkeypatch):
     evaluate, protocol, rows = inputs(monkeypatch)
     report = evaluate(protocol, rows, HASH)
