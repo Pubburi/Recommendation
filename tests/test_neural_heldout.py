@@ -44,6 +44,111 @@ def inputs(monkeypatch):
     return script["evaluate"], protocol, rows
 
 
+def pairwise_inputs(monkeypatch):
+    evaluate, protocol, rows = inputs(monkeypatch)
+    protocol.training_materials = {
+        str(n): evaluate.__globals__["MaterialJudgment"](
+            material="wheat" if n == 2 else "rice", evidence_sha256=HASH
+        )
+        for n in (1, 2, 3)
+    }
+    return evaluate, protocol, rows
+
+
+def test_pairwise_objective_fits_fact_targets_and_is_symmetric_without_heldout_leakage(monkeypatch):
+    evaluate, protocol, rows = pairwise_inputs(monkeypatch)
+    estimator = evaluate.__globals__["MLPClassifier"]
+    captured = []
+
+    class Capture(estimator):
+        def fit(self, x, y):
+            captured.append((x.copy(), y.copy()))
+            return super().fit(x, y)
+
+    monkeypatch.setitem(evaluate.__globals__, "MLPClassifier", Capture)
+    report = evaluate(protocol, rows, HASH, objective="pairwise-material", latent_weight=0.25)
+    info = report["neural_representation"]
+    assert info["hidden_layer_sizes"] == [8, 4]
+    assert (
+        info["training_pairs"],
+        info["positive_training_pairs"],
+        info["negative_training_pairs"],
+    ) == (3, 1, 2)
+    assert info["supervised_training_products"] == 3 and info["unlabeled_training_products"] == 0
+    assert "training_reconstruction_rmse" not in info
+    features = evaluate.__globals__["pair_features"]
+    a, b = np.array([0.0, 1.0, 0.0]), np.array([0.0, 0.0, 1.0])
+    np.testing.assert_array_equal(features(a, b), features(b, a))
+    assert not np.array_equal(features(a, a), features(a, b))
+    assert next(row for row in report["cases"] if row["query"] == 7)["orders"] == {
+        "b1": [],
+        "d1": [],
+    }
+    rows[-1].update(category="new-category", abv_percent=99.0, volume_ml=1_000_000)
+    protocol.heldout["4"].material = "different"
+    changed = evaluate(protocol, rows, HASH, objective="pairwise-material", latent_weight=0.25)
+    assert changed["b1_fit"] == report["b1_fit"] and changed["d1_fit"] == report["d1_fit"]
+    np.testing.assert_array_equal(captured[0][0], captured[1][0])
+    np.testing.assert_array_equal(captured[0][1], captured[1][1])
+    protocol.training_materials["3"].material = "wheat"
+    target_changed = evaluate(
+        protocol, rows, HASH, objective="pairwise-material", latent_weight=0.25
+    )
+    assert (
+        target_changed["b1_fit"] == report["b1_fit"]
+        and target_changed["d1_fit"] != report["d1_fit"]
+    )
+    np.testing.assert_array_equal(captured[0][0], captured[2][0])
+    assert not np.array_equal(captured[0][1], captured[2][1])
+
+
+def test_pairwise_unknown_target_is_not_negative_and_same_producer_pair_is_not_training(
+    monkeypatch,
+):
+    evaluate, protocol, rows = pairwise_inputs(monkeypatch)
+    protocol.train_rows.append(8)
+    rows.append(
+        {**rows[0], "source_row_number": 8, "producer_name": "Unlabeled", "category": "other"}
+    )
+    report = evaluate(protocol, rows, HASH, objective="pairwise-material")
+    assert report["training"]["rows"] == 4
+    assert report["neural_representation"]["unlabeled_training_products"] == 1
+    assert report["neural_representation"]["training_pairs"] == 3
+    rows[2]["producer_name"] = rows[0]["producer_name"]
+    with pytest.raises(AuditError, match="positive_and_negative_training_pairs"):
+        evaluate(protocol, rows, HASH, objective="pairwise-material")
+
+
+@pytest.mark.parametrize("change", ["heldout", "noncanonical", "evidence"])
+def test_pairwise_training_label_requires_exact_training_row_authority(monkeypatch, change):
+    evaluate, protocol, rows = pairwise_inputs(monkeypatch)
+    if change == "heldout":
+        protocol.training_materials["4"] = protocol.training_materials["1"]
+    elif change == "noncanonical":
+        protocol.training_materials["01"] = protocol.training_materials.pop("1")
+    else:
+        protocol.training_materials["1"].evidence_sha256 = "b" * 64
+    with pytest.raises(AuditError, match="training_material_authority"):
+        evaluate(protocol, rows, HASH, objective="pairwise-material")
+
+
+@pytest.mark.parametrize("value", [True, None, float("nan"), float("inf"), 0, 0.1])
+def test_pairwise_alpha_rejects_unreviewed_values(monkeypatch, value):
+    evaluate, protocol, rows = pairwise_inputs(monkeypatch)
+    with pytest.raises(AuditError, match="pairwise_alpha"):
+        evaluate(protocol, rows, HASH, objective="pairwise-material", pairwise_alpha=value)
+
+
+def test_pairwise_alpha_is_consumed_and_legacy_objective_must_be_explicit(monkeypatch):
+    evaluate, protocol, rows = pairwise_inputs(monkeypatch)
+    a = evaluate(protocol, rows, HASH, objective="pairwise-material", pairwise_alpha=0.001)
+    b = evaluate(protocol, rows, HASH, objective="pairwise-material", pairwise_alpha=0.01)
+    assert a["b1_fit"] == b["b1_fit"] and a["d1_fit"] != b["d1_fit"]
+    assert b["neural_representation"]["alpha"] == 0.01
+    with pytest.raises(AuditError, match="explicit_pairwise_objective"):
+        evaluate(protocol, rows, HASH)
+
+
 def test_heldout_changes_never_refit_models_and_zero_scores_never_fill(monkeypatch):
     evaluate, protocol, rows = inputs(monkeypatch)
     report = evaluate(protocol, rows, HASH)

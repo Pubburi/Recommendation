@@ -19,7 +19,8 @@
     "Only source product labels, brewery labels and individually reviewed same-provider category/alcohol facts are included. A volume observation additionally requires explicit single-container mL, matching single CSV volume and reviewed alcohol. No images, creative introductions, inferred sensory tags or raw Git redistribution.",
     "Publications with conflicting no-derivatives notices remain held for new normalization, feature fit and evaluation labels. Existing approved factual evidence is assessed by its own terms.",
     "Bare CSV quantities do not establish units, variants, packaging, sale price, stock or business identity. No dataset-wide unit or SKU promotion.",
-    "Project policy permits reviewed structured facts for noncommercial local display and fit through at-reviewed-local-catalog-v1; explicit Backend identity mapping and current state remain separate. This records project scope, not newly granted publisher rights."
+    "Project policy permits reviewed structured facts for noncommercial local display and fit through at-reviewed-local-catalog-v1; explicit Backend identity mapping and current state remain separate. This records project scope, not newly granted publisher rights.",
+    "Individually reviewed coarse food-base judgments may supervise offline factual-relationship learning and evaluation. They are manual target labels, not sensory/user-preference labels, ingredient model features or automatic service-catalog fields; creative text and source media remain excluded."
   ],
   "decision_notes": [
     "The earlier automatic acquisition hold is preserved in private evidence. A separately authorized normal public download passed the portal rate guard without login, captcha bypass, accounts or contacts.",
