@@ -263,12 +263,70 @@ assert [row.product_id for row in b0.items]==[377]
         or any(row[field] is not None for field in ("backend_product_id", "sku_group", "price_krw"))
     ):
         raise RuntimeError("Installed reviewed volume bypassed the offline source boundary")
+    selection = write(
+        "authored-at-local-selection.json",
+        {
+            "schema_version": 1,
+            "algorithm": "at-local-catalog-selection-v1",
+            "catalog_version": "authored-local-v1",
+            "reviewed_at_utc": datetime.now(UTC).isoformat(),
+            "input_sha256": sha(raw),
+            "receipt_sha256": sha(receipt),
+            "manifest_sha256": sha(manifest),
+            "review_sha256": sha(volume_review),
+            "records": [
+                {
+                    "catalog_record_id": "explicit-authored-row",
+                    "source_row_number": 1,
+                    "source_variant_group": "explicit-authored-group",
+                }
+            ],
+        },
+    )
+    authority_output = work / ".pubburi" / "at-local-authority"
+    local_command = [str(python), "-I", "-m", "pubburi_recommendation.at_local_catalog"]
+    for name, value in {
+        "manifest": manifest,
+        "input": raw,
+        "receipt": receipt,
+        "review": volume_review,
+        "selection": selection,
+        "fact-evidence": evidence,
+        "output-dir": authority_output,
+    }.items():
+        local_command += ["--" + name, str(value)]
+    subprocess.run(local_command, cwd=work, check=True, timeout=10, stdout=subprocess.DEVNULL)
+    authority_file = authority_output / "catalog-authority.json"
+    authority = json.loads(authority_file.read_text())
+    completed = json.loads((authority_output / "receipt.json").read_text())
+    facts = authority["records"][0]["facts"]
+    if (
+        authority["scope"] != "REVIEWED_LOCAL_CATALOG"
+        or authority["source"]["evidence_kind"] != "authored_regression_fixture"
+        or authority["source"]["captured_at_utc"] != "2026-11-05T00:00:00Z"
+        or facts["abv_percent"] != 0
+        or facts["volume_ml"] != 750
+        or any(
+            facts[key] is not None
+            for key in ("gtin", "taste_tags", "aroma_tags", "image_url", "description")
+        )
+        or "price" in json.dumps(authority)
+        or "backend_product_id" in json.dumps(authority)
+        or not completed["completed"]
+        or completed["authority_sha256"] != sha(authority_file)
+    ):
+        raise RuntimeError("Installed aT authority lost explicit provenance, facts or unknown")
     raw.write_bytes(raw.read_bytes() + b"\n")
     changed = work / ".pubburi" / "at-changed"
     command[-1] = str(changed)
     rejected = subprocess.run(command, cwd=work, capture_output=True, timeout=10)
     if rejected.returncode != 2 or changed.exists():
         raise RuntimeError("Changed source bytes bypassed the installed receipt boundary")
+    changed_authority = work / ".pubburi" / "at-local-changed"
+    local_command[-1] = str(changed_authority)
+    rejected = subprocess.run(local_command, cwd=work, capture_output=True, timeout=10)
+    if rejected.returncode != 2 or changed_authority.exists():
+        raise RuntimeError("Installed aT authority accepted changed source bytes")
 
 
 def smoke_source_catalog(python: Path, work: Path, manifest: Path, authored_entity: dict) -> None:

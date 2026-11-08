@@ -5,6 +5,58 @@
 업무 SKU로 등록하지 않고, 이번에 해석한 단위·근거와 원래 충돌을 함께 남긴다.
 문자열 `catalog_record_id`·`source_variant_group`은 Backend ID나 판매 적격성 승인이 아니다.
 
+## aT 검수 사실의 로컬 카탈로그 권위
+
+`python -m pubburi_recommendation.at_local_catalog`는 기존 aT CSV·원 획득 receipt·행별
+동일 제공자 근거·단일 포장 검수를 재검증해 `at-reviewed-local-catalog-v1`을 발행한다.
+이는 비상업 로컬 MVP의 구조화 사실 표시/fit 범위를 명시한 프로젝트 정책이다. 포털의
+무료/제한 없음 표시와 추가 유의사항을 함께 검토한 기존 이용 범위를 사용하며 새로운
+외부 권리 취득, 실제 판매 적격성이나 GTIN 확인으로 표현하지 않는다. 원문·이미지·창작
+소개·미확인 맛/향·실판매 가격·재고는 포함하지 않는다.
+
+```bash
+uv run --locked python -m pubburi_recommendation.at_local_catalog \
+  --manifest sources/at-traditional-liquor.json \
+  --input .pubburi/source/public-data.csv --receipt .pubburi/source/source-receipt.json \
+  --review .pubburi/catalog/review.json --selection .pubburi/catalog/selection.json \
+  --fact-evidence .pubburi/catalog/provider-evidence.html \
+  --output-dir .pubburi/catalog/new-authority
+```
+
+selection은 `schema_version=1`, `algorithm=at-local-catalog-selection-v1`, `catalog_version`,
+실제 로컬 재검수 `reviewed_at_utc`, raw/원 receipt/현재 manifest/새 review의 파일 SHA256,
+`records[{catalog_record_id,source_row_number,source_variant_group}]`를 가진다. 선택 행은 review와
+정확히 같아야 한다. 고유 record ID/행을 요구하고 변형 그룹은 명시적으로 공유할 수 있다.
+라벨·양조장·단일 도수·단일 mL가 모두 검수됐으며 CSV와 정확히 같은 행만 통과한다.
+기존 보류·복수 수량·동일 라벨/양조장 중복을 이 선택으로 덮지 않는다.
+
+출력 `catalog-authority.json`의 추가 필드는 거절하며 정확 계약은 다음과 같다.
+
+| 필드 | 내용 |
+|---|---|
+| root | `schema_version:1`, `algorithm:at-reviewed-local-catalog-v1`, `scope:REVIEWED_LOCAL_CATALOG`, `catalog_version`, `reviewed_at_utc`, `source`, `license`, `records` |
+| source | `source_id:at-traditional-liquor`, `dataset_id:15048755`, `source_version`, 원 `evidence_kind`·`captured_at_utc`, `input_sha256`, `receipt_sha256`, `manifest_sha256`, `review_sha256`, `selection_sha256` |
+| license | `label:portal-unrestricted-with-additional-notes`, `purpose:noncommercial_local_structured_display_and_fit`, `attribution:한국농수산식품유통공사(aT) 전통주정보`, 원 `source_url`, `raw_redistribution:false`, `source_media_included:false`, `free_text_included:false` |
+| records | `catalog_record_id`, 원 `source_record_id`·`source_row_number`, 명시 `source_variant_group`, `facts`, `evidence{url,sha256}` |
+| facts | `label`, `producer_name`, `source_category`, `category`, `abv_percent`, `volume_ml`, `gtin:null`, `taste_tags:null`, `aroma_tags:null`, `image_url:null`, `description:null` |
+
+주종은 닫힌 대응표 `약주→약 · 청주`, `탁주→탁주`, `과실주→과실주`, `증류주→증류주`만
+허용하고 원 `source_category`도 보존한다. 가격·available·업무 ID·expiry는 권위에 없다.
+원 capture는 새 발행 시각으로 바꾸지 않는다. 파일 SHA로 pin한 버전은 검수 시점의 사실이며
+상류 수정/철회 실시간 감지나 재고 보장이 아니다. 변경/권리 보류 시 해당 권위와 매핑을
+재검수·교체해야 한다. `authored_regression_fixture`는 테스트용으로 끝까지 구분하며 실제
+로컬 서비스 소비자는 원 receipt의 `operator_public_download_receipt`만 허용한다.
+
+Backend는 별도 pin한 명시 업무 ID/그룹 매핑과 현재 DB의 라벨·주종·도수·용량을 대조한다.
+현재 행/상태·시연 가격과 요청 간 snapshot 충돌 처리는 Backend 소유다. 가격은 항상 DEMO로
+표시하고 기존 시연 bundle의 300초 만료나 false 권위 flag를 이 계약으로 변경하지 않는다.
+발행은 새 ignored 디렉터리에서 입력을 다시 검증하고 완료 receipt에 정확 artifact SHA를 남긴다.
+실패/기존 출력은 덮지 않으며 pinning은 서명이나 권리 검증 자체를 대체하지 않는다.
+
+실제 기존 검수6행의 과실주2·약주2·증류주1·탁주1, 단일 도수/용량 사실을 새 권위로 발행했다.
+원 20260731 CSV·획득 receipt/capture와 이전 manifest/review/실험은 보존하고 새 정책에 대한
+로컬 재검수·selection의 해시만 추가했다. 새 수집·학습·독립 품질 개선 결과가 아니다.
+
 ## 데이터와 검수의 권리·역할
 
 - 데이터 필드의 정본은 이미 허용된 [Wikidata CC0 구조화 snapshot](CATALOG-AUDIT.md)의
