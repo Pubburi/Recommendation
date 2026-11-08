@@ -271,7 +271,7 @@ def main(progress: dict[str, str]) -> None:
             "'hardConstraints':dict.fromkeys(('minPriceKrw','maxPriceKrw',"
             "'minAbvPercent','maxAbvPercent'))})).product_count is None; "
             "assert 'sklearn' not in sys.modules and 'numpy' not in sys.modules, "
-            "'Health/OpenAPI startup imported numerical model libraries'"
+            "'Module import/OpenAPI generation imported numerical model libraries'"
         )
         subprocess.run([str(python), "-I", "-c", probe], cwd=work, check=True, timeout=10)
         progress["stage"] = "isolated-catalog-cli"

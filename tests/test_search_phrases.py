@@ -437,17 +437,26 @@ def test_new_route_body_deadline_and_disconnect_precede_any_provider_execution()
     asyncio.run(run())
 
 
-def test_all_search_phrase_modes_and_openapi_do_not_import_numerical_or_model_runtime():
+def test_search_phrase_modes_and_openapi_do_not_retry_unavailable_model_runtime():
     code = f"""
-import sys
+import sys,importlib.abc
+attempts=[]
+class UnavailableModel(importlib.abc.MetaPathFinder):
+    def find_spec(self,fullname,path=None,target=None):
+        if fullname=='pubburi_recommendation.content_model':
+            attempts.append(fullname)
+            raise ImportError('authored unavailable dependency')
+sys.meta_path.insert(0,UnavailableModel())
 from fastapi.testclient import TestClient
 from pubburi_recommendation.main import app
 with TestClient(app) as client:
+    assert len(attempts)==1
     assert client.get('/openapi.json').status_code == 200
     body = {request()!r}
     assert client.post({PATH!r},json=body).status_code == 200
     body['search_opt_in_fields']=['tasteTags']
     assert client.post({PATH!r},json=body).json()['items'] == []
+    assert len(attempts)==1
 assert not {{'numpy','sklearn','pubburi_recommendation.content_model'}} & set(sys.modules)
 """
     subprocess.run([sys.executable, "-I", "-c", code], check=True, capture_output=True, text=True)

@@ -10,8 +10,9 @@ The coordinator owns shared runtime/DB/API decisions, Notion, final merge and cl
 ## Runtime and data contracts
 
 - Preserve health and the seven POST contracts: B0 baseline; B1 content/exploration/similar/context/
-  feedback; model-free search-phrases. Their API docs are authoritative. Startup/health/B0 need no DB,
-  numerical import, model download or network. B1 fits only the explicit request catalog, once per request.
+  feedback; model-free search-phrases. Their API docs are authoritative. Module import/schema generation
+  remain numerical-free. Lifespan prepares numerical imports before traffic, without DB/network/model
+  download or fit; dependency exceptions preserve health/B0. B1 fits only the request catalog, once.
 - All POSTs retain512KiB cumulative bodies and10-second total receive deadlines. Duplicate decoded JSON
   keys are rejected only after successful full decode; preserve syntax/encoding/depth error priority.
   This receive bound does not cancel or bound a running CPU fit.
@@ -76,7 +77,7 @@ The coordinator owns shared runtime/DB/API decisions, Notion, final merge and cl
   historical code/lockfile links. Do not delete useful integrity/security or core independent checks.
 - Use Korean Conventional Commit/PR titles and one reviewable purpose per commit, following
   [CONTRIBUTING](CONTRIBUTING.md). No WIP/empty commits, forced history rewriting or unrelated changes.
-- README currently has three supported cases and one missing toward the final four. Change the register
+- README has four supported cases. Change the register
   only when selection/evidence changes; preserve concrete code/measurement or fixed Git links. Never split
   adjacent fixes/bootstrap topics to fill the count or invent failures/contribution/quality/performance.
   Performance requires real comparable measurements. Do not restore project/role/provenance link tables,

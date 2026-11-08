@@ -197,7 +197,7 @@ def test_no_fit_at_startup_health_or_b0(monkeypatch):
         assert client.post("/v1/recommendations/baseline", json={"catalog": []}).status_code == 200
 
 
-def test_fresh_process_startup_and_openapi_do_not_load_the_model_libraries():
+def test_fresh_process_module_import_and_openapi_do_not_load_the_model_libraries():
     result = subprocess.run(
         [
             sys.executable,
@@ -209,6 +209,38 @@ def test_fresh_process_startup_and_openapi_do_not_load_the_model_libraries():
         text=True,
         timeout=10,
         check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize("failure", ["ImportError", "OSError", "ValueError"])
+def test_numerical_dependency_failure_keeps_lifespan_health_and_baseline_available(failure):
+    program = f"""
+import importlib.abc,sys
+class BrokenNumerical(importlib.abc.MetaPathFinder):
+    def find_spec(self,fullname,path=None,target=None):
+        if fullname.split(".")[0] in {{"numpy","sklearn"}}:
+            raise {failure}("authored unavailable numerical dependency")
+sys.meta_path.insert(0,BrokenNumerical())
+from pubburi_recommendation.main import app
+from fastapi.testclient import TestClient
+with TestClient(app,raise_server_exceptions=False) as client:
+    expected={{"status":"ok","service":"pubburi-recommendation"}}
+    assert client.get("/health").json()==expected
+    baseline=client.post("/v1/recommendations/baseline",json={{"catalog":[
+        {{"product_id":1,"available":True,"abv_percent":0}},
+        {{"product_id":2,"available":True,"abv_percent":10}}],"constraints":{{"max_abv_percent":0}}}})
+    assert baseline.status_code==200
+    assert [item["product_id"] for item in baseline.json()["items"]]==[1]
+    failed=client.post("/v1/recommendations/content",json={{"catalog":[
+        {{"product_id":1,"available":True,"sku_group":"a","category":"탁주"}}]}})
+    assert failed.status_code==500
+    assert client.get("/health").json()==expected
+    assert client.post("/v1/recommendations/baseline",json={{"catalog":[]}}).status_code==200
+assert "sklearn" not in sys.modules and "numpy" not in sys.modules
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", program], capture_output=True, text=True, timeout=10
     )
     assert result.returncode == 0, result.stderr
 

@@ -1,5 +1,8 @@
 import json
+import logging
+from contextlib import asynccontextmanager
 from decimal import Decimal, DecimalException
+from importlib import import_module
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, Request
@@ -44,6 +47,21 @@ from pubburi_recommendation.similar_api import (
     recommend_similar,
 )
 
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Pay dependency initialization before accepting B1 traffic; never fit sample/user data.
+    # Numerical dependency failures must leave the independent health/B0 paths available.
+    try:
+        import_module("pubburi_recommendation.content_model")
+    except Exception as error:
+        logging.getLogger(__name__).warning(
+            "B1 dependency preparation failed (%s); health/B0 remain available",
+            type(error).__name__,
+        )
+    yield
+
+
 app = FastAPI(
     title="Pubburi Recommendation",
     description=(
@@ -51,6 +69,7 @@ app = FastAPI(
         "No model persistence or user preference learning."
     ),
     version="0.1.0",
+    lifespan=lifespan,
 )
 app.add_middleware(CatalogRequestLimit)
 
