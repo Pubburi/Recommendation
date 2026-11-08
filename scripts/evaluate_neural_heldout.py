@@ -130,13 +130,18 @@ def evaluate(
     max_iterations=1000,
     objective="reconstruction",
     pairwise_alpha=0.001,
+    pairwise_weighting="uniform",
 ):
     if type(objective) is not str or objective not in ("reconstruction", "pairwise-material"):
         raise AuditError("heldout_objective_not_supported")
     if objective == "reconstruction" and (
-        protocol.training_materials is not None or pairwise_alpha != 0.001
+        protocol.training_materials is not None
+        or pairwise_alpha != 0.001
+        or pairwise_weighting != "uniform"
     ):
         raise AuditError("training_materials_require_explicit_pairwise_objective")
+    if type(pairwise_weighting) is not str or pairwise_weighting not in ("uniform", "balanced"):
+        raise AuditError("heldout_pairwise_weighting_must_be_uniform_or_balanced")
     if (
         type(pairwise_alpha) not in (int, float)
         or not math.isfinite(pairwise_alpha)
@@ -231,7 +236,18 @@ def evaluate(
                 protocol, training, reviewed, producers, train
             )
             settings |= {"hidden_layer_sizes": (8, 4), "alpha": pairwise_alpha}
-            d1 = MLPClassifier(**settings).fit(fit_inputs, fit_targets)
+            # Compute only after unknown targets/same-producer pairs have been excluded.
+            # Total weight remains N, preserving the regularization denominator.
+            pair_weights = (
+                len(fit_targets) / (2 * np.bincount(fit_targets)[fit_targets])
+                if pairwise_weighting == "balanced"
+                else None
+            )
+            d1 = MLPClassifier(**settings).fit(
+                fit_inputs,
+                fit_targets,
+                **({"sample_weight": pair_weights} if pair_weights is not None else {}),
+            )
     heldout_ids = sorted(judgments)
     transformed = matrix(b1, [products[k] for k in heldout_ids]) * input_scale
     features = dict(zip(heldout_ids, transformed, strict=True))
@@ -319,6 +335,16 @@ def evaluate(
             "positive_training_pairs": int(fit_targets.sum()),
             "negative_training_pairs": int((fit_targets == 0).sum()),
             "training_regularized_log_loss": float(d1.loss_),
+            **(
+                {
+                    "pairwise_weighting": pairwise_weighting,
+                    "positive_weight_sum": float(pair_weights[fit_targets == 1].sum()),
+                    "negative_weight_sum": float(pair_weights[fit_targets == 0].sum()),
+                    "total_weight": float(pair_weights.sum()),
+                }
+                if pair_weights is not None
+                else {}
+            ),
         }
     return {
         "algorithm": ALGORITHM
@@ -359,6 +385,11 @@ def evaluate(
                 **({"observation_scale": observation_scale} if observation_scale != 1 else {}),
                 **({"training_mode": training_mode} if training_mode != "clean" else {}),
                 **(
+                    {"pairwise_weighting": pairwise_weighting}
+                    if pairwise_weighting != "uniform"
+                    else {}
+                ),
+                **(
                     {
                         "objective": objective,
                         "training_materials": {
@@ -396,6 +427,7 @@ def main():
         "--objective", choices=("reconstruction", "pairwise-material"), default="reconstruction"
     )
     parser.add_argument("--pairwise-alpha", type=float, choices=(0.001, 0.01), default=0.001)
+    parser.add_argument("--pairwise-weighting", choices=("uniform", "balanced"), default="uniform")
     args = parser.parse_args()
     try:
         if ".pubburi" not in args.output.resolve().parts or args.output.exists():
@@ -427,6 +459,7 @@ def main():
             max_iterations=args.max_iterations,
             objective=args.objective,
             pairwise_alpha=args.pairwise_alpha,
+            pairwise_weighting=args.pairwise_weighting,
         )
         report["protocol_sha256"] = protocol_hash
         report["source_sha256"] = source["input_sha256"]
