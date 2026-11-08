@@ -59,6 +59,21 @@ def metrics(order, relevant):
     return {"recall": len(hits) / len(relevant), "ndcg": dcg / ideal}
 
 
+def training_views(train, category_columns, mode):
+    inputs, targets = [train], [train]
+    if mode == "numeric-block-denoising":
+        for column in range(category_columns, train.shape[1], 2):
+            # Only observed blocks generate a view. Mask value and observation
+            # together; a known numeric zero still has a nonzero observation flag.
+            observed = train[:, column + 1] != 0
+            corrupted = train[observed].copy()
+            corrupted[:, column : column + 2] = 0
+            supported = np.any(corrupted != 0, axis=1)
+            inputs.append(corrupted[supported])
+            targets.append(train[observed][supported])
+    return np.vstack(inputs), np.vstack(targets)
+
+
 def evaluate(
     protocol,
     source_records,
@@ -67,6 +82,7 @@ def evaluate(
     *,
     bottleneck_dimension=2,
     observation_scale=1.0,
+    training_mode="clean",
 ):
     if (
         type(latent_weight) not in (int, float)
@@ -83,6 +99,11 @@ def evaluate(
     ):
         raise AuditError("heldout_observation_scale_must_be_one_or_half")
     observation_scale = float(observation_scale)
+    if type(training_mode) is not str or training_mode not in (
+        "clean",
+        "numeric-block-denoising",
+    ):
+        raise AuditError("heldout_training_mode_must_be_clean_or_numeric_block_denoising")
     if protocol.review_sha256 != review_hash:
         raise AuditError("heldout_review_hash_mismatch")
     train_ids = set(protocol.train_rows)
@@ -130,10 +151,13 @@ def evaluate(
     # Each active numeric block is its scaled value followed by its observation flag.
     input_scale[len(b1.vectorizer.vocabulary_) + 1 :: 2] = observation_scale
     train = original_train * input_scale
+    fit_inputs, fit_targets = training_views(train, len(b1.vectorizer.vocabulary_), training_mode)
     with warnings.catch_warnings(record=True) as emitted:
         warnings.simplefilter("always", ConvergenceWarning)
         settings = MODEL_SETTINGS | {"hidden_layer_sizes": (8, bottleneck_dimension, 8)}
-        d1 = MLPRegressor(**settings).fit(train, train if train.shape[1] > 1 else train.ravel())
+        d1 = MLPRegressor(**settings).fit(
+            fit_inputs, fit_targets if train.shape[1] > 1 else fit_targets.ravel()
+        )
     heldout_ids = sorted(judgments)
     latent = dict(
         zip(
@@ -189,10 +213,17 @@ def evaluate(
         "neural_representation": {
             "bottleneck_dimension": bottleneck_dimension,
             "observation_scale": observation_scale,
+            "training_mode": training_mode,
+            "training_view_rows": len(fit_inputs),
+            "training_corrupted_views": len(fit_inputs) - len(train),
             "training_reconstruction_rmse": float(
                 np.sqrt(np.mean((reconstructed / input_scale - original_train) ** 2))
             ),
-            "training_objective_rmse": float(np.sqrt(np.mean((reconstructed - train) ** 2))),
+            "training_objective_rmse": float(
+                np.sqrt(
+                    np.mean((d1.predict(fit_inputs).reshape(fit_targets.shape) - fit_targets) ** 2)
+                )
+            ),
         },
         "training": {
             "rows": len(training),
@@ -223,6 +254,7 @@ def evaluate(
                 "weights": [x.tolist() for x in d1.coefs_],
                 "biases": [x.tolist() for x in d1.intercepts_],
                 **({"observation_scale": observation_scale} if observation_scale != 1 else {}),
+                **({"training_mode": training_mode} if training_mode != "clean" else {}),
             }
         ),
         "converged": not any(issubclass(item.category, ConvergenceWarning) for item in emitted),
@@ -239,6 +271,9 @@ def main():
     parser.add_argument("--latent-weight", type=float, default=0.5)
     parser.add_argument("--bottleneck-dimension", type=int, choices=(2, 4), default=2)
     parser.add_argument("--observation-scale", type=float, choices=(0.5, 1.0), default=1.0)
+    parser.add_argument(
+        "--training-mode", choices=("clean", "numeric-block-denoising"), default="clean"
+    )
     args = parser.parse_args()
     try:
         if ".pubburi" not in args.output.resolve().parts or args.output.exists():
@@ -261,6 +296,7 @@ def main():
             args.latent_weight,
             bottleneck_dimension=args.bottleneck_dimension,
             observation_scale=args.observation_scale,
+            training_mode=args.training_mode,
         )
         report["protocol_sha256"] = protocol_hash
         report["source_sha256"] = source["input_sha256"]
