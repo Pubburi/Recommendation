@@ -220,6 +220,8 @@ def test_changed_original_authority_is_rejected(inputs, field):
         '<footer id="footer"><a href="/copyright">본 자료는 변경 금지입니다</a></footer>',
         '<footer id="footer"><a href="https://www.kogl.or.kr/info/license.do" '
         'rel="license">공공누리 제4유형 안내</a></footer>',
+        '<footer id="footer"><p>본 저작물은 <a href="https://www.kogl.or.kr/info/license.do">'
+        "공공누리 제4유형 안내</a>를 따릅니다</p></footer>",
     ],
 )
 def test_local_authority_holds_a_referenced_publication_with_restrictive_terms(inputs, notice):
@@ -243,7 +245,7 @@ def test_local_authority_distinguishes_site_footer_navigation_from_publication_t
     evidence = inputs.fact_evidence[0]
     evidence.write_text(
         '<article>검수한 상품 정보</article><footer id="footer">\n'
-        '<a href="https://www.kogl.or.kr/info/license.do">공공누리 제4유형 안내</a>\n</footer>',
+        '<a href="https://www.kogl.or.kr/info/license.do">공공누리 유형안내</a>\n</footer>',
         encoding="utf-8",
     )
     revise(inputs, "review", lambda x: x["records"][0].update(evidence_sha256=sha(evidence)))
