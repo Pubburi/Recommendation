@@ -207,6 +207,46 @@ def test_changed_original_authority_is_rejected(inputs, field):
 
 
 @pytest.mark.parametrize(
+    "notice",
+    [
+        '<div class="opencode nuri4"><img src="/images/front/cont/opencode4.png"></div>',
+        "<span>공공누리 제4유형</span>",
+        '<div class="opencode nuri3">공공누리 제3유형</div>',
+        "<p>출처표시 + 상업적 이용금지 + 변경&nbsp;<strong>금지</strong></p>",
+        "<p>KOGL Type 4</p>",
+        '<footer id="footer"><p>본 저작물 변경 금지</p></footer>',
+    ],
+)
+def test_local_authority_holds_a_referenced_publication_with_restrictive_terms(inputs, notice):
+    evidence = inputs.fact_evidence[0]
+    evidence.write_text(notice, encoding="utf-8")
+    revise(inputs, "review", lambda x: x["records"][0].update(evidence_sha256=sha(evidence)))
+
+    with pytest.raises(AuditError, match="at_local_catalog_publication_restricts_derivatives"):
+        compile(inputs)
+
+
+def test_local_authority_ignores_terms_in_an_unreferenced_capture(inputs, tmp_path):
+    unused = tmp_path / "unreferenced.html"
+    unused.write_text("<span>공공누리 제4유형</span>", encoding="utf-8")
+    inputs.fact_evidence.append(unused)
+
+    assert len(compile(inputs).records) == 1
+
+
+def test_local_authority_distinguishes_site_footer_from_publication_terms(inputs):
+    evidence = inputs.fact_evidence[0]
+    evidence.write_text(
+        '<article>검수한 상품 정보</article><footer id="footer">\n'
+        '<a href="/examples">공공누리 제4유형 안내</a>\n</footer>',
+        encoding="utf-8",
+    )
+    revise(inputs, "review", lambda x: x["records"][0].update(evidence_sha256=sha(evidence)))
+
+    assert len(compile(inputs).records) == 1
+
+
+@pytest.mark.parametrize(
     "change",
     [
         lambda x: x["additional_conditions"].remove(compiler.LOCAL_POLICY),

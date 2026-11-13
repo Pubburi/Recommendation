@@ -3,9 +3,11 @@
 import csv
 import hashlib
 import io
+import re
 from collections import Counter
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
+from html import unescape
 from pathlib import Path
 from typing import Annotated, Literal
 from urllib.parse import urlsplit
@@ -253,7 +255,37 @@ def normalize_at_csv(
     return report, records, None
 
 
-def audit_at_source(manifest_hash, input_path, receipt_path, review_path, evidence_paths):
+def _check_local_catalog_publication_terms(content: bytes):
+    try:
+        html = content.decode("utf-8")
+    except UnicodeError as error:
+        raise AuditError("at_local_catalog_publication_terms_unreadable") from error
+    publication = re.sub(
+        r"<footer\b[^>]*\bid\s*=\s*['\"]footer['\"][^>]*>.*?</footer\s*>",
+        lambda footer: re.sub(
+            r"<a\b[^>]*>.*?</a\s*>", "", footer[0], flags=re.IGNORECASE | re.DOTALL
+        ),
+        html,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    text = unescape(re.sub(r"<[^>]*>", "", publication))
+    if re.search(r"\bnuri[34]\b|/opencode[34]\.png\b", publication, re.IGNORECASE) or re.search(
+        r"공공\s*누리\s*(?:제\s*)?[34]\s*유형|변경\s*금지|\bKOGL\s*Type\s*[34]\b",
+        text,
+        re.IGNORECASE,
+    ):
+        raise AuditError("at_local_catalog_publication_restricts_derivatives")
+
+
+def audit_at_source(
+    manifest_hash,
+    input_path,
+    receipt_path,
+    review_path,
+    evidence_paths,
+    *,
+    local_catalog_rows: frozenset[int] = frozenset(),
+):
     """Return the same validated receipt snapshot that binds the factual outputs."""
     if receipt_path is None:
         raise AuditError("at_public_download_receipt_required")
@@ -261,7 +293,18 @@ def audit_at_source(manifest_hash, input_path, receipt_path, review_path, eviden
     receipt = AtReceipt.model_validate(receipt_data)
     review_data, review_hash = (None, None) if review_path is None else read_json(review_path)
     review = None if review_data is None else AtReview.model_validate(review_data)
-    evidence_hashes = {hashlib.sha256(bounded_bytes(path)).hexdigest() for path in evidence_paths}
+    selected_evidence = {
+        record.evidence_sha256
+        for record in (review.records if review else ())
+        if record.row_number in local_catalog_rows
+    }
+    evidence_hashes = set()
+    for path in evidence_paths:
+        content = bounded_bytes(path)
+        digest = hashlib.sha256(content).hexdigest()
+        if digest in selected_evidence:
+            _check_local_catalog_publication_terms(content)
+        evidence_hashes.add(digest)
     report, records, _ = normalize_at_csv(
         bounded_bytes(input_path),
         receipt,
