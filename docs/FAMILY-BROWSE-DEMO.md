@@ -79,7 +79,7 @@ fit 전에 원천 catalog hash·명시 업무 사실·독립 후보/조건/fallb
 
 | 원천·적용 단위 | 실제 검수·실행과 한계 |
 |---|---|
-| 기존 accepted6 중 known-ABV5상품군 | 별도 업무 DEMO 명시 매핑·14개 고정 사실 재현. 신규 수집/SKU5개가 아님. [원값/분모](measurements/2026-11-03-family-browse-demo.md) |
+| 기존 accepted6 중 known-ABV5상품군 | 별도 업무 DEMO 명시 매핑·14개 고정 사실 재현. 신규 수집/SKU5개가 아님. [원값/분모](https://github.com/Pubburi/Recommendation/blob/3f0a6cfb0780d06fda06ad4e6920f814e5f6a798/docs/measurements/2026-11-03-family-browse-demo.md) |
 | 다른 기존 accepted4 중 상품군1 | 정확5.2vol%·정상 P31/P176 검수, 두 소유 DB에서 같은12조건 각각 통과·모델/전체 결과 동일. 같은1상품군/12조건 반복이며2상품/24개 독립 정답이 아님. 나머지3항목 보류·GTIN/포장 gate 유지 |
 | 새 CC0 수집3 중 상품군1 | 새로 고정한3ID의 단일 공식 GET이 accepted=true. Duchesse de Bourgogne의 정상 P31/P176·6.2vol%·revision을 검수해 소유 PG의 실제 API 반환 ID에 명시 매핑. 기존 export/bundle/B1·B0로 사전 고정12조건 통과하고 실제 Backend의 PROVIDER/family DEMO·BASELINE 경로도 확인. 나머지는 beer brand grain1·조건부 제조사 진술1로 보류 |
 | aT 검수 named-product 행2 | 기존 20260731 CSV의 개별 검수 사실을 소유 폐기 PG의 실제 API 반환 두 ID에 명시 매핑했다. 기존 export·fresh checked bundle과 B1/B0 고정12조건을 검증했다. 주종1어휘/IDF1, 도수6.5–8.5 활성, 용량·맛/향 관측0이며 가격은 별도 업무 DEMO 값이다. 상품군·SKU 수에 합산하거나 일반 서비스 채택으로 세지 않는다 |

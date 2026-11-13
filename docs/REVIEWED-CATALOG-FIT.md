@@ -54,7 +54,7 @@ API가 반환한 업무 ID와 fresh snapshot으로 명시 매핑1개·B0/B1 expo
 실제 fit은1상품/1그룹이다. TF-IDF는 업무 분류 `category:맥주`1어휘/IDF1을 학습했다.
 원천 도수/용량의 수치 변환은 각각 관측1개·범위5–5vol%/500–500mL이며 상수라 활성 거리
 특성은0개다. 미확인 맛/향은 각각1/1 null, 검수된 빈 태그는0이다. OOV·빈 취향과 상수
-수량만 요청한 경우 결정적 기본순을 유지했다. 자세한 [조건/원값](measurements/2026-11-01-reviewed-catalog-fit.md)을 따른다.
+수량만 요청한 경우 결정적 기본순을 유지했다. 자세한 [조건/원값](https://github.com/Pubburi/Recommendation/blob/378de7fe72d9a0c8d20e2d27bb121da786608312/docs/measurements/2026-11-01-reviewed-catalog-fit.md)을 따른다.
 
 같은 데이터/모델에서 순위 개선을 판별할 비교 후보가 없고, 학습/평가 상품군 분리·신규상품
 일반화·독립 관련성 라벨·최종 holdout도 없다. Recall/NDCG는 미산출이며 SVD/복잡한 모델을
@@ -64,7 +64,7 @@ API가 반환한 업무 ID와 fresh snapshot으로 명시 매핑1개·B0/B1 expo
 2026-11-03에는 별도 [상품군 browse DEMO](FAMILY-BROWSE-DEMO.md) authority/origin으로
 기존 검수5상품군을 명시 업무 연결하고 같은 B1/B0·독립 사실 검사기를 실행했다. 용량 null을
 보존하는 family-only 경계이며 위 container1 결과나 물리 SKU gate를 바꾸지 않는다.
-[새 scope의 실제 관측](measurements/2026-11-03-family-browse-demo.md)과 분모를 구분한다.
+[새 scope의 실제 관측](https://github.com/Pubburi/Recommendation/blob/3f0a6cfb0780d06fda06ad4e6920f814e5f6a798/docs/measurements/2026-11-03-family-browse-demo.md)과 분모를 구분한다.
 
 [구현](../src/pubburi_recommendation/reviewed_catalog_fit.py) ·
 [직접 작성 회귀](../tests/test_reviewed_catalog_fit.py) ·
