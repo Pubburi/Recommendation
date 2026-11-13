@@ -65,7 +65,7 @@ Recall@k·NDCG@k를 계산한다. Recall 분모는 선언 양성 수, ideal DCG�
 
 ## 실제 새 상품군과 작은 사실 평가
 
-2026-11-01의 [추가 원천/평가 기록](measurements/2026-11-01-source-family-fact-evaluation.md)은
+2026-11-01의 [추가 원천/평가 기록](https://github.com/Pubburi/Recommendation/blob/bcb1b1d4302134e8b45c4ceb69776c1aaa5494ac/docs/measurements/2026-11-01-source-family-fact-evaluation.md)은
 새 실명 상품군6개를 각각 다른 그룹으로 검수해4fit/2transform을 실행했다. 같은 원천 스타일을
 공유하는 서로 다른2개 상품군 중1개를 변환에 두고, 또 다른 변환 상품군은 미관측 스타일로
 선택했다. 양성1질의/후보4와 양성0질의1을 사전 고정한 목적 표본이며 무작위/대표 표본이 아니다.
@@ -97,7 +97,7 @@ uv run --locked python -m pubburi_recommendation.source_family_experiment \
 
 ## 실제 첫 실행과 남은 범위
 
-[고정 원천 실험 기록](measurements/2026-11-01-source-family-fit.md)은 실제 CC0 상품군5개를
+[고정 원천 실험 기록](https://github.com/Pubburi/Recommendation/blob/5afc477eceda95b33df62f87fb4df4cb9c64327b/docs/measurements/2026-11-01-source-family-fit.md)은 실제 CC0 상품군5개를
 3개 학습/2개 변환으로 나눠 실행했다. TF-IDF 3×5·rank3, 학습 도수3관측·용량0관측을 확인했다.
 두 변환 항목은 각각 주종 토큰이 OOV라 공통 제조사 토큰만 남았다. 이는 실제 표현의 제한을
 드러낸 결과이며 신규 상품 추천 품질이 검증됐다는 뜻이 아니다.

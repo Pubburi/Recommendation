@@ -56,7 +56,7 @@ source-backed 업무 DEMO1 fit과 분리한다.
 
 독립 exact-P31 사실 명세는 전체6질의·후보5 중 양성1질의만 Recall/NDCG를 계산하고 나머지5는
 생략·원순위/동점을 보존했다. 클래스는 표현 입력이기도 해 사람 선호 정답과 독립적이지 않다.
-표현 지원1/6과 지표 분모1을 함께 남긴 [실제 조건/원값](measurements/2026-11-02-cross-producer-cohort.md)을
+표현 지원1/6과 지표 분모1을 함께 남긴 [실제 조건/원값](https://github.com/Pubburi/Recommendation/blob/418bd17b71b7d647d0b7a09dca4040a33ea03248/docs/measurements/2026-11-02-cross-producer-cohort.md)을
 따른다. 최종 holdout·서비스 SKU/추천 품질·다른 주종/기업 관계 일반화는 미완료이며 SVD를
 fit/채택하지 않았다.
 

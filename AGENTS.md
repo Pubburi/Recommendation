@@ -51,8 +51,8 @@ The coordinator owns shared runtime/DB/API decisions, Notion, final merge and cl
   mapping/B1 fit/B0/factual constraints/leakage/fallback/reproducibility belong before the MVP deadline.
   Provider/fixture-only work never completes a whole feature. Do not wait for external users/future logs.
 - Required unfinished work remains first, even after a missed deadline; report it without extending it.
-  After the existing Notion tasks and MVP acceptance are complete, select one Recommendation optimization
-  from 2027-01-01. Check reviewed catalog size, measure before and after under the same input and workload,
+  As soon as the existing Notion tasks are complete, select one Recommendation optimization.
+  Check reviewed catalog size, measure before and after under the same input and workload,
   and run independent evaluation for quality, constraints, explanations and fallback. Revise the model if
   needed and merge the PR after validation. Keep product defects that block MVP in MVP scope.
   The 2026-11-06 user instructions bring forward D1 development and data curation for AI03. Compare
