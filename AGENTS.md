@@ -58,7 +58,7 @@ The coordinator owns shared runtime/DB/API decisions, Notion, final merge and cl
   The 2026-11-06 user instructions bring forward D1 development and data curation for AI03. Compare
   with B1 on reviewed groups excluded from all fits and tuning. Serve a candidate only after it
   outperforms B1 on independent evidence and passes the business mapping, explanation and fallback gates.
-  Final deadline is2027-02-05 inclusive; no implementation/commits/merges from2027-02-06 00:00 KST.
+  Final handoff is due 2027-01-15 KST. Stop implementation, commits and merges at 00:00 KST on 2027-01-16.
   Chatbot/mobile implementation, real payment/shipping and AWS resources remain outside scope.
 - Resume this chat every 6 hours with gpt-6.1-sol/ultra. Read current context/ownership/Git/PR status and
   relevant contracts, then do required product work or actual blocking defects. Do not create filler work.
