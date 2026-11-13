@@ -194,14 +194,20 @@ def compile_catalog(manifest_path, input_path, receipt_path, review_path, select
         raise AuditError("at_local_catalog_project_scope_not_reviewed")
     selected_data, selection_hash = read_json(selection_path)
     selection = CatalogSelection.model_validate(selected_data)
+    selected_rows = frozenset(row.source_row_number for row in selection.records)
     report, rows, receipt = audit_at_source(
-        manifest_hash, input_path, receipt_path, review_path, evidence
+        manifest_hash,
+        input_path,
+        receipt_path,
+        review_path,
+        evidence,
+        local_catalog_rows=selected_rows,
     )
     for key in ("input_sha256", "receipt_sha256", "manifest_sha256", "review_sha256"):
         if getattr(selection, key) != report[key]:
             raise AuditError("at_catalog_selection_authority_mismatch")
     reviewed = {row["source_row_number"] for row in rows if row["review_evidence"] is not None}
-    if reviewed != {row.source_row_number for row in selection.records}:
+    if reviewed != selected_rows:
         raise AuditError("at_catalog_selection_requires_exact_reviewed_rows")
     by_row = {row["source_row_number"]: row for row in rows}
     records = []
