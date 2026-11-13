@@ -51,13 +51,16 @@ The coordinator owns shared runtime/DB/API decisions, Notion, final merge and cl
   mapping/B1 fit/B0/factual constraints/leakage/fallback/reproducibility belong before the MVP deadline.
   Provider/fixture-only work never completes a whole feature. Do not wait for external users/future logs.
 - Required unfinished work remains first, even after a missed deadline; report it without extending it.
-  Additional models/tuning/optimization/portfolio work begins from2027-01-01 only after MVP acceptance.
+  After the existing Notion tasks and MVP acceptance are complete, select one Recommendation optimization
+  from 2027-01-01. Check reviewed catalog size, measure before and after under the same input and workload,
+  and run independent evaluation for quality, constraints, explanations and fallback. Revise the model if
+  needed and merge the PR after validation. Keep product defects that block MVP in MVP scope.
   The 2026-11-06 user instructions bring forward D1 development and data curation for AI03. Compare
   with B1 on reviewed groups excluded from all fits and tuning. Serve a candidate only after it
   outperforms B1 on independent evidence and passes the business mapping, explanation and fallback gates.
   Final deadline is2027-02-05 inclusive; no implementation/commits/merges from2027-02-06 00:00 KST.
   Chatbot/mobile implementation, real payment/shipping and AWS resources remain outside scope.
-- Resume this chat every4hours with gpt-6.1-sol/ultra. Read current context/ownership/Git/PR status and
+- Resume this chat every 6 hours with gpt-6.1-sol/ultra. Read current context/ownership/Git/PR status and
   relevant contracts, then do required product work or actual blocking defects. Do not create filler work.
 - Run [TESTING](docs/TESTING.md)'s ./scripts/check.sh: locked pytest/Ruff and fresh distribution/runtime
   checks. Required CI, completed latest-head Codex review, relevant validation and no unresolved findings
@@ -77,12 +80,11 @@ The coordinator owns shared runtime/DB/API decisions, Notion, final merge and cl
   historical code/lockfile links. Do not delete useful integrity/security or core independent checks.
 - Use Korean Conventional Commit/PR titles and one reviewable purpose per commit, following
   [CONTRIBUTING](CONTRIBUTING.md). No WIP/empty commits, forced history rewriting or unrelated changes.
-- README has four supported cases. Change the register
-  only when selection/evidence changes; preserve concrete code/measurement or fixed Git links. Never split
-  adjacent fixes/bootstrap topics to fill the count or invent failures/contribution/quality/performance.
+- README presents one representative case. Update the register when the selection or evidence changes,
+  and preserve the supporting code, measurements and Git references.
   Performance requires real comparable measurements. Do not restore project/role/provenance link tables,
   successor narration or screenshot sections in this repo.
 
 ## README 대표 사례 검토
 
-대표 사례는 주기적으로 검토하며 **문제 → 원인 → 해결 → 결과 → 대체안/회고 → 코드** 순서를 유지한다. 실제 오류 개선·최적화의 원인/대안·전후 실측과 한계, 현재 핵심 코드로 설명할 수 있는 소재를 우선한다. 기존 사례보다 채용 관점에서 더 설득력 있는 근거를 확보했을 때만 해당 사례를 교체하고 나머지 내용/순서는 보존한다. 최신 작업·코드량·테스트/CI 수만으로 교체하거나 없는 성능/기여를 만들지 않는다. 코드는 현재 소스의 핵심 분기·데이터 경계만 짧은 연속 발췌로 펼쳐 보이며, README 문제/원인/해결/결과/대체안·회고/코드에는 하이퍼링크를 두지 않고 근거 링크는 기존 case-study-register/정본문서에서 관리하며, 임의 stub·생략기호·전체 코드 부록은 만들지 않는다. 비교는 계속하되 변경 없는 매회 유지 보고서는 만들지 않는다.
+대표 사례는 주기적으로 검토하며 **문제 → 원인 → 해결 → 결과 → 대체안/회고 → 코드** 순서를 유지한다. 실제 오류 개선·최적화의 원인/대안·전후 실측과 한계, 현재 핵심 코드로 설명할 수 있는 소재를 우선한다. 현재 대표 사례보다 근거가 충분한 사례를 구현하고 검증했을 때 교체한다. 최신 작업·코드량·테스트/CI 수만으로 교체하거나 없는 성능/기여를 만들지 않는다. 코드는 현재 소스의 핵심 분기·데이터 경계만 짧은 연속 발췌로 펼쳐 보이며, README 문제/원인/해결/결과/대체안·회고/코드에는 하이퍼링크를 두지 않고 근거 링크는 기존 case-study-register/정본문서에서 관리하며, 임의 stub·생략기호·전체 코드 부록은 만들지 않는다. 비교는 계속하되 변경 없는 매회 유지 보고서는 만들지 않는다.
