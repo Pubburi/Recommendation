@@ -215,6 +215,11 @@ def test_changed_original_authority_is_rejected(inputs, field):
         "<p>출처표시 + 상업적 이용금지 + 변경&nbsp;<strong>금지</strong></p>",
         "<p>KOGL Type 4</p>",
         '<footer id="footer"><p>본 저작물 변경 금지</p></footer>',
+        '<footer id="footer"><a href="https://www.kogl.or.kr/info/license.do">'
+        '<img src="/images/front/cont/opencode4.png" alt="공공누리 제4유형"></a></footer>',
+        '<footer id="footer"><a href="/copyright">본 자료는 변경 금지입니다</a></footer>',
+        '<footer id="footer"><a href="https://www.kogl.or.kr/info/license.do" '
+        'rel="license">공공누리 제4유형 안내</a></footer>',
     ],
 )
 def test_local_authority_holds_a_referenced_publication_with_restrictive_terms(inputs, notice):
@@ -234,11 +239,11 @@ def test_local_authority_ignores_terms_in_an_unreferenced_capture(inputs, tmp_pa
     assert len(compile(inputs).records) == 1
 
 
-def test_local_authority_distinguishes_site_footer_from_publication_terms(inputs):
+def test_local_authority_distinguishes_site_footer_navigation_from_publication_terms(inputs):
     evidence = inputs.fact_evidence[0]
     evidence.write_text(
         '<article>검수한 상품 정보</article><footer id="footer">\n'
-        '<a href="/examples">공공누리 제4유형 안내</a>\n</footer>',
+        '<a href="https://www.kogl.or.kr/info/license.do">공공누리 제4유형 안내</a>\n</footer>',
         encoding="utf-8",
     )
     revise(inputs, "review", lambda x: x["records"][0].update(evidence_sha256=sha(evidence)))

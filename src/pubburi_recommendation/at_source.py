@@ -255,19 +255,27 @@ def normalize_at_csv(
     return report, records, None
 
 
+def _without_footer_license_guide(html: str) -> str:
+    # A plain link to the general guide can mention a type without labeling this work.
+    # Keep license badges, links with license attributes, and any other link wording.
+    guide_link = (
+        r"<a\s+href\s*=\s*(['\"])https://(?:www\.)?kogl\.or\.kr/info/license\.do\1\s*>"
+        r"\s*공공누리\s*(?:제\s*[34]\s*유형\s*|유형\s*)?안내\s*</a\s*>"
+    )
+    return re.sub(
+        r"<footer\b[^>]*\bid\s*=\s*['\"]footer['\"][^>]*>.*?</footer\s*>",
+        lambda footer: re.sub(guide_link, "", footer[0], flags=re.IGNORECASE),
+        html,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+
+
 def _check_local_catalog_publication_terms(content: bytes):
     try:
         html = content.decode("utf-8")
     except UnicodeError as error:
         raise AuditError("at_local_catalog_publication_terms_unreadable") from error
-    publication = re.sub(
-        r"<footer\b[^>]*\bid\s*=\s*['\"]footer['\"][^>]*>.*?</footer\s*>",
-        lambda footer: re.sub(
-            r"<a\b[^>]*>.*?</a\s*>", "", footer[0], flags=re.IGNORECASE | re.DOTALL
-        ),
-        html,
-        flags=re.IGNORECASE | re.DOTALL,
-    )
+    publication = _without_footer_license_guide(html)
     text = unescape(re.sub(r"<[^>]*>", "", publication))
     if re.search(r"\bnuri[34]\b|/opencode[34]\.png\b", publication, re.IGNORECASE) or re.search(
         r"공공\s*누리\s*(?:제\s*)?[34]\s*유형|변경\s*금지|\bKOGL\s*Type\s*[34]\b",
