@@ -207,6 +207,36 @@ def test_changed_original_authority_is_rejected(inputs, field):
 
 
 @pytest.mark.parametrize(
+    ("provider", "query_suffix"),
+    [
+        ("https://thesool.com", "#some-variant"),
+        ("https://thesool.com", "#"),
+        ("https://THESOOL.COM", ""),
+        ("https://thesool.com", "&searchString=raw space"),
+        ("https://thesool.com", "&searchString=%XZ"),
+    ],
+)
+def test_local_authority_rejects_evidence_url_that_backend_cannot_read(
+    inputs, provider, query_suffix
+):
+    url = provider + "/front/publication/M000000066/view.do?publicationId=C000002100" + query_suffix
+    revise(inputs, "review", lambda x: x["records"][0].update(evidence_url=url))
+
+    with pytest.raises(ValidationError, match="at_catalog_requires_same_provider_evidence"):
+        compile(inputs)
+
+
+def test_local_authority_preserves_an_encoded_publication_query(inputs):
+    url = (
+        "https://thesool.com/front/publication/M000000066/view.do?publicationId=C000002100"
+        "&searchString=%23%20"
+    )
+    revise(inputs, "review", lambda x: x["records"][0].update(evidence_url=url))
+
+    assert compile(inputs).records[0].evidence.url == url
+
+
+@pytest.mark.parametrize(
     "notice",
     [
         '<div class="opencode nuri4"><img src="/images/front/cont/opencode4.png"></div>',
