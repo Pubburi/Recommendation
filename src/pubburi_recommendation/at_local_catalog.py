@@ -5,6 +5,7 @@ import contextlib
 import hashlib
 import json
 import os
+import re
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -137,14 +138,12 @@ class CatalogEvidence(ContractModel):
 
     @model_validator(mode="after")
     def same_provider(self):
-        url = urlsplit(self.url)
+        # The consumer reads the original URL as a Java URI and keeps the source URL unchanged.
         if (
-            url.scheme != "https"
-            or url.hostname != "thesool.com"
-            or url.username is not None
-            or url.password is not None
-            or url.port is not None
-            or url.path != "/front/publication/M000000066/view.do"
+            not self.url.startswith("https://thesool.com/")
+            or re.search(r'[\s\x00-\x1f\x7f-\x9f<>"{}|\\^\x60#\ud800-\udfff]', self.url)
+            or re.search(r"%(?![0-9a-fA-F]{2})", self.url)
+            or urlsplit(self.url).path != "/front/publication/M000000066/view.do"
         ):
             raise ValueError("at_catalog_requires_same_provider_evidence")
         return self

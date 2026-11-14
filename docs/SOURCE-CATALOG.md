@@ -31,6 +31,8 @@ selection은 `schema_version=1`, `algorithm=at-local-catalog-selection-v1`, `cat
 기존 보류·복수 수량·동일 라벨/양조장 중복을 이 선택으로 덮지 않는다.
 선택 행이 참조한 출판물 자체에 공공누리 제3·4유형이나 변경 금지 표시가 있으면 로컬 권위 발행을 보류한다.
 검수자는 각 출판물의 이용 조건과 원천 범위를 직접 확인한다.
+출처 URL은 Backend도 읽을 수 있는 더술닷컴의 `https` 출판물 주소여야 한다. 잘못된 URL 인코딩이나
+fragment가 있으면 발행 전에 거절하고, 유효한 주소와 query는 그대로 보존한다.
 
 출력 `catalog-authority.json`의 추가 필드는 거절하며 정확 계약은 다음과 같다.
 
